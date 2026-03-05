@@ -1,0 +1,26 @@
+package com.strangeparticle.springboard.app.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+val NavbarBackground = Color(0xFF1E1E2E)
+val NavbarText = Color(0xFFCDD6F4)
+val AccentMagenta = Color(0xFFF5C2E7)
+val CellHighlight = Color(0xFFEBEBEB)
+val RowHighlight = Color(0xFFF5F5F5)
+val ColumnHighlight = Color(0xFFF5F5F5)
+val HeaderHoverBackground = Color(0xFFEEEEEE)
+val EmptyCellBackground = Color(0xFFF5F5F5)
+val ActiveCellIndicator = Color(0xFF89B4FA)
+val ToastErrorBackground = Color(0xFFFFEBEE)
+val ToastErrorBorder = Color(0xFFEF9A9A)
+val ToastErrorText = Color(0xFFC62828)
+val ToastWarningBackground = Color(0xFFFFF8E1)
+val ToastWarningBorder = Color(0xFFFFE082)
+val ToastWarningText = Color(0xFF5D4037)
+val ToastInfoBackground = Color(0xFFE8F5E9)
+val ToastInfoBorder = Color(0xFFA5D6A7)
+val ToastInfoText = Color(0xFF2E7D32)
+val StatusBarBackground = Color(0xFFF0F0F0)
+val StatusBarText = Color(0xFF666666)
+val GridBorderColor = Color(0xFFDDDDDD)
+val GridDividerColor = Color(0xFFE0E0E0)

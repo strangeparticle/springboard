@@ -1,0 +1,7 @@
+build/
+composeApp/build/
+.idea/
+.gradle/
+.kotlin/
+kotlin-js-store/
+local.properties

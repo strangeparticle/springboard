@@ -49,18 +49,14 @@ fun GridNav(
             .padding(16.dp)
             .focusProperties { canFocus = false }
     ) {
-        Text(
-            text = environmentName,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Box(
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = environmentName,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier
                     .width(CommonUiConstants.ResourceLabelWidth)
-                    .height(CommonUiConstants.GridHeaderHeight)
+                    .padding(bottom = 8.dp)
             )
 
             currentSpringboard.apps.forEach { app ->

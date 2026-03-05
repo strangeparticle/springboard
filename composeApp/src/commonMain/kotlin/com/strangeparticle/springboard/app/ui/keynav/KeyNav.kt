@@ -106,8 +106,8 @@ private fun MinimalDropdown(
                 .height(34.dp)
                 .background(Color.White, RectangleShape)
                 .border(
-                    width = if (isFocused) 2.dp else 1.dp,
-                    color = if (isFocused) Color(0xFF89B4FA) else Color.White.copy(alpha = 0.3f),
+                    width = if (isFocused) 3.dp else 1.dp,
+                    color = if (isFocused) Color(0xFF1E6FFF) else Color.White.copy(alpha = 0.3f),
                     shape = RectangleShape
                 )
                 .focusRequester(focusRequester)

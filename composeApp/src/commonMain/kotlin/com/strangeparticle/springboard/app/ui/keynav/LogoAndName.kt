@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.ui.keynav
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
@@ -21,7 +22,7 @@ fun LogoAndName(modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(Res.drawable.springboard_icon_512),
         contentDescription = "Springboard",
-        modifier = Modifier.size(36.dp).then(modifier)
+        modifier = Modifier.size(36.dp).offset(y = 6.dp).then(modifier)
     )
     Spacer(modifier = Modifier.width(10.dp))
     Text(

@@ -44,7 +44,6 @@ fun main(args: Array<String>) {
                         if (contents != null) {
                             println("[Springboard] config loading: $path")
                             viewModel.loadConfig(contents, path)
-                            resizeWindowToFitSpringboard(viewModel, windowState)
                             println("[Springboard] grid ready")
                             println("[Springboard] application ready")
                         }
@@ -74,6 +73,11 @@ fun main(args: Array<String>) {
                 }
             )
 
+            // Resize whenever the loaded springboard changes, regardless of how it was opened
+            LaunchedEffect(viewModel.springboard) {
+                resizeWindowToFitSpringboard(viewModel, windowState)
+            }
+
             LaunchedEffect(configPath) {
                 if (configPath != null) {
                     val file = File(configPath)
@@ -81,7 +85,6 @@ fun main(args: Array<String>) {
                         println("[Springboard] config loading: $configPath")
                         val contents = file.readText()
                         viewModel.loadConfig(contents, configPath)
-                        resizeWindowToFitSpringboard(viewModel, windowState)
                         println("[Springboard] grid ready")
                         println("[Springboard] application ready")
                     } else {
@@ -115,11 +118,15 @@ private fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, window
         val height = springboard.displayHints.height
         if (width != null && height != null) {
             windowState.size = DpSize(width.dp, height.dp)
+            windowState.position = WindowPosition(Alignment.Center)
         }
-    } else {
-        val width = 200 + (springboard.apps.size * 120) + 40
-        val height = 56 + 32 + 40 + (springboard.resources.size * 40) + 32 + 40
-        windowState.size = DpSize(width.dp, height.dp)
+        return
     }
+    // Width: resource label (200) + app columns (180 each) + grid padding (32) + buffer (40)
+    val width = 200 + (springboard.apps.size * 180) + 72
+    // Height: navbar (56) + grid top padding (16) + env title (40) + header row (40)
+    //         + rows (40 each) + grid bottom padding (16) + status bar (32) + buffer (40)
+    val height = 56 + 16 + 40 + 40 + (springboard.resources.size * 40) + 16 + 32 + 40
+    windowState.size = DpSize(width.dp, height.dp)
     windowState.position = WindowPosition(Alignment.Center)
 }

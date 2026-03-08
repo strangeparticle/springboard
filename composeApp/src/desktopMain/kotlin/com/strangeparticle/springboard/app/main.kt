@@ -7,7 +7,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.*
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import com.strangeparticle.springboard.app.platform.expandTildePath
+import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
 import com.strangeparticle.springboard.app.platform.openFileDialog
 import com.strangeparticle.springboard.app.platform.readFileContents
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -20,7 +25,7 @@ fun main(args: Array<String>) {
     println("[Springboard] platform initialized")
 
     val configPath = args.firstOrNull()
-    println("[Springboard] config path: ${configPath ?: "none"}")
+    println("[Springboard] launch config path: ${configPath ?: "none"}")
 
     application {
         val windowState = rememberWindowState(
@@ -30,6 +35,11 @@ fun main(args: Array<String>) {
 
         val viewModel = remember { SpringboardViewModel() }
         val environmentFocusRequester = remember { FocusRequester() }
+        val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
+            println("[Springboard] config loading: $path")
+            viewModel.loadConfig(contents, path)
+            println("[Springboard] grid ready")
+        }
 
         Window(
             onCloseRequest = ::exitApplication,
@@ -42,10 +52,9 @@ fun main(args: Array<String>) {
                     if (path != null) {
                         val contents = readFileContents(path)
                         if (contents != null) {
-                            println("[Springboard] config loading: $path")
-                            viewModel.loadConfig(contents, path)
-                            println("[Springboard] grid ready")
-                            println("[Springboard] application ready")
+                            loadSpringboardConfig(path, contents)
+                        } else {
+                            ToastBroadcaster.error("Failed to open: file not found")
                         }
                     }
                 },
@@ -54,8 +63,7 @@ fun main(args: Array<String>) {
                     val path = springboard.source
                     val contents = readFileContents(path)
                     if (contents != null) {
-                        println("[Springboard] config loading: $path")
-                        viewModel.loadConfig(contents, path)
+                        loadSpringboardConfig(path, contents)
                         ToastBroadcaster.info("Springboard reloaded")
                     } else {
                         ToastBroadcaster.error("Failed to reload: file not found")
@@ -73,31 +81,32 @@ fun main(args: Array<String>) {
                 }
             )
 
-            // Resize whenever the loaded springboard changes, regardless of how it was opened
+            // Runs once initially and again whenever the loaded springboard instance changes.
             LaunchedEffect(viewModel.springboard) {
                 resizeWindowToFitSpringboard(viewModel, windowState)
             }
 
+            // Runs once when this window composition starts because configPath is captured from main(args).
+            // It handles optional startup loading from the launch argument, then marks startup complete.
             LaunchedEffect(configPath) {
                 if (configPath != null) {
-                    val file = File(configPath)
+                    val homeDirectoryPath = getHomeDirectoryPath()
+                    val expandedConfigPath = expandTildePath(configPath, homeDirectoryPath)
+                    val file = File(expandedConfigPath)
                     if (file.exists()) {
-                        println("[Springboard] config loading: $configPath")
                         val contents = file.readText()
-                        viewModel.loadConfig(contents, configPath)
-                        println("[Springboard] grid ready")
-                        println("[Springboard] application ready")
+                        loadSpringboardConfig(expandedConfigPath, contents)
                     } else {
-                        ToastBroadcaster.error("Config file not found: $configPath")
-                        println("[Springboard] config file not found: $configPath")
-                        println("[Springboard] application ready")
+                        ToastBroadcaster.error("Config file not found: $expandedConfigPath")
+                        println("[Springboard] config file not found: $expandedConfigPath")
                     }
-                } else {
-                    println("[Springboard] application ready")
                 }
+
+                println("[Springboard] application ready")
             }
 
             val windowInfo = LocalWindowInfo.current
+            // Runs when the window focus state changes; when focus returns, restore keyboard focus.
             LaunchedEffect(windowInfo.isWindowFocused) {
                 if (windowInfo.isWindowFocused && viewModel.isConfigLoaded) {
                     // Small delay to ensure composition is ready before requesting focus
@@ -109,24 +118,4 @@ fun main(args: Array<String>) {
             }
         }
     }
-}
-
-private fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: WindowState) {
-    val springboard = viewModel.springboard ?: return
-    if (springboard.displayHints != null) {
-        val width = springboard.displayHints.width
-        val height = springboard.displayHints.height
-        if (width != null && height != null) {
-            windowState.size = DpSize(width.dp, height.dp)
-            windowState.position = WindowPosition(Alignment.Center)
-        }
-        return
-    }
-    // Width: resource label (200) + app columns (180 each) + grid padding (32) + buffer (40)
-    val width = 200 + (springboard.apps.size * 180) + 72
-    // Height: navbar (56) + grid top padding (16) + env title (40) + header row (40)
-    //         + rows (40 each) + grid bottom padding (16) + status bar (32) + buffer (40)
-    val height = 56 + 16 + 40 + 40 + (springboard.resources.size * 40) + 16 + 32 + 40
-    windowState.size = DpSize(width.dp, height.dp)
-    windowState.position = WindowPosition(Alignment.Center)
 }

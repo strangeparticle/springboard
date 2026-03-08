@@ -11,12 +11,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +46,24 @@ fun GridNav(
 
     val environmentName = currentSpringboard.environments.find { it.id == environmentId }?.name ?: environmentId
 
+    val headerTextStyle = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold)
+    val textMeasurer = rememberTextMeasurer()
+    val longestTruncatedName = remember(currentSpringboard.apps) {
+        currentSpringboard.apps
+            .maxByOrNull { it.name.length }
+            ?.name
+            ?.let(::truncateHeaderText)
+            ?: ""
+    }
+    val measuredLongestHeader = remember(longestTruncatedName) {
+        textMeasurer.measure(longestTruncatedName, headerTextStyle)
+    }
+    val sin45 = 0.7071f
+    val gridHeaderHeight = with(LocalDensity.current) {
+        val rotatedHeightPx = (measuredLongestHeader.size.width + measuredLongestHeader.size.height) * sin45
+        rotatedHeightPx.toDp()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +71,12 @@ fun GridNav(
             .padding(16.dp)
             .focusProperties { canFocus = false }
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(gridHeaderHeight),
+            verticalAlignment = Alignment.Bottom
+        ) {
             Text(
                 text = environmentName,
                 fontSize = 20.sp,
@@ -64,7 +91,7 @@ fun GridNav(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(CommonUiConstants.GridHeaderHeight)
+                        .fillMaxHeight()
                         .background(if (isHighlighted) HeaderHoverBackground else Color.Transparent)
                         .focusProperties { canFocus = false }
                         .clickable { viewModel.activateColumn(app.id) }
@@ -82,12 +109,27 @@ fun GridNav(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = app.name,
-                        fontSize = 14.sp,
+                        text = truncateHeaderText(app.name),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        softWrap = false,
+                        modifier = Modifier
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(
+                                    constraints.copy(maxWidth = 10_000)
+                                )
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    val sin45 = 0.7071f
+                                    val cos45 = 0.7071f
+                                    val rotatedBottomOffset = (placeable.width + placeable.height) * sin45 / 2f
+                                    placeable.place(
+                                        x = constraints.maxWidth / 2 - (placeable.width * (1f - cos45) / 2f).toInt(),
+                                        y = (constraints.maxHeight - placeable.height / 2f - rotatedBottomOffset).toInt()
+                                    )
+                                }
+                            }
+                            .rotate(-45f)
                     )
                 }
             }

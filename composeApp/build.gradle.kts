@@ -9,7 +9,9 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
 }
 
-val appVersionName = project.findProperty("appVersionName")?.toString() ?: "3.0.0"
+// Version is defined in gradle.properties
+val appVersionName = project.findProperty("appVersionName")?.toString()
+    ?: error("appVersionName not set in gradle.properties")
 
 kotlin {
     jvm("desktop")
@@ -24,6 +26,7 @@ kotlin {
                 outputFileName = "composeApp.js"
                 devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
                     static = (static ?: mutableListOf()).apply {
+                        // Serve sources to debug inside browser
                         add(rootDirPath)
                         add(projectDirPath)
                     }
@@ -64,8 +67,8 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(
-                TargetFormat.Pkg,
-                TargetFormat.Dmg
+                TargetFormat.Pkg,   // OS X Desktop builds distributed via app-store
+                TargetFormat.Dmg,   // OS X Desktop builds distributed via direct-download
             )
 
             packageName = "Springboard"
@@ -73,8 +76,9 @@ compose.desktop {
 
             macOS {
                 iconFile.set(project.file("src/desktopMain/resources/icon.icns"))
+
                 packageName = "Springboard"
-                bundleID = "com.strangeparticle.springboard"
+                bundleID = "com.strangeparticle.springboard.core"
                 appCategory = "public.app-category.developer-tools"
                 minimumSystemVersion = "12.0"
             }

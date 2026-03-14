@@ -5,3 +5,5 @@ composeApp/build/
 .kotlin/
 kotlin-js-store/
 local.properties
+tmp/
+.DS_Store

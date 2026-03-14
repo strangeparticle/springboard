@@ -252,8 +252,4 @@ class SpringboardViewModel : ViewModel() {
         selectedAppId = null
         selectedResourceId = null
     }
-
-    companion object {
-        const val VERSION = "3.0.0"
-    }
 }

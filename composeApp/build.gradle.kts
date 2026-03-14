@@ -10,8 +10,7 @@ plugins {
 }
 
 // Version is defined in gradle.properties
-val appVersionName = project.findProperty("appVersionName")?.toString()
-    ?: error("appVersionName not set in gradle.properties")
+val appVersion = project.findProperty("appVersion")?.toString() ?: error("appVersion not set in gradle.properties")
 
 kotlin {
     jvm("desktop")
@@ -72,7 +71,7 @@ compose.desktop {
             )
 
             packageName = "Springboard"
-            packageVersion = appVersionName
+            packageVersion = appVersion
 
             macOS {
                 iconFile.set(project.file("src/desktopMain/resources/icon.icns"))

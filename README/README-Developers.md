@@ -175,4 +175,4 @@ The Gradle wrapper version is set in `gradle/wrapper/gradle-wrapper.properties`.
 ./gradlew wrapper --gradle-version=<version>
 ```
 
-The application version (`appVersionName`) is declared in `gradle.properties`.
+The application version is declared in `gradle.properties` AND `AppVersion.kt`.

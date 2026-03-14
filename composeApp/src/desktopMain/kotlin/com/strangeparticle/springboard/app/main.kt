@@ -15,16 +15,33 @@ import com.strangeparticle.springboard.app.platform.expandTildePath
 import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
 import com.strangeparticle.springboard.app.platform.openFileDialog
 import com.strangeparticle.springboard.app.platform.readFileContents
+import com.strangeparticle.springboard.app.platform.surfaceAppleScriptErrors
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import java.io.File
 
+private data class LaunchArgs(
+    val configPath: String?,
+    val surfaceAppleScriptErrors: Boolean,
+)
+
+private fun parseLaunchArgs(args: Array<String>): LaunchArgs {
+    val surfaceErrors = "--surface-applescript-errors" in args
+    val configPath = args.filterNot { it.startsWith("--") }.firstOrNull()
+    return LaunchArgs(configPath = configPath, surfaceAppleScriptErrors = surfaceErrors)
+}
+
 fun main(args: Array<String>) {
     println("[Springboard] platform initialized")
 
-    val configPath = args.firstOrNull()
+    val launchArgs = parseLaunchArgs(args)
+
+    surfaceAppleScriptErrors = launchArgs.surfaceAppleScriptErrors
+    if (surfaceAppleScriptErrors) println("[Springboard] AppleScript error surfacing enabled")
+
+    val configPath = launchArgs.configPath
     println("[Springboard] launch config path: ${configPath ?: "none"}")
 
     application {

@@ -20,3 +20,5 @@ actual fun formatTimestamp(millis: Long): String {
 }
 
 actual fun getPlatformName(): String = "Web"
+
+actual fun openNewBrowserWindowIfAppropriate(): Boolean = false

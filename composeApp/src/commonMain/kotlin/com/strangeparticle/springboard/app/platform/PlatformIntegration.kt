@@ -13,3 +13,5 @@ expect fun getPlatformName(): String
 expect fun executeCommand(command: String)
 
 expect fun copyToClipboard(text: String)
+
+expect fun openNewBrowserWindowIfAppropriate(): Boolean

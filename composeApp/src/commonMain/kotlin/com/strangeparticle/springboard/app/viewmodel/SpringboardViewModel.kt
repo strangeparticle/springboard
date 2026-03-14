@@ -10,6 +10,7 @@ import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.loading.SpringboardLoader
 import com.strangeparticle.springboard.app.platform.executeCommand
 import com.strangeparticle.springboard.app.platform.openUrl
+import com.strangeparticle.springboard.app.platform.openNewBrowserWindowIfAppropriate
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel : ViewModel() {
@@ -151,38 +152,44 @@ class SpringboardViewModel : ViewModel() {
         val coordinate = Coordinate(environmentId, appId, resourceId)
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
 
-        executeActivator(activator)
+        executeActivators(listOf(activator))
         resetAfterActivation()
     }
 
     fun activateCell(coordinate: Coordinate) {
         val currentSpringboard = springboard ?: return
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
-        executeActivator(activator)
+        executeActivators(listOf(activator))
     }
 
     fun activateColumn(appId: String) {
         val environmentId = selectedEnvironmentId ?: return
         val currentSpringboard = springboard ?: return
-        currentSpringboard.resources.forEach { resource ->
+        val activators = buildList {
+            currentSpringboard.resources.forEach { resource ->
             val coordinate = Coordinate(environmentId, appId, resource.id)
             val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
             if (activator != null) {
-                executeActivator(activator)
+                    add(activator)
+                }
             }
         }
+        executeActivators(activators)
     }
 
     fun activateRow(resourceId: String) {
         val environmentId = selectedEnvironmentId ?: return
         val currentSpringboard = springboard ?: return
-        currentSpringboard.apps.forEach { app ->
+        val activators = buildList {
+            currentSpringboard.apps.forEach { app ->
             val coordinate = Coordinate(environmentId, app.id, resourceId)
             val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
             if (activator != null) {
-                executeActivator(activator)
+                    add(activator)
+                }
             }
         }
+        executeActivators(activators)
     }
 
     fun toggleMultiSelect(coordinate: Coordinate) {
@@ -195,12 +202,15 @@ class SpringboardViewModel : ViewModel() {
 
     fun activateMultiSelect() {
         val currentSpringboard = springboard ?: return
-        multiSelectSet.forEach { coordinate ->
+        val activators = buildList {
+            multiSelectSet.forEach { coordinate ->
             val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
             if (activator != null) {
-                executeActivator(activator)
+                    add(activator)
+                }
             }
         }
+        executeActivators(activators)
         multiSelectSet = emptySet()
     }
 
@@ -223,6 +233,14 @@ class SpringboardViewModel : ViewModel() {
         } catch (e: Exception) {
             ToastBroadcaster.error("An error has occurred: ${e.message}")
         }
+    }
+
+    private fun executeActivators(activators: List<Activator>) {
+        if (activators.isEmpty()) return
+        if (activators.any { it is UrlActivator }) {
+            openNewBrowserWindowIfAppropriate()
+        }
+        activators.forEach(::executeActivator)
     }
 
     private fun resetAfterActivation() {

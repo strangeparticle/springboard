@@ -46,9 +46,31 @@ class ViewModelTest {
 
         assertNotNull(vm.springboard)
         assertTrue(vm.isConfigLoaded)
-        assertEquals("preprod", vm.selectedEnvironmentId) // defaults to preprod
+        assertEquals("preprod", vm.selectedEnvironmentId) // defaults to first env (no "all" present)
         assertNull(vm.selectedAppId)
         assertNull(vm.selectedResourceId)
+    }
+
+    @Test
+    fun testDefaultEnvironmentPrefersAll() {
+        val jsonWithAll = """
+        {
+          "name": "Test",
+          "environments": [
+            { "id": "staging", "name": "Staging" },
+            { "id": "all", "name": "All" },
+            { "id": "prod", "name": "Production" }
+          ],
+          "apps": [{ "id": "a1", "name": "A1" }],
+          "resources": [{ "id": "r1", "name": "R1" }],
+          "activators": [
+            { "type": "url", "appId": "a1", "resourceId": "r1", "environmentId": "all", "url": "https://example.com" }
+          ]
+        }
+        """.trimIndent()
+        val vm = SpringboardViewModel()
+        vm.loadConfig(jsonWithAll, "/test")
+        assertEquals("all", vm.selectedEnvironmentId)
     }
 
     @Test

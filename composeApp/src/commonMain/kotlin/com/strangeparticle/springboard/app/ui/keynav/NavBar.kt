@@ -14,7 +14,7 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 @Composable
 fun NavBar(
     viewModel: SpringboardViewModel,
-    environmentFocusRequester: FocusRequester
+    firstDropdownFocusRequester: FocusRequester
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().height(CommonUiConstants.NavbarHeight)
@@ -29,7 +29,7 @@ fun NavBar(
         if (viewModel.isConfigLoaded) {
             KeyNav(
                 viewModel = viewModel,
-                environmentFocusRequester = environmentFocusRequester
+                firstDropdownFocusRequester = firstDropdownFocusRequester
             )
         }
 

@@ -21,8 +21,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun SpringboardApp(
     viewModel: SpringboardViewModel,
-    environmentFocusRequester: FocusRequester,
-    onRequestFocusEnvironment: (() -> Unit)? = null
+    firstDropdownFocusRequester: FocusRequester,
+    onRequestFocusFirstDropdown: (() -> Unit)? = null
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     var lastLoadedPath by remember { mutableStateOf<String?>(null) }
@@ -52,14 +52,14 @@ fun SpringboardApp(
             Column(modifier = Modifier.fillMaxSize()) {
                 NavBar(
                     viewModel = viewModel,
-                    environmentFocusRequester = environmentFocusRequester
+                    firstDropdownFocusRequester = firstDropdownFocusRequester
                 )
 
                 LaunchedEffect(viewModel.isConfigLoaded) {
                     if (viewModel.isConfigLoaded) {
                         // Delay lets the dropdown composables enter the tree before focus is requested
                         kotlinx.coroutines.delay(100)
-                        try { environmentFocusRequester.requestFocus() } catch (_: Exception) {}
+                        try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
                     }
                 }
 
@@ -119,7 +119,7 @@ fun SpringboardApp(
             }
 
             ToastOverlay(onToastDismissed = {
-                onRequestFocusEnvironment?.invoke()
+                onRequestFocusFirstDropdown?.invoke()
             })
         }
     }

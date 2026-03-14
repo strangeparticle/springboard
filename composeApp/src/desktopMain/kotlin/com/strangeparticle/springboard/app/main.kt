@@ -34,7 +34,7 @@ fun main(args: Array<String>) {
         )
 
         val viewModel = remember { SpringboardViewModel() }
-        val environmentFocusRequester = remember { FocusRequester() }
+        val firstDropdownFocusRequester = remember { FocusRequester() }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
             viewModel.loadConfig(contents, path)
@@ -73,10 +73,10 @@ fun main(args: Array<String>) {
 
             SpringboardApp(
                 viewModel = viewModel,
-                environmentFocusRequester = environmentFocusRequester,
-                onRequestFocusEnvironment = {
+                firstDropdownFocusRequester = firstDropdownFocusRequester,
+                onRequestFocusFirstDropdown = {
                     try {
-                        environmentFocusRequester.requestFocus()
+                        firstDropdownFocusRequester.requestFocus()
                     } catch (_: Exception) {}
                 }
             )
@@ -112,7 +112,7 @@ fun main(args: Array<String>) {
                     // Small delay to ensure composition is ready before requesting focus
                     kotlinx.coroutines.delay(50)
                     try {
-                        environmentFocusRequester.requestFocus()
+                        firstDropdownFocusRequester.requestFocus()
                     } catch (_: Exception) {}
                 }
             }

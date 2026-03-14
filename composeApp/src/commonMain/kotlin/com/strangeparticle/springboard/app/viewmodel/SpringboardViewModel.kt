@@ -98,10 +98,10 @@ class SpringboardViewModel : ViewModel() {
     private fun applySpringboard(springboardConfig: Springboard) {
         springboard = springboardConfig
 
-        val stagingEnvironment = springboardConfig.environments.find {
-            it.id.contains("staging", ignoreCase = true) || it.id.contains("preprod", ignoreCase = true)
+        val defaultEnvironment = springboardConfig.environments.find {
+            it.id.equals("all", ignoreCase = true)
         }
-        selectedEnvironmentId = stagingEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
+        selectedEnvironmentId = defaultEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
         selectedAppId = null
         selectedResourceId = null
         multiSelectSet = emptySet()
@@ -227,10 +227,10 @@ class SpringboardViewModel : ViewModel() {
 
     private fun resetAfterActivation() {
         val currentSpringboard = springboard ?: return
-        val stagingEnvironment = currentSpringboard.environments.find {
-            it.id.contains("staging", ignoreCase = true) || it.id.contains("preprod", ignoreCase = true)
+        val defaultEnvironment = currentSpringboard.environments.find {
+            it.id.equals("all", ignoreCase = true)
         }
-        selectedEnvironmentId = stagingEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
+        selectedEnvironmentId = defaultEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
         selectedAppId = null
         selectedResourceId = null
     }

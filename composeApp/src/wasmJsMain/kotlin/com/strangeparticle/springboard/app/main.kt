@@ -43,14 +43,14 @@ private suspend fun fetchText(url: String): String = suspendCancellableCoroutine
 fun main() {
     ComposeViewport(document.body!!) {
         val viewModel = remember { SpringboardViewModel() }
-        val environmentFocusRequester = remember { FocusRequester() }
+        val firstDropdownFocusRequester = remember { FocusRequester() }
 
         // Incremented each time the browser window gains focus
         var windowFocusTick by remember { mutableStateOf(0) }
 
         SpringboardApp(
             viewModel = viewModel,
-            environmentFocusRequester = environmentFocusRequester
+            firstDropdownFocusRequester = firstDropdownFocusRequester
         )
 
         // Register the JS window focus listener once
@@ -62,7 +62,7 @@ fun main() {
         LaunchedEffect(windowFocusTick) {
             if (windowFocusTick > 0 && viewModel.isConfigLoaded) {
                 delay(50)
-                try { environmentFocusRequester.requestFocus() } catch (_: Exception) {}
+                try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
             }
         }
 
@@ -76,7 +76,7 @@ fun main() {
                     viewModel.loadConfig(jsonText, urlString)
                     // Wait for Compose to recompose and render the dropdowns before requesting focus
                     delay(300)
-                    try { environmentFocusRequester.requestFocus() } catch (_: Exception) {}
+                    try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
                 } catch (e: Throwable) {
                     ToastBroadcaster.error("Failed to fetch config: ${e.message}")
                 }

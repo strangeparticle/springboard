@@ -22,44 +22,47 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 @Composable
 fun KeyNav(
     viewModel: SpringboardViewModel,
-    environmentFocusRequester: FocusRequester
+    firstDropdownFocusRequester: FocusRequester
 ) {
-    val appFocusRequester = remember { FocusRequester() }
     val resourceFocusRequester = remember { FocusRequester() }
+    val environmentFocusRequester = remember { FocusRequester() }
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        MinimalDropdown(
-            items = viewModel.environments.map { it.id to it.name },
-            selectedId = viewModel.selectedEnvironmentId,
-            enabledStates = viewModel.environments.associate { it.id to true },
-            onSelect = { viewModel.selectEnvironment(it) },
-            focusRequester = environmentFocusRequester,
-            onTab = { appFocusRequester.requestFocus() }
-        )
-
+        // Dropdown 1: App
         MinimalDropdown(
             items = viewModel.apps.map { it.id to it.name },
             selectedId = viewModel.selectedAppId,
             enabledStates = viewModel.appEnabledStates,
             onSelect = { viewModel.selectApp(it) },
-            focusRequester = appFocusRequester,
+            focusRequester = firstDropdownFocusRequester,
             onTab = { resourceFocusRequester.requestFocus() }
         )
 
+        // Dropdown 2: Resource
         MinimalDropdown(
             items = viewModel.resources.map { it.id to it.name },
             selectedId = viewModel.selectedResourceId,
             enabledStates = viewModel.resourceEnabledStates,
             onSelect = { viewModel.selectResource(it) },
             focusRequester = resourceFocusRequester,
+            onTab = { environmentFocusRequester.requestFocus() }
+        )
+
+        // Dropdown 3: Environment
+        MinimalDropdown(
+            items = viewModel.environments.map { it.id to it.name },
+            selectedId = viewModel.selectedEnvironmentId,
+            enabledStates = viewModel.environments.associate { it.id to true },
+            onSelect = { viewModel.selectEnvironment(it) },
+            focusRequester = environmentFocusRequester,
             onTab = {
                 if (viewModel.isActivateEnabled) {
                     viewModel.activateCurrentSelection()
                 }
-                environmentFocusRequester.requestFocus()
+                firstDropdownFocusRequester.requestFocus()
             },
             onEnter = {
                 if (viewModel.isActivateEnabled) {

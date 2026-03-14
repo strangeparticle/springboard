@@ -33,7 +33,7 @@ internal data class UrlTemplateActivatorDto(
 ) : ActivatorDto()
 
 @Serializable
-@SerialName("command")
+@SerialName("cmd")
 internal data class CommandActivatorDto(
     override val appId: String,
     override val resourceId: String,

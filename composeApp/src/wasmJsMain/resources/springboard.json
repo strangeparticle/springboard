@@ -27,43 +27,43 @@
 
   "activators": [
     { "type": "url",     "appId": "fretnaut",    "resourceId": "github",   "environmentId": "eny",       "url": "https://example.com" },
-    { "type": "command", "appId": "fretnaut",    "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
+    { "type": "cmd", "appId": "fretnaut",    "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
     { "type": "url",     "appId": "springboard", "resourceId": "github",   "environmentId": "eny",       "url": "https://example.com" },
-    { "type": "command", "appId": "springboard", "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
     { "type": "url",     "appId": "dervish",     "resourceId": "github",   "environmentId": "eny",       "url": "https://example.com" },
-    { "type": "command", "appId": "dervish",     "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
+    { "type": "cmd", "appId": "dervish",     "resourceId": "intellij", "environmentId": "eny",       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
 
     { "type": "url",     "appId": "fretnaut", "resourceId": "github",            "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "ecs",               "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "prometheus",        "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "postgres",          "environmentId": "ephemeral", "url": "https://example.com" },
-    { "type": "command", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
+    { "type": "cmd", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
 
     { "type": "url",     "appId": "fretnaut", "resourceId": "github",            "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "grafana",           "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "prometheus",        "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "microservice-logs", "environmentId": "sandbox",   "url": "https://example.com" },
-    { "type": "command", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
+    { "type": "cmd", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
 
     { "type": "url",     "appId": "fretnaut", "resourceId": "github",            "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "ecs",               "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "grafana",           "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "prometheus",        "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "postgres",          "environmentId": "staging",   "url": "https://example.com" },
-    { "type": "command", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
+    { "type": "cmd", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
 
     { "type": "url",     "appId": "fretnaut", "resourceId": "github",            "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "ecs",               "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "grafana",           "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "postgres",          "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "fretnaut", "resourceId": "microservice-logs", "environmentId": "prod",      "url": "https://example.com" },
-    { "type": "command", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
+    { "type": "cmd", "appId": "fretnaut", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/fretnaut" },
 
     { "type": "url",     "appId": "springboard", "resourceId": "github",            "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "ecs",               "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "grafana",           "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "microservice-logs", "environmentId": "ephemeral", "url": "https://example.com" },
-    { "type": "command", "appId": "springboard", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
 
     { "type": "url",     "appId": "springboard", "resourceId": "github",            "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "ecs",               "environmentId": "sandbox",   "url": "https://example.com" },
@@ -71,19 +71,19 @@
     { "type": "url",     "appId": "springboard", "resourceId": "prometheus",        "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "postgres",          "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "microservice-logs", "environmentId": "sandbox",   "url": "https://example.com" },
-    { "type": "command", "appId": "springboard", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
 
     { "type": "url",     "appId": "springboard", "resourceId": "github",            "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "ecs",               "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "prometheus",        "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "microservice-logs", "environmentId": "staging",   "url": "https://example.com" },
-    { "type": "command", "appId": "springboard", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
 
     { "type": "url",     "appId": "springboard", "resourceId": "github",            "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "grafana",           "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "prometheus",        "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "springboard", "resourceId": "postgres",          "environmentId": "prod",      "url": "https://example.com" },
-    { "type": "command", "appId": "springboard", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/springboard" },
 
     { "type": "url",     "appId": "dervish", "resourceId": "github",            "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "ecs",               "environmentId": "ephemeral", "url": "https://example.com" },
@@ -91,25 +91,25 @@
     { "type": "url",     "appId": "dervish", "resourceId": "prometheus",        "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "postgres",          "environmentId": "ephemeral", "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "microservice-logs", "environmentId": "ephemeral", "url": "https://example.com" },
-    { "type": "command", "appId": "dervish", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
+    { "type": "cmd", "appId": "dervish", "resourceId": "intellij",          "environmentId": "ephemeral", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
 
     { "type": "url",     "appId": "dervish", "resourceId": "github",            "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "ecs",               "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "postgres",          "environmentId": "sandbox",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "microservice-logs", "environmentId": "sandbox",   "url": "https://example.com" },
-    { "type": "command", "appId": "dervish", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
+    { "type": "cmd", "appId": "dervish", "resourceId": "intellij",          "environmentId": "sandbox",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
 
     { "type": "url",     "appId": "dervish", "resourceId": "github",            "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "grafana",           "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "prometheus",        "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "postgres",          "environmentId": "staging",   "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "microservice-logs", "environmentId": "staging",   "url": "https://example.com" },
-    { "type": "command", "appId": "dervish", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
+    { "type": "cmd", "appId": "dervish", "resourceId": "intellij",          "environmentId": "staging",   "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" },
 
     { "type": "url",     "appId": "dervish", "resourceId": "github",            "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "ecs",               "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "prometheus",        "environmentId": "prod",      "url": "https://example.com" },
     { "type": "url",     "appId": "dervish", "resourceId": "microservice-logs", "environmentId": "prod",      "url": "https://example.com" },
-    { "type": "command", "appId": "dervish", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" }
+    { "type": "cmd", "appId": "dervish", "resourceId": "intellij",          "environmentId": "prod",      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/development/dervish" }
   ]
 }

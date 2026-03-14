@@ -23,7 +23,7 @@ class SpringboardFactoryTest {
       ],
       "activators": [
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "staging", "url": "https://example.com/dash" },
-        { "type": "command", "appId": "app1", "resourceId": "res2", "environmentId": "staging", "commandTemplate": "open /tmp" },
+        { "type": "cmd", "appId": "app1", "resourceId": "res2", "environmentId": "staging", "commandTemplate": "open /tmp" },
         { "type": "urlTemplate", "appId": "app2", "resourceId": "res1", "environmentId": "staging", "urlTemplate": "https://example.com/${'$'}{environment.id}/dash" },
         { "type": "url", "appId": "app2", "resourceId": "res2", "environmentId": "prod", "url": "https://example.com/prod/logs" }
       ]

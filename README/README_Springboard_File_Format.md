@@ -32,7 +32,7 @@ The config file must be valid JSON. All top-level fields are required unless not
     { "type": "url",     "appId": "my-service", "resourceId": "github",  "environmentId": "staging", "url": "https://github.com/..." },
     { "type": "url",     "appId": "my-service", "resourceId": "grafana", "environmentId": "staging", "url": "https://grafana.example.com/..." },
     { "type": "url",     "appId": "my-service", "resourceId": "github",  "environmentId": "prod",    "url": "https://github.com/..." },
-    { "type": "command", "appId": "my-service", "resourceId": "github",  "environmentId": "staging",
+    { "type": "cmd",     "appId": "my-service", "resourceId": "github",  "environmentId": "staging",
       "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /path/to/project" }
   ]
 }
@@ -53,13 +53,13 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `resources[].id` | yes | |
 | `resources[].name` | yes | |
 | `activators` | yes | One entry per (environment, app, resource) combination you want to activate |
-| `activators[].type` | yes | `"url"`, `"urlTemplate"`, or `"command"` |
+| `activators[].type` | yes | `"url"`, `"urlTemplate"`, or `"cmd"` |
 | `activators[].appId` | yes | Must match a declared `apps[].id` |
 | `activators[].resourceId` | yes | Must match a declared `resources[].id` |
 | `activators[].environmentId` | yes | Must match a declared `environments[].id` |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
 | `activators[].urlTemplate` | when `type="urlTemplate"` | URL with interpolation (Phase 2) |
-| `activators[].commandTemplate` | when `type="command"` | Shell command, desktop only |
+| `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
 | `displayHints.width` | optional | Preferred window width in pixels |
 | `displayHints.height` | optional | Preferred window height in pixels |
 

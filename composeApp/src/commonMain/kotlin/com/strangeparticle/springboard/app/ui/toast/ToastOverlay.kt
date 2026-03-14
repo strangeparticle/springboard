@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
@@ -20,6 +21,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.text.selection.SelectionContainer
+import com.strangeparticle.springboard.app.platform.copyToClipboard
 import com.strangeparticle.springboard.app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -113,6 +116,18 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
+                IconButton(
+                    onClick = { copyToClipboard(toast.message) },
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Icon(
+                        Icons.Default.ContentCopy,
+                        contentDescription = "Copy",
+                        tint = textColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
                 IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
                     Icon(
                         Icons.Default.Close,
@@ -126,11 +141,13 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(6.dp))
 
             // Body
-            Text(
-                text = toast.message,
-                color = textColor,
-                fontSize = 13.sp
-            )
+            SelectionContainer {
+                Text(
+                    text = toast.message,
+                    color = textColor,
+                    fontSize = 13.sp
+                )
+            }
         }
     }
 }

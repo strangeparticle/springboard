@@ -11,3 +11,5 @@ expect fun formatTimestamp(millis: Long): String
 expect fun getPlatformName(): String
 
 expect fun executeCommand(command: String)
+
+expect fun copyToClipboard(text: String)

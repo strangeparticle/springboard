@@ -57,14 +57,43 @@ object SpringboardFactory {
 
         val indexes = buildIndexes(activators)
 
+        val guidanceData = dto.guidanceData.map { guidanceDto ->
+            require(guidanceDto.environmentId in environmentIds) {
+                "Guidance data references non-existent environment: '${guidanceDto.environmentId}'"
+            }
+            require(guidanceDto.appId in appIds) {
+                "Guidance data references non-existent app: '${guidanceDto.appId}'"
+            }
+            require(guidanceDto.resourceId in resourceIds) {
+                "Guidance data references non-existent resource: '${guidanceDto.resourceId}'"
+            }
+            val coordinate = Coordinate(guidanceDto.environmentId, guidanceDto.appId, guidanceDto.resourceId)
+            require(indexes.activatorByCoordinate.containsKey(coordinate)) {
+                "Guidance data references coordinate without an activator: env='${guidanceDto.environmentId}', app='${guidanceDto.appId}', resource='${guidanceDto.resourceId}'"
+            }
+            GuidanceData(
+                environmentId = guidanceDto.environmentId,
+                appId = guidanceDto.appId,
+                resourceId = guidanceDto.resourceId,
+                guidanceLines = guidanceDto.guidanceLines
+            )
+        }
+
+        val guidanceByCoordinate = guidanceData.associateBy {
+            Coordinate(it.environmentId, it.appId, it.resourceId)
+        }
+
+        val indexesWithGuidance = indexes.copy(guidanceByCoordinate = guidanceByCoordinate)
+
         return Springboard(
             name = dto.name,
             environments = dto.environments.map { Environment(it.id, it.name) },
             apps = dto.apps.map { App(it.id, it.name) },
             resources = dto.resources.map { Resource(it.id, it.name) },
             activators = activators,
+            guidanceData = guidanceData,
             displayHints = dto.displayHints?.let { DisplayHints(it.width, it.height) },
-            indexes = indexes,
+            indexes = indexesWithGuidance,
             source = source,
             lastLoadTime = currentTimeMillis()
         )

@@ -6,6 +6,7 @@ data class Springboard(
     val apps: List<App>,
     val resources: List<Resource>,
     val activators: List<Activator>,
+    val guidanceData: List<GuidanceData>,
     val displayHints: DisplayHints?,
     val indexes: SpringboardIndexes,
     val source: String,

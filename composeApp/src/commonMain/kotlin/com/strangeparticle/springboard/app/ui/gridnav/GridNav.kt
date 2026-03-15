@@ -25,8 +25,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.theme.*
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun GridNav(
@@ -41,6 +45,11 @@ fun GridNav(
     var hoveredResourceId by remember { mutableStateOf<String?>(null) }
     var hoveredHeaderAppId by remember { mutableStateOf<String?>(null) }
     var hoveredHeaderResourceId by remember { mutableStateOf<String?>(null) }
+
+    // Single active guidance tooltip — only one can be visible at a time.
+    var activeGuidanceCoordinate by remember { mutableStateOf<Coordinate?>(null) }
+    val guidanceDismissScope = rememberCoroutineScope()
+    var guidanceDismissJob by remember { mutableStateOf<Job?>(null) }
 
     val verticalScroll = rememberScrollState()
 
@@ -185,14 +194,36 @@ fun GridNav(
                         val cellInteractionSource = remember { MutableInteractionSource() }
                         val isCellHovered by cellInteractionSource.collectIsHoveredAsState()
 
-                        LaunchedEffect(isCellHovered) {
+                        // Guidance tooltip state
+                        val guidanceData = currentSpringboard.indexes.guidanceByCoordinate[coordinate]
+                        var isTooltipHovered by remember { mutableStateOf(false) }
+                        val isGuidanceActive = activeGuidanceCoordinate == coordinate
+
+                        LaunchedEffect(isCellHovered, isTooltipHovered) {
                             if (isCellHovered) {
                                 hoveredAppId = app.id
                                 hoveredResourceId = resource.id
+                                if (guidanceData != null) {
+                                    guidanceDismissJob?.cancel()
+                                    guidanceDismissJob = null
+                                    activeGuidanceCoordinate = coordinate
+                                }
                             } else {
                                 if (hoveredAppId == app.id && hoveredResourceId == resource.id) {
                                     hoveredAppId = null
                                     hoveredResourceId = null
+                                }
+                                if (isTooltipHovered && guidanceData != null) {
+                                    guidanceDismissJob?.cancel()
+                                    guidanceDismissJob = null
+                                } else if (isGuidanceActive) {
+                                    guidanceDismissJob?.cancel()
+                                    guidanceDismissJob = guidanceDismissScope.launch {
+                                        delay(300L)
+                                        if (activeGuidanceCoordinate == coordinate) {
+                                            activeGuidanceCoordinate = null
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -243,6 +274,15 @@ fun GridNav(
                                             .border(2.dp, ActiveCellIndicator, CircleShape)
                                     )
                                 }
+                            }
+
+                            if (isGuidanceActive && guidanceData != null) {
+                                GuidanceTooltip(
+                                    guidanceLines = guidanceData.guidanceLines,
+                                    onTooltipHoverChanged = { hovered ->
+                                        isTooltipHovered = hovered
+                                    }
+                                )
                             }
                         }
                     }

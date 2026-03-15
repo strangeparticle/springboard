@@ -62,6 +62,37 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
 | `displayHints.width` | optional | Preferred window width in pixels |
 | `displayHints.height` | optional | Preferred window height in pixels |
+| `guidanceData` | optional | List of per-coordinate guidance entries (see below) |
+| `guidanceData[].environmentId` | yes | Must match a declared `environments[].id` |
+| `guidanceData[].appId` | yes | Must match a declared `apps[].id` |
+| `guidanceData[].resourceId` | yes | Must match a declared `resources[].id` |
+| `guidanceData[].guidanceLines` | yes | Ordered list of plain-text strings shown in the guidance tooltip |
+
+## Guidance Data
+
+Guidance data provides optional, per-coordinate instructional text that appears in a tooltip-style overlay when the user hovers a populated cell. It is stored separately from activators to keep both sections compact and easy to hand-edit.
+
+Each guidance entry is associated with a coordinate (environment + app + resource) that **must** have a corresponding activator — guidance for empty cells is rejected at load time.
+
+```json
+"guidanceData": [
+  {
+    "environmentId": "prod",
+    "appId": "my-service",
+    "resourceId": "grafana",
+    "guidanceLines": [
+      "Use the prod AWS account before opening this link.",
+      "Select the us-west-2 region.",
+      "Open the Log Groups section after landing."
+    ]
+  }
+]
+```
+
+- `guidanceLines` are rendered as plain text. Formatting (markdown, etc.) is not supported.
+- The tooltip is selectable and includes a copy icon for easy clipboard access.
+- Guidance data is entirely optional — files without the `guidanceData` field continue to work unchanged.
+- Guidance data is maintained by hand-editing the JSON file, just like activators.
 
 ## Rules
 

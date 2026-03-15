@@ -195,4 +195,59 @@ class ViewModelTest {
         vm.toggleMultiSelect(coord1)
         assertEquals(setOf(coord2), vm.multiSelectSet)
     }
+
+    // --- Guidance data through ViewModel load ---
+
+    private val jsonWithGuidance = """
+    {
+      "name": "Guided Springboard",
+      "environments": [
+        { "id": "preprod", "name": "Preprod" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "preprod", "url": "https://example.com/dash" }
+      ],
+      "guidanceData": [
+        {
+          "environmentId": "preprod",
+          "appId": "app1",
+          "resourceId": "res1",
+          "guidanceLines": ["Log in first.", "Select the team workspace."]
+        }
+      ]
+    }
+    """.trimIndent()
+
+    @Test
+    fun testGuidanceDataAvailableAfterLoad() {
+        val vm = SpringboardViewModel()
+        vm.loadConfig(jsonWithGuidance, "/test.json")
+
+        val sb = vm.springboard
+        assertNotNull(sb)
+        assertEquals(1, sb.guidanceData.size)
+
+        val coord = Coordinate("preprod", "app1", "res1")
+        val guidance = sb.indexes.guidanceByCoordinate[coord]
+        assertNotNull(guidance)
+        assertEquals(listOf("Log in first.", "Select the team workspace."), guidance.guidanceLines)
+    }
+
+    @Test
+    fun testNoGuidanceDataStillLoads() {
+        // The original validJson has no guidanceData
+        val vm = SpringboardViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        val sb = vm.springboard
+        assertNotNull(sb)
+        assertTrue(sb.guidanceData.isEmpty())
+        assertTrue(sb.indexes.guidanceByCoordinate.isEmpty())
+    }
 }

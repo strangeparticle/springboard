@@ -4,8 +4,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.ComposeViewport
+import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.persistence.WasmSettingsPersistenceManager
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
+import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.browser.document
 import kotlinx.coroutines.delay
@@ -41,8 +45,19 @@ private suspend fun fetchText(url: String): String = suspendCancellableCoroutine
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
+    val runtimeEnvironment = detectRuntimeEnvironment()
+    val persistenceManager = WasmSettingsPersistenceManager()
+    val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
+    settingsManager.loadSettingsAtStartup()
+
     ComposeViewport(document.body!!) {
-        val viewModel = remember { SpringboardViewModel() }
+        val viewModel = remember { SpringboardViewModel(settingsManager) }
+        val settingsViewModel = remember {
+            SettingsViewModel(
+                settingsManager = settingsManager,
+                currentFilePath = { viewModel.springboard?.source },
+            )
+        }
         val firstDropdownFocusRequester = remember { FocusRequester() }
 
         // Incremented each time the browser window gains focus
@@ -50,6 +65,7 @@ fun main() {
 
         SpringboardApp(
             viewModel = viewModel,
+            settingsViewModel = settingsViewModel,
             firstDropdownFocusRequester = firstDropdownFocusRequester
         )
 

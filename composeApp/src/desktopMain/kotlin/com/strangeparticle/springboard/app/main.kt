@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
@@ -16,33 +17,46 @@ import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
 import com.strangeparticle.springboard.app.platform.openFileDialog
 import com.strangeparticle.springboard.app.platform.readFileContents
 import com.strangeparticle.springboard.app.platform.surfaceAppleScriptErrors
+import com.strangeparticle.springboard.app.settings.*
+import com.strangeparticle.springboard.app.settings.persistence.DesktopSettingsPersistenceManager
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
+import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import java.io.File
 
-private data class LaunchArgs(
-    val configPath: String?,
-    val surfaceAppleScriptErrors: Boolean,
-)
-
-private fun parseLaunchArgs(args: Array<String>): LaunchArgs {
-    val surfaceErrors = "--surface-applescript-errors" in args
-    val configPath = args.filterNot { it.startsWith("--") }.firstOrNull()
-    return LaunchArgs(configPath = configPath, surfaceAppleScriptErrors = surfaceErrors)
+private enum class ActiveSettingsOpenedFrom {
+    SETTINGS_SCREEN,
+    MAIN_SCREEN,
 }
 
 fun main(args: Array<String>) {
     println("[Springboard] platform initialized")
 
-    val launchArgs = parseLaunchArgs(args)
+    val runtimeEnvironment = detectRuntimeEnvironment()
 
-    surfaceAppleScriptErrors = launchArgs.surfaceAppleScriptErrors
-    if (surfaceAppleScriptErrors) println("[Springboard] AppleScript error surfacing enabled")
+    // Initialize the settings system
+    val persistenceManager = DesktopSettingsPersistenceManager()
+    val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
 
-    val configPath = launchArgs.configPath
+    // Load all settings sources: persisted user settings, env vars, CLI args
+    settingsManager.loadSettingsAtStartup(
+        environmentVariables = System.getenv(),
+        commandLineArgs = args.toList(),
+    )
+
+    // Propagate the resolved surfaceAppleScriptErrors value to the browser automation module
+    surfaceAppleScriptErrors = settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
+
+    // Determine the startup config path from the explicit startup-springboard setting.
+    val startupSpringboardPath = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
+    val configPath = startupSpringboardPath
+
     println("[Springboard] launch config path: ${configPath ?: "none"}")
+    if (settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)) {
+        println("[Springboard] AppleScript error surfacing enabled")
+    }
 
     application {
         val windowState = rememberWindowState(
@@ -50,12 +64,50 @@ fun main(args: Array<String>) {
             position = WindowPosition(Alignment.Center)
         )
 
-        val viewModel = remember { SpringboardViewModel() }
+        val viewModel = remember { SpringboardViewModel(settingsManager) }
+        val settingsViewModel = remember {
+            SettingsViewModel(
+                settingsManager = settingsManager,
+                currentFilePath = { viewModel.springboard?.source },
+            )
+        }
         val firstDropdownFocusRequester = remember { FocusRequester() }
+        val showSettings = remember { mutableStateOf(false) }
+        val showActiveSettings = remember { mutableStateOf(false) }
+        val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
             viewModel.loadConfig(contents, path)
             println("[Springboard] grid ready")
+        }
+        val openSettingsScreen = {
+            activeSettingsOpenedFrom.value = null
+            showActiveSettings.value = false
+            showSettings.value = true
+        }
+        val openActiveSettingsFromSettings = {
+            activeSettingsOpenedFrom.value = ActiveSettingsOpenedFrom.SETTINGS_SCREEN
+            showActiveSettings.value = true
+        }
+        val openActiveSettingsFromMain = {
+            activeSettingsOpenedFrom.value = ActiveSettingsOpenedFrom.MAIN_SCREEN
+            showSettings.value = true
+            showActiveSettings.value = true
+        }
+        val closeActiveSettings = {
+            when (activeSettingsOpenedFrom.value) {
+                ActiveSettingsOpenedFrom.SETTINGS_SCREEN -> {
+                    showActiveSettings.value = false
+                }
+                ActiveSettingsOpenedFrom.MAIN_SCREEN -> {
+                    showActiveSettings.value = false
+                    showSettings.value = false
+                }
+                null -> {
+                    showActiveSettings.value = false
+                }
+            }
+            activeSettingsOpenedFrom.value = null
         }
 
         Window(
@@ -85,12 +137,20 @@ fun main(args: Array<String>) {
                     } else {
                         ToastBroadcaster.error("Failed to reload: file not found")
                     }
-                }
+                },
+                onOpenSettings = openSettingsScreen,
+                onShowActiveSettings = openActiveSettingsFromMain,
             )
 
             SpringboardApp(
                 viewModel = viewModel,
+                settingsViewModel = settingsViewModel,
                 firstDropdownFocusRequester = firstDropdownFocusRequester,
+                showSettings = showSettings,
+                showActiveSettings = showActiveSettings,
+                onOpenSettings = openSettingsScreen,
+                onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
+                onCloseActiveSettings = closeActiveSettings,
                 onRequestFocusFirstDropdown = {
                     try {
                         firstDropdownFocusRequester.requestFocus()

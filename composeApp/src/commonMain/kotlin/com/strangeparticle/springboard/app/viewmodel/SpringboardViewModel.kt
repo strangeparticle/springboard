@@ -11,9 +11,13 @@ import com.strangeparticle.springboard.app.loading.SpringboardLoader
 import com.strangeparticle.springboard.app.platform.executeCommand
 import com.strangeparticle.springboard.app.platform.openUrl
 import com.strangeparticle.springboard.app.platform.openNewBrowserWindowIfAppropriate
+import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
-class SpringboardViewModel : ViewModel() {
+class SpringboardViewModel(
+    private val settingsManager: SettingsManager,
+) : ViewModel() {
 
     var springboard by mutableStateOf<Springboard?>(null)
         private set
@@ -143,6 +147,7 @@ class SpringboardViewModel : ViewModel() {
         selectedResourceId = resourceId
     }
 
+    /** Activated via keynav (drop-down selection + enter). */
     fun activateCurrentSelection() {
         val environmentId = selectedEnvironmentId ?: return
         val appId = selectedAppId ?: return
@@ -152,16 +157,23 @@ class SpringboardViewModel : ViewModel() {
         val coordinate = Coordinate(environmentId, appId, resourceId)
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
 
-        executeActivators(listOf(activator))
-        resetAfterActivation()
+        executeActivators(listOf(activator), isSingleSelection = true)
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION)) {
+            resetKeynavSelections()
+        }
     }
 
+    /** Activated via grid-nav (cell click). */
     fun activateCell(coordinate: Coordinate) {
         val currentSpringboard = springboard ?: return
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
-        executeActivators(listOf(activator))
+        executeActivators(listOf(activator), isSingleSelection = true)
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
+            resetKeynavSelections()
+        }
     }
 
+    /** Activated via grid-nav (column header click). */
     fun activateColumn(appId: String) {
         val environmentId = selectedEnvironmentId ?: return
         val currentSpringboard = springboard ?: return
@@ -174,9 +186,13 @@ class SpringboardViewModel : ViewModel() {
                 }
             }
         }
-        executeActivators(activators)
+        executeActivators(activators, isSingleSelection = false)
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
+            resetKeynavSelections()
+        }
     }
 
+    /** Activated via grid-nav (row label click). */
     fun activateRow(resourceId: String) {
         val environmentId = selectedEnvironmentId ?: return
         val currentSpringboard = springboard ?: return
@@ -189,7 +205,10 @@ class SpringboardViewModel : ViewModel() {
                 }
             }
         }
-        executeActivators(activators)
+        executeActivators(activators, isSingleSelection = false)
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
+            resetKeynavSelections()
+        }
     }
 
     fun toggleMultiSelect(coordinate: Coordinate) {
@@ -200,6 +219,7 @@ class SpringboardViewModel : ViewModel() {
         }
     }
 
+    /** Activated via grid-nav (shift-release after multi-select). */
     fun activateMultiSelect() {
         val currentSpringboard = springboard ?: return
         val activators = buildList {
@@ -210,8 +230,11 @@ class SpringboardViewModel : ViewModel() {
                 }
             }
         }
-        executeActivators(activators)
+        executeActivators(activators, isSingleSelection = false)
         multiSelectSet = emptySet()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
+            resetKeynavSelections()
+        }
     }
 
     fun getActivatorForCell(environmentId: String, appId: String, resourceId: String): Activator? {
@@ -235,15 +258,22 @@ class SpringboardViewModel : ViewModel() {
         }
     }
 
-    private fun executeActivators(activators: List<Activator>) {
+    private fun executeActivators(activators: List<Activator>, isSingleSelection: Boolean) {
         if (activators.isEmpty()) return
         if (activators.any { it is UrlActivator }) {
-            openNewBrowserWindowIfAppropriate()
+            val shouldOpenNewWindow = if (isSingleSelection) {
+                settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE)
+            } else {
+                settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE)
+            }
+            if (shouldOpenNewWindow) {
+                openNewBrowserWindowIfAppropriate()
+            }
         }
         activators.forEach(::executeActivator)
     }
 
-    private fun resetAfterActivation() {
+    private fun resetKeynavSelections() {
         val currentSpringboard = springboard ?: return
         val defaultEnvironment = currentSpringboard.environments.find {
             it.id.equals("all", ignoreCase = true)

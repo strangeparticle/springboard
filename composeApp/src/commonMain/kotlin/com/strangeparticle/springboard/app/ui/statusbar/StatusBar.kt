@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -22,7 +23,8 @@ import com.strangeparticle.springboard.app.ui.theme.StatusBarText
 fun StatusBar(
     springboard: Springboard?,
     isReloading: Boolean,
-    onReload: () -> Unit
+    onReload: () -> Unit,
+    onOpenSettings: () -> Unit = {},
 ) {
     val currentSpringboard = springboard ?: return
 
@@ -49,7 +51,19 @@ fun StatusBar(
         Text(
             text = "Source: ${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
             fontSize = 11.sp,
-            color = StatusBarText
+            color = StatusBarText,
+            modifier = Modifier.weight(1f),
         )
+        IconButton(
+            onClick = onOpenSettings,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = "Settings",
+                modifier = Modifier.size(16.dp),
+                tint = StatusBarText
+            )
+        }
     }
 }

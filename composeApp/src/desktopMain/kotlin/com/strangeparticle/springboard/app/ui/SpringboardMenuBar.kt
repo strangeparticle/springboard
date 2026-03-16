@@ -9,7 +9,9 @@ import androidx.compose.ui.window.MenuBar
 @Composable
 fun FrameWindowScope.SpringboardMenuBar(
     onOpen: () -> Unit,
-    onReload: () -> Unit
+    onReload: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onShowActiveSettings: () -> Unit,
 ) {
     MenuBar {
         Menu("File") {
@@ -18,6 +20,14 @@ fun FrameWindowScope.SpringboardMenuBar(
             }
             Item("Reload", shortcut = KeyShortcut(Key.R, meta = true)) {
                 onReload()
+            }
+        }
+        Menu("Settings") {
+            Item("Settings…", shortcut = KeyShortcut(Key.Comma, meta = true)) {
+                onOpenSettings()
+            }
+            Item("Show Active Settings") {
+                onShowActiveSettings()
             }
         }
     }

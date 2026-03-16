@@ -189,7 +189,7 @@ fun GridNav(
 
                     currentSpringboard.apps.forEach { app ->
                         val coordinate = Coordinate(environmentId, app.id, resource.id)
-                        val activator = viewModel.getActivatorForCell(environmentId, app.id, resource.id)
+                        val activator = viewModel.getActivatorForCell(coordinate)
                         val hasActivator = activator != null
                         val cellInteractionSource = remember { MutableInteractionSource() }
                         val isCellHovered by cellInteractionSource.collectIsHoveredAsState()

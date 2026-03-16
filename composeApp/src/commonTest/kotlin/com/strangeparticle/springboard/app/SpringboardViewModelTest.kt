@@ -172,10 +172,10 @@ class SpringboardViewModelTest {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
-        val activator = vm.getActivatorForCell("preprod", "app1", "res1")
+        val activator = vm.getActivatorForCell(Coordinate("preprod", "app1", "res1"))
         assertNotNull(activator)
 
-        val missing = vm.getActivatorForCell("preprod", "app2", "res1")
+        val missing = vm.getActivatorForCell(Coordinate("preprod", "app2", "res1"))
         assertNull(missing)
     }
 

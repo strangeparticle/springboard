@@ -237,9 +237,9 @@ class SpringboardViewModel(
         }
     }
 
-    fun getActivatorForCell(environmentId: String, appId: String, resourceId: String): Activator? {
+    fun getActivatorForCell(coordinate: Coordinate): Activator? {
         val currentSpringboard = springboard ?: return null
-        return currentSpringboard.indexes.activatorByCoordinate[Coordinate(environmentId, appId, resourceId)]
+        return currentSpringboard.indexes.activatorByCoordinate[coordinate]
     }
 
     private fun executeActivator(activator: Activator) {

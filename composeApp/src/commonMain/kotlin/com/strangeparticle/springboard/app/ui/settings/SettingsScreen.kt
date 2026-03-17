@@ -3,7 +3,6 @@ package com.strangeparticle.springboard.app.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,12 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.*
@@ -190,34 +190,51 @@ private fun OverrideMessage(
     sourceName: String,
     onShowActiveSettings: () -> Unit,
 ) {
-    val activeSettingsTag = "active_settings"
+    val linkBaseColor = Color(0xFFAA6600)
+    val activeSettings = "Active Settings"
+    val fullText = "Overridden by $sourceName. See $activeSettings for details."
+    val linkStart = fullText.indexOf(activeSettings)
+
     val message = buildAnnotatedString {
-        append("Overridden by $sourceName. See ")
-        pushStringAnnotation(tag = activeSettingsTag, annotation = activeSettingsTag)
-        withStyle(
-            SpanStyle(
-                color = Color(0xFFAA6600),
-                textDecoration = TextDecoration.Underline,
-            )
-        ) {
-            append("Active Settings")
-        }
-        pop()
-        append(" for details.")
+        append(fullText)
+        addLink(
+            LinkAnnotation.Clickable(
+                tag = "active_settings",
+                styles = TextLinkStyles(
+                    style = SpanStyle(
+                        color = linkBaseColor,
+                        textDecoration = TextDecoration.Underline,
+                    ),
+                    hoveredStyle = SpanStyle(
+                        color = Color(0xFFCC8800),
+                        textDecoration = TextDecoration.Underline,
+                        background = Color(0x18AA6600),
+                    ),
+                    pressedStyle = SpanStyle(
+                        color = Color(0xFF884400),
+                        textDecoration = TextDecoration.Underline,
+                        background = Color(0x28AA6600),
+                    ),
+                    focusedStyle = SpanStyle(
+                        color = linkBaseColor,
+                        textDecoration = TextDecoration.Underline,
+                        background = Color(0x10AA6600),
+                    ),
+                ),
+                linkInteractionListener = { onShowActiveSettings() },
+            ),
+            start = linkStart,
+            end = linkStart + activeSettings.length,
+        )
     }
 
-    ClickableText(
+    Text(
         text = message,
         style = LocalTextStyle.current.copy(
             fontSize = 11.sp,
             fontStyle = FontStyle.Italic,
-            color = Color(0xFFAA6600),
+            color = linkBaseColor,
         ),
-        onClick = { offset ->
-            message.getStringAnnotations(tag = activeSettingsTag, start = offset, end = offset)
-                .firstOrNull()
-                ?.let { onShowActiveSettings() }
-        },
     )
 }
 

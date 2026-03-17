@@ -51,6 +51,20 @@ fun GridNav(
     val guidanceDismissScope = rememberCoroutineScope()
     var guidanceDismissJob by remember { mutableStateOf<Job?>(null) }
 
+    // When keynav forms a full coordinate with guidance, show the tooltip on that cell.
+    val keynavCoordinate = viewModel.keynavCoordinate
+    LaunchedEffect(keynavCoordinate) {
+        if (keynavCoordinate != null &&
+            currentSpringboard.indexes.guidanceByCoordinate.containsKey(keynavCoordinate)
+        ) {
+            guidanceDismissJob?.cancel()
+            guidanceDismissJob = null
+            activeGuidanceCoordinate = keynavCoordinate
+        } else if (activeGuidanceCoordinate != null) {
+            activeGuidanceCoordinate = null
+        }
+    }
+
     val verticalScroll = rememberScrollState()
 
     val environmentName = currentSpringboard.environments.find { it.id == environmentId }?.name ?: environmentId

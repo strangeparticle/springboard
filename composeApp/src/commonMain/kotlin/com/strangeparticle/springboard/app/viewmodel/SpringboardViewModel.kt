@@ -60,6 +60,13 @@ class SpringboardViewModel(
         }
     }
 
+    val keynavCoordinate by derivedStateOf {
+        val environmentId = selectedEnvironmentId ?: return@derivedStateOf null
+        val appId = selectedAppId ?: return@derivedStateOf null
+        val resourceId = selectedResourceId ?: return@derivedStateOf null
+        Coordinate(environmentId, appId, resourceId)
+    }
+
     val isActivateEnabled by derivedStateOf {
         val environmentId = selectedEnvironmentId ?: return@derivedStateOf false
         val appId = selectedAppId ?: return@derivedStateOf false

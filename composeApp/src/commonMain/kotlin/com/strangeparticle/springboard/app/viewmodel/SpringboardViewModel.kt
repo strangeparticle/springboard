@@ -37,6 +37,9 @@ class SpringboardViewModel(
     var multiSelectSet by mutableStateOf<Set<Coordinate>>(emptySet())
         private set
 
+    /** Activator preview text shown when hovering a cell or when keynav fully selects a coordinate. */
+    var hoveredActivatorPreview by mutableStateOf<String?>(null)
+
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
     val apps by derivedStateOf { springboard?.apps ?: emptyList() }
     val resources by derivedStateOf { springboard?.resources ?: emptyList() }

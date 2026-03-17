@@ -9,6 +9,7 @@ import com.strangeparticle.springboard.app.platform.readFileContents
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenSpringboardPrompt
+import com.strangeparticle.springboard.app.ui.activatorpreview.ActivatorPreview
 import com.strangeparticle.springboard.app.ui.statusbar.StatusBar
 import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
@@ -65,6 +66,8 @@ fun MainScreen(
                     }
                 )
             }
+
+            ActivatorPreview(previewText = viewModel.hoveredActivatorPreview)
 
             StatusBar(
                 springboard = viewModel.springboard,

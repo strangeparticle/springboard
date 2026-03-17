@@ -24,7 +24,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.theme.*
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -51,17 +51,22 @@ fun GridNav(
     val guidanceDismissScope = rememberCoroutineScope()
     var guidanceDismissJob by remember { mutableStateOf<Job?>(null) }
 
-    // When keynav forms a full coordinate with guidance, show the tooltip on that cell.
+    // When keynav forms a full coordinate, show guidance tooltip and activator preview.
     val keynavCoordinate = viewModel.keynavCoordinate
     LaunchedEffect(keynavCoordinate) {
-        if (keynavCoordinate != null &&
-            currentSpringboard.indexes.guidanceByCoordinate.containsKey(keynavCoordinate)
-        ) {
-            guidanceDismissJob?.cancel()
-            guidanceDismissJob = null
-            activeGuidanceCoordinate = keynavCoordinate
-        } else if (activeGuidanceCoordinate != null) {
-            activeGuidanceCoordinate = null
+        if (keynavCoordinate != null) {
+            val activator = currentSpringboard.indexes.activatorByCoordinate[keynavCoordinate]
+            viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
+            if (currentSpringboard.indexes.guidanceByCoordinate.containsKey(keynavCoordinate)) {
+                guidanceDismissJob?.cancel()
+                guidanceDismissJob = null
+                activeGuidanceCoordinate = keynavCoordinate
+            }
+        } else {
+            viewModel.hoveredActivatorPreview = null
+            if (activeGuidanceCoordinate != null) {
+                activeGuidanceCoordinate = null
+            }
         }
     }
 
@@ -217,6 +222,7 @@ fun GridNav(
                             if (isCellHovered) {
                                 hoveredAppId = app.id
                                 hoveredResourceId = resource.id
+                                viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
                                 if (guidanceData != null) {
                                     guidanceDismissJob?.cancel()
                                     guidanceDismissJob = null
@@ -226,6 +232,7 @@ fun GridNav(
                                 if (hoveredAppId == app.id && hoveredResourceId == resource.id) {
                                     hoveredAppId = null
                                     hoveredResourceId = null
+                                    viewModel.hoveredActivatorPreview = null
                                 }
                                 if (isTooltipHovered && guidanceData != null) {
                                     guidanceDismissJob?.cancel()

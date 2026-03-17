@@ -78,7 +78,6 @@ fun MainScreen(
                             val contents = readFileContents(path)
                             if (contents != null) {
                                 viewModel.loadConfig(contents, path)
-                                ToastBroadcaster.info("Springboard reloaded")
                             } else {
                                 ToastBroadcaster.error("Failed to reload: file not found")
                             }

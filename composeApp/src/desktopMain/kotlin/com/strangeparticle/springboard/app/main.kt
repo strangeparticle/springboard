@@ -133,7 +133,6 @@ fun main(args: Array<String>) {
                     val contents = readFileContents(path)
                     if (contents != null) {
                         loadSpringboardConfig(path, contents)
-                        ToastBroadcaster.info("Springboard reloaded")
                     } else {
                         ToastBroadcaster.error("Failed to reload: file not found")
                     }

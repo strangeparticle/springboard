@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,8 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.strangeparticle.springboard.app.platform.copyToClipboard
 import com.strangeparticle.springboard.app.ui.theme.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A compact, tooltip-style popup that displays guidance lines for a grid cell.
@@ -40,6 +43,8 @@ fun GuidanceTooltip(
     guidanceLines: List<String>,
     onTooltipHoverChanged: (Boolean) -> Unit
 ) {
+    var showCopied by remember { mutableStateOf(false) }
+    val copyScope = rememberCoroutineScope()
     val tooltipInteractionSource = remember { MutableInteractionSource() }
     val isTooltipHovered by tooltipInteractionSource.collectIsHoveredAsState()
     val popupPositionProvider = remember {
@@ -90,12 +95,19 @@ fun GuidanceTooltip(
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
-                        Icons.Default.ContentCopy,
-                        contentDescription = "Copy guidance",
+                        if (showCopied) Icons.Default.Check else Icons.Default.ContentCopy,
+                        contentDescription = if (showCopied) "Copied" else "Copy guidance",
                         tint = GuidanceCopyIcon,
                         modifier = Modifier
                             .size(12.dp)
-                            .clickable { copyToClipboard(guidanceLines.joinToString("\n")) }
+                            .clickable {
+                                copyToClipboard(guidanceLines.joinToString("\n"))
+                                showCopied = true
+                                copyScope.launch {
+                                    delay(500)
+                                    showCopied = false
+                                }
+                            }
                     )
                 }
 

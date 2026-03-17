@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Warning
@@ -69,6 +70,9 @@ fun ToastOverlay(onToastDismissed: () -> Unit = {}) {
 
 @Composable
 private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
+    var showCopied by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     val (background, borderColor, textColor, icon, severityLabel) = when (toast.severity) {
         ToastSeverity.ERROR -> ToastStyle(
             ToastErrorBackground, ToastErrorBorder, ToastErrorText,
@@ -117,12 +121,19 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                     modifier = Modifier.weight(1f)
                 )
                 IconButton(
-                    onClick = { copyToClipboard(toast.message) },
+                    onClick = {
+                        copyToClipboard(toast.message)
+                        showCopied = true
+                        scope.launch {
+                            delay(500)
+                            showCopied = false
+                        }
+                    },
                     modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
-                        Icons.Default.ContentCopy,
-                        contentDescription = "Copy",
+                        if (showCopied) Icons.Default.Check else Icons.Default.ContentCopy,
+                        contentDescription = if (showCopied) "Copied" else "Copy",
                         tint = textColor,
                         modifier = Modifier.size(14.dp)
                     )

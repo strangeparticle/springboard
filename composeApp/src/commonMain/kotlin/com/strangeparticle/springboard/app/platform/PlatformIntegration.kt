@@ -15,3 +15,7 @@ expect fun executeCommand(command: String)
 expect fun copyToClipboard(text: String)
 
 expect fun openNewBrowserWindowIfAppropriate(): Boolean
+
+expect fun saveLocalCopyAsFileDialog(suggestedName: String): String?
+
+expect fun writeFileContents(path: String, contents: String): Boolean

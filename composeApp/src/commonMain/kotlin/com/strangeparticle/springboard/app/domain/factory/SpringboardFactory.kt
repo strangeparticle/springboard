@@ -14,10 +14,10 @@ object SpringboardFactory {
 
     fun fromJson(jsonString: String, source: String): Springboard {
         val dto = json.decodeFromString<SpringboardDto>(jsonString)
-        return fromDto(dto, source)
+        return fromDto(dto, source, jsonSource = jsonString)
     }
 
-    private fun fromDto(dto: SpringboardDto, source: String): Springboard {
+    private fun fromDto(dto: SpringboardDto, source: String, jsonSource: String): Springboard {
         val environmentIds = dto.environments.map { it.id }.toSet()
         val appIds = dto.apps.map { it.id }.toSet()
         val resourceIds = dto.resources.map { it.id }.toSet()
@@ -95,7 +95,8 @@ object SpringboardFactory {
             displayHints = dto.displayHints?.let { DisplayHints(it.width, it.height) },
             indexes = indexesWithGuidance,
             source = source,
-            lastLoadTime = currentTimeMillis()
+            lastLoadTime = currentTimeMillis(),
+            jsonSource = jsonSource,
         )
     }
 

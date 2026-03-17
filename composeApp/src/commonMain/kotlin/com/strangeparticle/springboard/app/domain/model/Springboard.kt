@@ -10,5 +10,6 @@ data class Springboard(
     val displayHints: DisplayHints?,
     val indexes: SpringboardIndexes,
     val source: String,
-    val lastLoadTime: Long
+    val lastLoadTime: Long,
+    val jsonSource: String,     // the source-file used to build this springboard
 )

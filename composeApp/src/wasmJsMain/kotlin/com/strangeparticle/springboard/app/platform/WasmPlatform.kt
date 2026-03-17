@@ -22,3 +22,7 @@ actual fun formatTimestamp(millis: Long): String {
 actual fun getPlatformName(): String = "Web"
 
 actual fun openNewBrowserWindowIfAppropriate(): Boolean = false
+
+actual fun saveLocalCopyAsFileDialog(suggestedName: String): String? = null
+
+actual fun writeFileContents(path: String, contents: String): Boolean = false

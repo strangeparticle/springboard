@@ -39,6 +39,24 @@ actual fun formatTimestamp(millis: Long): String {
 
 actual fun getPlatformName(): String = "Desktop"
 
+actual fun saveLocalCopyAsFileDialog(suggestedName: String): String? {
+    val dialog = FileDialog(null as Frame?, "Save a Local Copy As", FileDialog.SAVE)
+    dialog.file = suggestedName
+    dialog.isVisible = true
+    val file = dialog.file ?: return null
+    val dir = dialog.directory ?: return null
+    return File(dir, file).absolutePath
+}
+
+actual fun writeFileContents(path: String, contents: String): Boolean {
+    return try {
+        File(path).writeText(contents)
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
 fun executeDesktopCommand(command: String) {
     ProcessBuilder("/bin/bash", "-c", command).start()
 }

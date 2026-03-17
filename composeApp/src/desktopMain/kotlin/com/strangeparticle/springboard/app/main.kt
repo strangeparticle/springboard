@@ -16,7 +16,9 @@ import com.strangeparticle.springboard.app.platform.expandTildePath
 import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
 import com.strangeparticle.springboard.app.platform.openFileDialog
 import com.strangeparticle.springboard.app.platform.readFileContents
+import com.strangeparticle.springboard.app.platform.saveLocalCopyAsFileDialog
 import com.strangeparticle.springboard.app.platform.surfaceAppleScriptErrors
+import com.strangeparticle.springboard.app.platform.writeFileContents
 import com.strangeparticle.springboard.app.settings.*
 import com.strangeparticle.springboard.app.settings.persistence.DesktopSettingsPersistenceManager
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -124,6 +126,23 @@ fun main(args: Array<String>) {
                             loadSpringboardConfig(path, contents)
                         } else {
                             ToastBroadcaster.error("Failed to open: file not found")
+                        }
+                    }
+                },
+                onSaveLocalCopyAs = {
+                    val springboard = viewModel.springboard
+                    if (springboard == null) {
+                        ToastBroadcaster.warning("No springboard is loaded")
+                        return@SpringboardMenuBar
+                    }
+                    val suggestedName = springboard.name.replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"
+                    val path = saveLocalCopyAsFileDialog(suggestedName)
+                    if (path != null) {
+                        val success = writeFileContents(path, springboard.jsonSource)
+                        if (success) {
+                            ToastBroadcaster.info("Saved to $path")
+                        } else {
+                            ToastBroadcaster.error("Failed to save to $path")
                         }
                     }
                 },

@@ -51,16 +51,16 @@ fun GridNav(
     val guidanceDismissScope = rememberCoroutineScope()
     var guidanceDismissJob by remember { mutableStateOf<Job?>(null) }
 
-    // When keynav forms a full coordinate, show guidance tooltip and activator preview.
-    val keynavCoordinate = viewModel.keynavCoordinate
-    LaunchedEffect(keynavCoordinate) {
-        if (keynavCoordinate != null) {
-            val activator = currentSpringboard.indexes.activatorByCoordinate[keynavCoordinate]
+    // When keyNav forms a full coordinate, show guidance tooltip and activator preview.
+    val keyNavCoordinate = viewModel.keyNavCoordinate
+    LaunchedEffect(keyNavCoordinate) {
+        if (keyNavCoordinate != null) {
+            val activator = currentSpringboard.indexes.activatorByCoordinate[keyNavCoordinate]
             viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
-            if (currentSpringboard.indexes.guidanceByCoordinate.containsKey(keynavCoordinate)) {
+            if (currentSpringboard.indexes.guidanceByCoordinate.containsKey(keyNavCoordinate)) {
                 guidanceDismissJob?.cancel()
                 guidanceDismissJob = null
-                activeGuidanceCoordinate = keynavCoordinate
+                activeGuidanceCoordinate = keyNavCoordinate
             }
         } else {
             viewModel.hoveredActivatorPreview = null

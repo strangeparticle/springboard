@@ -19,22 +19,22 @@ object SettingsRegistry {
     private val entries: Map<SettingsKey, SettingItem> = buildMap {
         register(
             SettingItem.General(
-                key = SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION,
+                key = SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION,
                 type = Boolean::class,
                 defaultValue = true,
-                displayName = "Reset keynav drop-downs after activation via keynav",
-                description = "When enabled, keynav drop-downs are reset after activating a selection through keynav.",
+                displayName = "Reset keyNav drop-downs after activation via keyNav",
+                description = "When enabled, keyNav drop-downs are reset after activating a selection through keyNav.",
                 envVarName = "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION",
                 cliParamName = "--reset-keynav-after-keynav-activation",
             )
         )
         register(
             SettingItem.General(
-                key = SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION,
+                key = SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION,
                 type = Boolean::class,
                 defaultValue = true,
-                displayName = "Reset keynav drop-downs after activation via grid-nav",
-                description = "When enabled, keynav drop-downs are reset after activating a selection through the grid.",
+                displayName = "Reset keyNav drop-downs after activation via grid-nav",
+                description = "When enabled, keyNav drop-downs are reset after activating a selection through the grid.",
                 envVarName = "SPRINGBOARD_RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION",
                 cliParamName = "--reset-keynav-after-gridnav-activation",
             )

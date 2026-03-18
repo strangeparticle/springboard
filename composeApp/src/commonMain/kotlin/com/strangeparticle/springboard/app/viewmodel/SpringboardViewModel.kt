@@ -37,7 +37,7 @@ class SpringboardViewModel(
     var multiSelectSet by mutableStateOf<Set<Coordinate>>(emptySet())
         private set
 
-    /** Activator preview text shown when hovering a cell or when keynav fully selects a coordinate. */
+    /** Activator preview text shown when hovering a cell or when keyNav fully selects a coordinate. */
     var hoveredActivatorPreview by mutableStateOf<String?>(null)
 
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
@@ -63,7 +63,7 @@ class SpringboardViewModel(
         }
     }
 
-    val keynavCoordinate by derivedStateOf {
+    val keyNavCoordinate by derivedStateOf {
         val environmentId = selectedEnvironmentId ?: return@derivedStateOf null
         val appId = selectedAppId ?: return@derivedStateOf null
         val resourceId = selectedResourceId ?: return@derivedStateOf null
@@ -157,7 +157,7 @@ class SpringboardViewModel(
         selectedResourceId = resourceId
     }
 
-    /** Activated via keynav (drop-down selection + enter). */
+    /** Activated via keyNav (drop-down selection + enter). */
     fun activateCurrentSelection() {
         val environmentId = selectedEnvironmentId ?: return
         val appId = selectedAppId ?: return
@@ -168,8 +168,8 @@ class SpringboardViewModel(
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
 
         executeActivators(listOf(activator), isSingleSelection = true)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION)) {
-            resetKeynavSelections()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION)) {
+            resetKeyNavSelections()
         }
     }
 
@@ -178,8 +178,8 @@ class SpringboardViewModel(
         val currentSpringboard = springboard ?: return
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
         executeActivators(listOf(activator), isSingleSelection = true)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
-            resetKeynavSelections()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+            resetKeyNavSelections()
         }
     }
 
@@ -197,8 +197,8 @@ class SpringboardViewModel(
             }
         }
         executeActivators(activators, isSingleSelection = false)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
-            resetKeynavSelections()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+            resetKeyNavSelections()
         }
     }
 
@@ -216,8 +216,8 @@ class SpringboardViewModel(
             }
         }
         executeActivators(activators, isSingleSelection = false)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
-            resetKeynavSelections()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+            resetKeyNavSelections()
         }
     }
 
@@ -242,8 +242,8 @@ class SpringboardViewModel(
         }
         executeActivators(activators, isSingleSelection = false)
         multiSelectSet = emptySet()
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION)) {
-            resetKeynavSelections()
+        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+            resetKeyNavSelections()
         }
     }
 
@@ -283,7 +283,7 @@ class SpringboardViewModel(
         activators.forEach(::executeActivator)
     }
 
-    private fun resetKeynavSelections() {
+    private fun resetKeyNavSelections() {
         val currentSpringboard = springboard ?: return
         val defaultEnvironment = currentSpringboard.environments.find {
             it.id.equals("all", ignoreCase = true)

@@ -22,8 +22,8 @@ data class SettingsValues(
     val openUrlsInNewWindowSingle: Boolean? = null,
     val openUrlsInNewWindowMultiple: Boolean? = null,
     val surfaceApplescriptErrors: Boolean? = null,
-    val resetKeynavAfterKeynavActivation: Boolean? = null,
-    val resetKeynavAfterGridnavActivation: Boolean? = null,
+    val resetKeyNavAfterKeyNavActivation: Boolean? = null,
+    val resetKeyNavAfterGridNavActivation: Boolean? = null,
 ) {
     /** Returns true if this source provided a non-null value for the given key. */
     fun isSet(key: SettingsKey): Boolean = get(key) != null
@@ -34,8 +34,8 @@ data class SettingsValues(
         SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE -> openUrlsInNewWindowSingle
         SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE -> openUrlsInNewWindowMultiple
         SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> surfaceApplescriptErrors
-        SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION -> resetKeynavAfterKeynavActivation
-        SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION -> resetKeynavAfterGridnavActivation
+        SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> resetKeyNavAfterKeyNavActivation
+        SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> resetKeyNavAfterGridNavActivation
     }
 
     /** Returns a copy with the given key/value set. */
@@ -45,8 +45,8 @@ data class SettingsValues(
             SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE -> copy(openUrlsInNewWindowSingle = value as Boolean?)
             SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE -> copy(openUrlsInNewWindowMultiple = value as Boolean?)
             SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> copy(surfaceApplescriptErrors = value as Boolean?)
-            SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION -> copy(resetKeynavAfterKeynavActivation = value as Boolean?)
-            SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION -> copy(resetKeynavAfterGridnavActivation = value as Boolean?)
+            SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> copy(resetKeyNavAfterKeyNavActivation = value as Boolean?)
+            SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> copy(resetKeyNavAfterGridNavActivation = value as Boolean?)
         }
     }
 
@@ -60,8 +60,8 @@ data class SettingsValues(
             "openUrlsInNewWindowSingle",
             "openUrlsInNewWindowMultiple",
             "surfaceApplescriptErrors",
-            "resetKeynavAfterKeynavActivation",
-            "resetKeynavAfterGridnavActivation",
+            "resetKeyNavAfterKeyNavActivation",
+            "resetKeyNavAfterGridNavActivation",
         )
     }
 }

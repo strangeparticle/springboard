@@ -22,8 +22,8 @@ data class UserSettingsDto(
     val openUrlsInNewWindowSingle: Boolean? = null,
     val openUrlsInNewWindowMultiple: Boolean? = null,
     val surfaceAppleScriptErrors: Boolean? = null,
-    val resetKeynavAfterKeynavActivation: Boolean? = null,
-    val resetKeynavAfterGridnavActivation: Boolean? = null,
+    val resetKeyNavAfterKeyNavActivation: Boolean? = null,
+    val resetKeyNavAfterGridNavActivation: Boolean? = null,
 ) {
     /** Converts this DTO to a [SettingsValues] instance. */
     fun toSettingsValues(): SettingsValues {
@@ -40,11 +40,11 @@ data class UserSettingsDto(
         if (surfaceAppleScriptErrors != null) {
             values = values.withSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, surfaceAppleScriptErrors)
         }
-        if (resetKeynavAfterKeynavActivation != null) {
-            values = values.withSetting(SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION, resetKeynavAfterKeynavActivation)
+        if (resetKeyNavAfterKeyNavActivation != null) {
+            values = values.withSetting(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION, resetKeyNavAfterKeyNavActivation)
         }
-        if (resetKeynavAfterGridnavActivation != null) {
-            values = values.withSetting(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION, resetKeynavAfterGridnavActivation)
+        if (resetKeyNavAfterGridNavActivation != null) {
+            values = values.withSetting(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION, resetKeyNavAfterGridNavActivation)
         }
         return values
     }
@@ -57,8 +57,8 @@ data class UserSettingsDto(
                 openUrlsInNewWindowSingle = values.openUrlsInNewWindowSingle,
                 openUrlsInNewWindowMultiple = values.openUrlsInNewWindowMultiple,
                 surfaceAppleScriptErrors = values.surfaceApplescriptErrors,
-                resetKeynavAfterKeynavActivation = values.resetKeynavAfterKeynavActivation,
-                resetKeynavAfterGridnavActivation = values.resetKeynavAfterGridnavActivation,
+                resetKeyNavAfterKeyNavActivation = values.resetKeyNavAfterKeyNavActivation,
+                resetKeyNavAfterGridNavActivation = values.resetKeyNavAfterGridNavActivation,
             )
         }
     }

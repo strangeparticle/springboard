@@ -29,8 +29,8 @@ class SettingsManagerTest {
         assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE))
         assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE))
         assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertTrue(manager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION))
-        assertTrue(manager.getBoolean(SettingsKey.RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION))
+        assertTrue(manager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+        assertTrue(manager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))
     }
 
     @Test

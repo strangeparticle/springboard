@@ -18,3 +18,7 @@ On macOS desktop builds, browser-window integration is enabled by default. Sprin
 
 - [Springboard File Format](./README/README_Springboard_File_Format.md) — config file specification and examples
 - [Developers](./README/README-Developers.md) — build, run, and test instructions
+
+## License
+
+Licensed under the BSD 3-Clause License. See `LICENSE`.

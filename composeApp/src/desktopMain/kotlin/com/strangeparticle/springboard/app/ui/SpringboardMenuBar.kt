@@ -13,6 +13,7 @@ fun FrameWindowScope.SpringboardMenuBar(
     onReload: () -> Unit,
     onOpenSettings: () -> Unit,
     onShowActiveSettings: () -> Unit,
+    onShowLicense: () -> Unit,
 ) {
     MenuBar {
         Menu("File") {
@@ -32,6 +33,11 @@ fun FrameWindowScope.SpringboardMenuBar(
             }
             Item("Show Active Settings") {
                 onShowActiveSettings()
+            }
+        }
+        Menu("Help") {
+            Item("License…") {
+                onShowLicense()
             }
         }
     }

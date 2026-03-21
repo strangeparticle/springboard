@@ -23,6 +23,7 @@ import com.strangeparticle.springboard.app.settings.*
 import com.strangeparticle.springboard.app.settings.persistence.DesktopSettingsPersistenceManager
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
+import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -76,6 +77,7 @@ fun main(args: Array<String>) {
         val firstDropdownFocusRequester = remember { FocusRequester() }
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
+        val showLicenseDialog = remember { mutableStateOf(false) }
         val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
@@ -158,7 +160,18 @@ fun main(args: Array<String>) {
                 },
                 onOpenSettings = openSettingsScreen,
                 onShowActiveSettings = openActiveSettingsFromMain,
+                onShowLicense = {
+                    showLicenseDialog.value = true
+                },
             )
+
+            if (showLicenseDialog.value) {
+                LicenseDialog(
+                    onClose = {
+                        showLicenseDialog.value = false
+                    }
+                )
+            }
 
             SpringboardApp(
                 viewModel = viewModel,

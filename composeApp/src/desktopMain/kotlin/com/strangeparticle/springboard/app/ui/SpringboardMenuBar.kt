@@ -8,6 +8,7 @@ import androidx.compose.ui.window.MenuBar
 
 @Composable
 fun FrameWindowScope.SpringboardMenuBar(
+    hasActiveSpringboard: Boolean,
     onOpen: () -> Unit,
     onSaveLocalCopyAs: () -> Unit,
     onReload: () -> Unit,
@@ -20,7 +21,11 @@ fun FrameWindowScope.SpringboardMenuBar(
             Item("Open…", shortcut = KeyShortcut(Key.O, meta = true)) {
                 onOpen()
             }
-            Item("Save a Local Copy As…", shortcut = KeyShortcut(Key.S, meta = true, shift = true)) {
+            Item(
+                "Save a Local Copy As…",
+                enabled = hasActiveSpringboard,
+                shortcut = KeyShortcut(Key.S, meta = true, shift = true)
+            ) {
                 onSaveLocalCopyAs()
             }
             Item("Reload", shortcut = KeyShortcut(Key.R, meta = true)) {

@@ -120,6 +120,7 @@ fun main(args: Array<String>) {
             state = windowState
         ) {
             SpringboardMenuBar(
+                hasActiveSpringboard = viewModel.springboard != null,
                 onOpen = {
                     val path = openFileDialog(null)
                     if (path != null) {
@@ -134,7 +135,6 @@ fun main(args: Array<String>) {
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
                     if (springboard == null) {
-                        ToastBroadcaster.warning("No springboard is loaded")
                         return@SpringboardMenuBar
                     }
                     val suggestedName = springboard.name.replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"

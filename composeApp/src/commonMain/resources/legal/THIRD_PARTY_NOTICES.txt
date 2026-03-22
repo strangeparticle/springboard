@@ -1,0 +1,39 @@
+Springboard uses third-party open-source software.
+
+Scope
+-----
+This notice file covers third-party application libraries redistributed with Springboard.
+Springboard's own project license is provided separately in LICENSE.txt.
+
+Included third-party application library families
+-------------------------------------------------
+- Kotlin Standard Library and Kotlin Test (org.jetbrains.kotlin:*)
+- Compose Multiplatform / Compose Desktop (org.jetbrains.compose:*)
+- AndroidX Lifecycle and related AndroidX libraries (org.jetbrains.androidx:*, androidx.*)
+- Kotlin Coroutines (org.jetbrains.kotlinx:kotlinx-coroutines-*)
+- Kotlin Serialization (org.jetbrains.kotlinx:kotlinx-serialization-*)
+- Kotlinx Datetime (org.jetbrains.kotlinx:kotlinx-datetime)
+- AtomicFU (org.jetbrains.kotlinx:atomicfu)
+- Skiko (org.jetbrains.skiko:*)
+
+License summary for these application libraries
+-----------------------------------------------
+These library families are used under the Apache License, Version 2.0.
+Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+Relevant upstream projects
+--------------------------
+- Kotlin: https://github.com/JetBrains/kotlin
+- Compose Multiplatform: https://github.com/JetBrains/compose-multiplatform
+- AndroidX: https://github.com/androidx/androidx
+- Kotlinx Coroutines: https://github.com/Kotlin/kotlinx.coroutines
+- Kotlinx Serialization: https://github.com/Kotlin/kotlinx.serialization
+- Kotlinx Datetime: https://github.com/Kotlin/kotlinx-datetime
+- AtomicFU: https://github.com/Kotlin/kotlinx-atomicfu
+- Skiko: https://github.com/JetBrains/skiko
+
+Desktop runtime note
+--------------------
+Desktop distributions include an embedded Java runtime image.
+Its license and notice files are bundled automatically by the packaging toolchain
+under the runtime legal directory inside the application bundle.

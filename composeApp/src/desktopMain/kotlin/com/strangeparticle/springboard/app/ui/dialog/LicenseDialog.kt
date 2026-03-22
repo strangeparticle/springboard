@@ -20,22 +20,29 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
 import com.strangeparticle.springboard.app.legal.loadBundledLicenseText
+import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 @Composable
 fun LicenseDialog(
     onClose: () -> Unit,
 ) {
     val licenseText = remember {
-        loadBundledLicenseText()
+        try {
+            loadBundledLicenseText()
+        } catch (exception: IllegalStateException) {
+            ToastBroadcaster.error("License text is unavailable: ${exception.message}")
+            "Licenses and notices are unavailable because the bundled legal resources could not be loaded."
+        }
     }
 
     DialogWindow(
         onCloseRequest = onClose,
-        title = "License",
+        title = "Licenses and Notices",
         resizable = true,
         state = rememberDialogState(width = 680.dp, height = 520.dp),
     ) {
@@ -67,7 +74,7 @@ fun LicenseDialog(
                         ) {
                             Text(
                                 text = licenseText,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                             )
                         }
                     }

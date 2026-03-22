@@ -14,11 +14,12 @@ Springboard is configured by a single JSON file. On the desktop app, open one wi
 
 On macOS desktop builds, browser-window integration is enabled by default. Springboard currently provides integration support for Safari and Google Chrome. Other browsers fall back to normal URL opening without the dedicated new-window behavior. The first time Springboard opens a URL, macOS may prompt you to allow the app or terminal that launched it to control your browser. The exact wording varies by macOS version.
 
+## License
+
+Licensed under the BSD 3-Clause License. See `LICENSE` and [Licensing Notes](./README/README-Licensing.md).
+
 ## Further Reading
 
 - [Springboard File Format](./README/README_Springboard_File_Format.md) — config file specification and examples
 - [Developers](./README/README-Developers.md) — build, run, and test instructions
-
-## License
-
-Licensed under the BSD 3-Clause License. See `LICENSE`.
+- [Licensing Notes](./README/README-Licensing.md) — what gets bundled, where it lives, and what the app shows in the legal dialog

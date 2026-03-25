@@ -18,19 +18,19 @@
   ],
 
   "activators": [
-    { "type": "cmd", "appId": "oreb", "resourceId": "int", "environmentId": "preprod", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/Documents/development/oreb" },
+    { "type": "cmd", "appId": "oreb", "resourceId": "int", "environmentId": "preprod", "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard test fixture command ran for oreb preprod\"'" },
     { "type": "url", "appId": "oreb", "resourceId": "git", "environmentId": "preprod", "url": "https://example.com/" },
     { "type": "url", "appId": "oreb", "resourceId": "wiki", "environmentId": "preprod", "url": "https://example.com/" },
 
-    { "type": "cmd", "appId": "oreb", "resourceId": "int", "environmentId": "prod", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/Documents/development/oreb" },
+    { "type": "cmd", "appId": "oreb", "resourceId": "int", "environmentId": "prod", "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard test fixture command ran for oreb prod\"'" },
     { "type": "url", "appId": "oreb", "resourceId": "git", "environmentId": "prod", "url": "https://example.com/" },
     { "type": "url", "appId": "oreb", "resourceId": "wiki", "environmentId": "prod", "url": "https://example.com/" },
 
-    { "type": "cmd", "appId": "springboard", "resourceId": "int", "environmentId": "preprod", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/Documents/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "int", "environmentId": "preprod", "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard test fixture command ran for springboard preprod\"'" },
     { "type": "url", "appId": "springboard", "resourceId": "git", "environmentId": "preprod", "url": "https://example.com/" },
     { "type": "url", "appId": "springboard", "resourceId": "wiki", "environmentId": "preprod", "url": "https://example.com/" },
 
-    { "type": "cmd", "appId": "springboard", "resourceId": "int", "environmentId": "prod", "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /Users/example/Documents/development/springboard" },
+    { "type": "cmd", "appId": "springboard", "resourceId": "int", "environmentId": "prod", "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard test fixture command ran for springboard prod\"'" },
     { "type": "url", "appId": "springboard", "resourceId": "git", "environmentId": "prod", "url": "https://example.com/" },
     { "type": "url", "appId": "springboard", "resourceId": "wiki", "environmentId": "prod", "url": "https://example.com/" }
   ]

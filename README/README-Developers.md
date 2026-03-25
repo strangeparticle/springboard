@@ -1,6 +1,8 @@
 # Developers
 
-Springboard is a [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) / [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) project targeting macOS/Linux desktop (JVM) and web (WASM).
+Springboard is a [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html) / [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) project.
+
+The public development story is desktop-first. The macOS desktop target is the primary supported path in this repo. The WASM target remains in-tree as an experimental skeleton for local tinkering, but it is not part of the initial supported release surface.
 
 ## Prerequisites
 
@@ -33,10 +35,10 @@ It is also the easiest target to debug: run it from IntelliJ or via Gradle and u
 Pass a path to a springboard JSON file as a launch argument to skip the Open prompt and boot straight into the grid:
 
 ```shell
-./gradlew :composeApp:run --args="composeApp/src/wasmJsMain/resources/springboard.json"
+./gradlew :composeApp:run --args="springboard-example.json"
 ```
 
-The sample config at `composeApp/src/commonTest/resources/sample-springboard.json` is also suitable for this.
+The sample config at `springboard-example.json` is intended as the public desktop example. The test fixture at `composeApp/src/commonTest/resources/springboard-test-fixture.json` is also suitable for local experimentation.
 
 ### Startup log lines
 
@@ -55,35 +57,19 @@ A clean startup reaches `[Springboard] application ready`.
 
 ---
 
-## Running the WASM App Locally
+## Experimental WASM Target
 
-The WASM target is a browser-based version of Springboard. It auto-loads a config from a URL set in `index.html` — there is no file dialog.
-
-### Start the dev server
+The WASM target is currently experimental and unsupported for the initial public release. It remains in-tree for local tinkering only.
 
 ```shell
 ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
 ```
 
-Then visit [http://localhost:8080/](http://localhost:8080/).
+Notes:
 
-### Local config
-
-The dev server serves `wasmJsMain/resources/` as static files. The bundled `springboard.json` in that directory is loaded automatically. Edit it to point at your real resources, or swap in a different file.
-
-The `index.html` in that directory sets the config URL:
-
-```html
-<script>window.springboardConfigUrl = "/springboard.json";</script>
-```
-
-Change the value to any accessible URL to load a different config without modifying the Kotlin code.
-
-### Notes
-
-- WASM requires serving over HTTP — you cannot open the built files directly from the filesystem because the app fetches `springboard.json` and browser security rules restrict `fetch()` and related asset loading from `file://` URLs.
-- Command activators are not supported on WASM; those entries are silently ignored.
-- Browser popup restrictions apply to URL activation (`window.open` is user-gesture restricted), so opening URLs works best when triggered directly by a click or keyboard action in the page.
+- There is no supported public default config-loading story for WASM yet.
+- Command activators are not supported on WASM.
+- Browser popup restrictions apply to URL activation.
 
 ---
 
@@ -95,7 +81,7 @@ Change the value to any accessible URL to load a different config without modify
 ./gradlew build
 ```
 
-This compiles all targets, runs all tests, builds the desktop JAR, and produces the WASM/browser distribution bundle. It does **not** create native macOS packages (`.dmg` / `.pkg`); use the packaging tasks below for those.
+This compiles all targets, runs all tests, builds the desktop JAR, and produces the experimental WASM/browser distribution bundle. It does **not** create native macOS packages (`.dmg` / `.pkg`); use the packaging tasks below for those.
 
 This target is the canonical "does everything work?" command.
 
@@ -126,14 +112,14 @@ Tests live in `composeApp/src/commonTest/`. They cover domain model parsing, fac
 A sample springboard config used by the tests is at:
 
 ```
-composeApp/src/commonTest/resources/sample-springboard.json
+composeApp/src/commonTest/resources/springboard-test-fixture.json
 ```
 
 ---
 
 ## Building Distributable Development Binaries (Local Use)
 
-This creates an unsigned `.dmg` or `.pkg` for local use on your own machine. No signing keys required.
+This creates an unsigned `.dmg` or `.pkg` for local use on your own machine. No signing keys, signing identities, provisioning profiles, or notarization setup are required in the public repo.
 
 ```shell
 ./gradlew :composeApp:packageDmg
@@ -158,7 +144,7 @@ composeApp/src/
 ├── commonMain/       # All domain logic, ViewModels, and Compose UI
 ├── commonTest/       # All unit tests
 ├── desktopMain/      # Desktop entry point and platform integrations; compiled for the desktop JVM target and packaged with an embedded Java runtime for distributable builds
-└── wasmJsMain/       # Browser entry point, JS interop, network config fetch
+└── wasmJsMain/       # Experimental browser entry point and JS interop
 ```
 
 Platform-specific code is minimal — only OS integrations and entry points live outside `commonMain`.

@@ -66,8 +66,8 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(
-                TargetFormat.Pkg,   // OS X Desktop builds distributed via app-store
-                TargetFormat.Dmg,   // OS X Desktop builds distributed via direct-download
+                TargetFormat.Pkg,
+                TargetFormat.Dmg,
             )
 
             packageName = "Springboard"

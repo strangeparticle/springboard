@@ -4,7 +4,7 @@ Springboard is configured by a single JSON file.
 
 On the desktop app you open it with standard "open file" behavior (**Cmd+O**, or File → Open, etc).
 
-For the web app the URL to a springboard file is configured as an environment variable.
+The public example file in this repo is `springboard-example.json`.
 
 ## Format
 
@@ -53,12 +53,11 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `resources[].id` | yes | |
 | `resources[].name` | yes | |
 | `activators` | yes | One entry per (environment, app, resource) combination you want to activate |
-| `activators[].type` | yes | `"url"`, `"urlTemplate"`, or `"cmd"` |
+| `activators[].type` | yes | `"url"` or `"cmd"` |
 | `activators[].appId` | yes | Must match a declared `apps[].id` |
 | `activators[].resourceId` | yes | Must match a declared `resources[].id` |
 | `activators[].environmentId` | yes | Must match a declared `environments[].id` |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
-| `activators[].urlTemplate` | when `type="urlTemplate"` | URL with interpolation (Phase 2) |
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
 | `displayHints.width` | optional | Preferred window width in pixels |
 | `displayHints.height` | optional | Preferred window height in pixels |
@@ -98,7 +97,7 @@ Each guidance entry is associated with a coordinate (environment + app + resourc
 
 - **Not every combination needs an activator.** Cells without an activator are simply empty. Only add entries for combinations you want to activate.
 - **IDs are case-sensitive.** `"prod"` and `"Prod"` are different ids.
-- **Command activators are desktop-only.** They are ignored on the web target.
+- **Command activators are desktop-only.**
 - **Order matters.** Environments, apps, and resources are rendered in the order they appear in the config — put the ones you use most first.
 
-A worked example is included at `composeApp/src/wasmJsMain/resources/springboard.json`.
+A worked example is included at `springboard-example.json`.

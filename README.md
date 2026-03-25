@@ -26,8 +26,7 @@ On macOS desktop builds, browser-window integration is enabled by default. This 
 a new browser window before activating urls (activated urls will open in that new browser 
 window).
 
-Springboard currently provides browswer-window integration support for Safari and Google Chrome
-on OS X.
+Springboard currently provides browser-window integration for Safari and Google Chrome on OS X.
 
 Other browsers and/or other OS's fall back to normal URL opening without the dedicated new-window
 behavior. The first time Springboard opens a URL, macOS may prompt you to allow the app or terminal

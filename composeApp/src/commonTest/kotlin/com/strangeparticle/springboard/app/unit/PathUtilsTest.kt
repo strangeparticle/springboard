@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app
+package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.platform.expandTildePath
 

@@ -1,4 +1,10 @@
-package com.strangeparticle.springboard.app.settings
+package com.strangeparticle.springboard.app.unit.settings
+
+import com.strangeparticle.springboard.app.settings.FilePath
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.SettingItem
+import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
 
 import kotlin.test.*
 

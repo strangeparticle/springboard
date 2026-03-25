@@ -1,4 +1,7 @@
-package com.strangeparticle.springboard.app.platform
+package com.strangeparticle.springboard.app.unit.platform
+
+import com.strangeparticle.springboard.app.platform.extractDefaultBrowserBundleId
+import com.strangeparticle.springboard.app.platform.parseLaunchServicesEntries
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

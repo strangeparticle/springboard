@@ -1,4 +1,7 @@
-package com.strangeparticle.springboard.app.settings
+package com.strangeparticle.springboard.app.unit.settings
+
+import com.strangeparticle.springboard.app.settings.PRECEDENCE_CHAIN
+import com.strangeparticle.springboard.app.settings.SettingsSource
 
 import kotlin.test.*
 

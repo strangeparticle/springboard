@@ -1,4 +1,6 @@
-package com.strangeparticle.springboard.app.ui.gridnav
+package com.strangeparticle.springboard.app.unit.ui.gridnav
+
+import com.strangeparticle.springboard.app.ui.gridnav.truncateHeaderText
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

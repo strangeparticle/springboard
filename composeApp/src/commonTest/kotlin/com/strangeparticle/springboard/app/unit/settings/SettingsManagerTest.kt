@@ -1,7 +1,14 @@
-package com.strangeparticle.springboard.app.settings
+package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.springboard.app.InMemorySettingsPersistenceManager
+import com.strangeparticle.springboard.app.settings.FilePath
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.SettingItem
+import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
+import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
+import com.strangeparticle.springboard.app.unit.InMemorySettingsPersistenceManager
 import kotlin.test.*
 
 class SettingsManagerTest {

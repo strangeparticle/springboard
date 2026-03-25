@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.settings
+package com.strangeparticle.springboard.app.unit.settings
 
 import com.strangeparticle.springboard.app.settings.persistence.SettingsSerializer
 import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto

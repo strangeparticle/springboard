@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.settings.*
+import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import kotlin.test.*
 
@@ -10,14 +11,14 @@ class SettingsViewModelTest {
         target: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
         currentFilePath: () -> String? = { null },
     ): SettingsViewModel {
-        val settingsManager = createTestSettingsManager(target)
+        val settingsManager = createSettingsManagerForTest(target)
         return SettingsViewModel(settingsManager, currentFilePath)
     }
 
     // -- designateCurrentFileAsStartup --
 
     @Test
-    fun testDesignateCurrentFileAsStartupSucceeds() {
+    fun `designate current file as startup succeeds`() {
         val vm = createViewModel(currentFilePath = { "/path/to/board.json" })
         val result = vm.designateCurrentFileAsStartup()
         assertTrue(result)
@@ -25,7 +26,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testDesignateCurrentFileAsStartupFailsWhenNoFileOpen() {
+    fun `designate current file as startup fails when no file open`() {
         val vm = createViewModel(currentFilePath = { null })
         val result = vm.designateCurrentFileAsStartup()
         assertFalse(result)
@@ -33,7 +34,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testClearStartupSpringboard() {
+    fun `clear startup springboard`() {
         val vm = createViewModel(currentFilePath = { "/path/to/board.json" })
         vm.designateCurrentFileAsStartup()
         assertNotNull(vm.getResolvedValue(SettingsKey.STARTUP_SPRINGBOARD))
@@ -45,7 +46,7 @@ class SettingsViewModelTest {
     // -- groupedSettings --
 
     @Test
-    fun testGroupedSettingsOnDesktopOsxHasGeneralAndDesktopGroups() {
+    fun `grouped settings on desktop osx has general and desktop groups`() {
         val vm = createViewModel(target = RuntimeEnvironment.DesktopOsx)
         val groups = vm.groupedSettings
         assertTrue(groups.size >= 2, "Desktop macOS should have at least general and desktop groups")
@@ -56,7 +57,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testGroupedSettingsOnWasmHasOnlyGeneralGroup() {
+    fun `grouped settings on wasm has only general group`() {
         val vm = createViewModel(target = RuntimeEnvironment.WASM)
         val groups = vm.groupedSettings
         assertEquals(1, groups.size)
@@ -68,7 +69,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun testGeneralGroupDoesNotContainDesktopSettings() {
+    fun `general group does not contain desktop settings`() {
         val vm = createViewModel(target = RuntimeEnvironment.DesktopOsx)
         val generalGroup = vm.groupedSettings.find { it.name == "General" }
         assertNotNull(generalGroup)
@@ -80,7 +81,7 @@ class SettingsViewModelTest {
     // -- settingsVersion --
 
     @Test
-    fun testSettingsVersionIncrementsOnChange() {
+    fun `settings version increments on change`() {
         val vm = createViewModel()
         val initialVersion = vm.settingsVersion
         vm.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)

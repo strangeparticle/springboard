@@ -17,7 +17,7 @@ import kotlin.test.*
 class SettingsValuesRegistrySyncTest {
 
     @Test
-    fun testEveryRegistrySettingHasASettingsValuesProperty() {
+    fun `every registry setting has a settings values property`() {
         val registryKeys = SettingsRegistry.allSettings().map { it.key }.toSet()
         for (key in registryKeys) {
             assertTrue(
@@ -28,7 +28,7 @@ class SettingsValuesRegistrySyncTest {
     }
 
     @Test
-    fun testEverySettingsValuesPropertyHasARegistrySetting() {
+    fun `every settings values property has a registry setting`() {
         val registryJsonKeys = SettingsKey.entries.map { it.jsonKey }.toSet()
         for (propertyName in SettingsValues.settingsPropertyNames) {
             assertTrue(
@@ -39,7 +39,7 @@ class SettingsValuesRegistrySyncTest {
     }
 
     @Test
-    fun testSettingsValuesPropertyCountMatchesRegistryCount() {
+    fun `settings values property count matches registry count`() {
         val registryCount = SettingsRegistry.allSettings().size
         val propertiesCount = SettingsValues.settingsPropertyNames.size
         assertEquals(
@@ -49,7 +49,7 @@ class SettingsValuesRegistrySyncTest {
     }
 
     @Test
-    fun testEverySettingsKeyIsCoveredByGet() {
+    fun `every settings key is covered by get`() {
         // Verify that SettingsValues.get() handles every SettingsKey without throwing.
         // This catches a missing branch in the when() expression.
         val values = SettingsValues()
@@ -60,7 +60,7 @@ class SettingsValuesRegistrySyncTest {
     }
 
     @Test
-    fun testEverySettingsKeyIsCoveredByWithSetting() {
+    fun `every settings key is covered by withSetting`() {
         // Verify that SettingsValues.withSetting() handles every SettingsKey without throwing.
         var values = SettingsValues()
         for (key in SettingsKey.entries) {
@@ -72,7 +72,7 @@ class SettingsValuesRegistrySyncTest {
     }
 
     @Test
-    fun testDefaultValueTypesMatchRegistryDeclarations() {
+    fun `default value types match registry declarations`() {
         for (item in SettingsRegistry.allSettings()) {
             val defaultValue = item.defaultValue
             if (defaultValue != null) {

@@ -8,7 +8,7 @@ import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
-import com.strangeparticle.springboard.app.unit.InMemorySettingsPersistenceManager
+import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemory
 import kotlin.test.*
 
 class SettingsManagerTest {
@@ -19,7 +19,7 @@ class SettingsManagerTest {
         envVars: Map<String, String> = emptyMap(),
         cliArgs: List<String> = emptyList(),
     ): SettingsManager {
-        val persistence = InMemorySettingsPersistenceManager()
+        val persistence = SettingsPersistenceManagerInMemory()
         if (persistedDto != null) {
             persistence.saveDto(persistedDto)
         }
@@ -31,7 +31,7 @@ class SettingsManagerTest {
     // -- Default Values --
 
     @Test
-    fun testDefaultBooleanValues() {
+    fun `default boolean values`() {
         val manager = createManager()
         assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE))
         assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE))
@@ -41,13 +41,13 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testDefaultFilePathIsNull() {
+    fun `default file path is null`() {
         val manager = createManager()
         assertNull(manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD))
     }
 
     @Test
-    fun testDefaultSourceIsAppDefault() {
+    fun `default source is app default`() {
         val manager = createManager()
         assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
@@ -55,7 +55,7 @@ class SettingsManagerTest {
     // -- User Settings Precedence --
 
     @Test
-    fun testUserSettingsOverrideDefaults() {
+    fun `user settings override defaults`() {
         val manager = createManager(
             persistedDto = UserSettingsDto(surfaceAppleScriptErrors = true)
         )
@@ -64,7 +64,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testUserSettingsFilePath() {
+    fun `user settings file path`() {
         val manager = createManager(
             persistedDto = UserSettingsDto(startupSpringboard = "/path/to/file.json")
         )
@@ -77,7 +77,7 @@ class SettingsManagerTest {
     // -- Environment Variable Precedence --
 
     @Test
-    fun testEnvVarOverridesUserSettings() {
+    fun `env var overrides user settings`() {
         val manager = createManager(
             persistedDto = UserSettingsDto(surfaceAppleScriptErrors = false),
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
@@ -87,7 +87,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testEnvVarOverridesDefault() {
+    fun `env var overrides default`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
@@ -98,7 +98,7 @@ class SettingsManagerTest {
     // -- CLI Precedence --
 
     @Test
-    fun testCliOverridesEnvVar() {
+    fun `cli overrides env var`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "false"),
             cliArgs = listOf("--surface-applescript-errors"),
@@ -108,7 +108,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testCliFilePathArg() {
+    fun `cli file path arg`() {
         val manager = createManager(
             cliArgs = listOf("--startup-springboard", "/cli/path.json"),
         )
@@ -119,7 +119,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testPositionalCliPathDoesNotSetStartupSpringboard() {
+    fun `positional cli path does not set startup springboard`() {
         val manager = createManager(
             cliArgs = listOf("/cli/path.json"),
         )
@@ -128,7 +128,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testCliBooleanFlagIsPresentMeansTrue() {
+    fun `cli boolean flag is present means true`() {
         val manager = createManager(
             cliArgs = listOf("--surface-applescript-errors"),
         )
@@ -138,7 +138,7 @@ class SettingsManagerTest {
     // -- Override Detection --
 
     @Test
-    fun testIsOverriddenWhenEnvVarSet() {
+    fun `is overridden when env var set`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
@@ -146,7 +146,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testIsOverriddenWhenCliSet() {
+    fun `is overridden when cli set`() {
         val manager = createManager(
             cliArgs = listOf("--surface-applescript-errors"),
         )
@@ -154,13 +154,13 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testIsNotOverriddenForDefault() {
+    fun `is not overridden for default`() {
         val manager = createManager()
         assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     @Test
-    fun testIsNotOverriddenForUserSetting() {
+    fun `is not overridden for user setting`() {
         val manager = createManager(
             persistedDto = UserSettingsDto(surfaceAppleScriptErrors = true),
         )
@@ -170,7 +170,7 @@ class SettingsManagerTest {
     // -- User Settings Mutation --
 
     @Test
-    fun testSetUserSetting() {
+    fun `set user setting`() {
         val manager = createManager()
         assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
 
@@ -180,8 +180,8 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testSetUserSettingPersists() {
-        val persistence = InMemorySettingsPersistenceManager()
+    fun `set user setting persists`() {
+        val persistence = SettingsPersistenceManagerInMemory()
         val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
         manager.loadSettingsAtStartup()
 
@@ -193,7 +193,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testSetUserSettingDoesNotOverrideHigherPrecedence() {
+    fun `set user setting does not override higher precedence`() {
         val manager = createManager(
             cliArgs = listOf("--surface-applescript-errors"),
         )
@@ -207,7 +207,7 @@ class SettingsManagerTest {
     // -- Target Filtering --
 
     @Test
-    fun testApplicableSettingsForWasm() {
+    fun `applicable settings for wasm excludes desktop settings`() {
         val manager = createManager(target = RuntimeEnvironment.WASM)
         val applicable = manager.applicableSettings()
         for (item in applicable) {
@@ -219,7 +219,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testApplicableSettingsForDesktopOsx() {
+    fun `applicable settings for desktop osx includes all settings`() {
         val manager = createManager(target = RuntimeEnvironment.DesktopOsx)
         val applicable = manager.applicableSettings()
         assertEquals(SettingsKey.entries.size, applicable.size)
@@ -228,7 +228,7 @@ class SettingsManagerTest {
     // -- Type Safety --
 
     @Test
-    fun testGetBooleanOnFilePathThrows() {
+    fun `get boolean on file path throws`() {
         val manager = createManager()
         assertFailsWith<IllegalArgumentException> {
             manager.getBoolean(SettingsKey.STARTUP_SPRINGBOARD)
@@ -236,7 +236,7 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testGetFilePathOnBooleanThrows() {
+    fun `get file path on boolean throws`() {
         val manager = createManager()
         assertFailsWith<IllegalArgumentException> {
             manager.getFilePath(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
@@ -246,14 +246,14 @@ class SettingsManagerTest {
     // -- Coercion --
 
     @Test
-    fun testCoerceStringToBoolean() {
+    fun `coerce string to boolean`() {
         val entry = SettingsRegistry.require(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
         assertEquals(true, SettingsManager.coerceStringValue(entry, "true"))
         assertEquals(false, SettingsManager.coerceStringValue(entry, "false"))
     }
 
     @Test
-    fun testCoerceInvalidStringToBooleanThrows() {
+    fun `coerce invalid string to boolean throws`() {
         val entry = SettingsRegistry.require(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
         assertFailsWith<IllegalArgumentException> {
             SettingsManager.coerceStringValue(entry, "maybe")
@@ -261,14 +261,14 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun testCoerceStringToFilePath() {
+    fun `coerce string to file path`() {
         val entry = SettingsRegistry.require(SettingsKey.STARTUP_SPRINGBOARD)
         val result = SettingsManager.coerceStringValue(entry, "/some/path.json")
         assertEquals(FilePath("/some/path.json"), result)
     }
 
     @Test
-    fun testCoerceBlankStringToFilePathReturnsNull() {
+    fun `coerce blank string to file path returns null`() {
         val entry = SettingsRegistry.require(SettingsKey.STARTUP_SPRINGBOARD)
         val result = SettingsManager.coerceStringValue(entry, "  ")
         assertNull(result)
@@ -277,7 +277,7 @@ class SettingsManagerTest {
     // -- Invalid External Values --
 
     @Test
-    fun testInvalidEnvVarIsIgnored() {
+    fun `invalid env var is ignored`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "not-a-boolean"),
         )

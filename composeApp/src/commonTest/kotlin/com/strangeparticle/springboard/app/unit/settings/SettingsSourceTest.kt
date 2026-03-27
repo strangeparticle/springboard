@@ -8,12 +8,12 @@ import kotlin.test.*
 class SettingsSourceTest {
 
     @Test
-    fun testPrecedenceChainIsNotEmpty() {
+    fun `precedence chain is not empty`() {
         assertTrue(PRECEDENCE_CHAIN.isNotEmpty(), "Precedence chain must not be empty")
     }
 
     @Test
-    fun testPrecedenceChainContainsNoDuplicates() {
+    fun `precedence chain contains no duplicates`() {
         val distinct = PRECEDENCE_CHAIN.distinct()
         assertEquals(
             PRECEDENCE_CHAIN.size, distinct.size,
@@ -22,7 +22,7 @@ class SettingsSourceTest {
     }
 
     @Test
-    fun testPrecedenceChainContainsAllSources() {
+    fun `precedence chain contains all sources`() {
         for (source in SettingsSource.entries) {
             assertTrue(
                 source in PRECEDENCE_CHAIN,

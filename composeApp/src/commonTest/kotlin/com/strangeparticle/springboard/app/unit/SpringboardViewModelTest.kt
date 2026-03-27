@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.*
 
@@ -29,10 +30,10 @@ class SpringboardViewModelTest {
     }
     """.trimIndent()
 
-    private fun createViewModel() = SpringboardViewModel(createTestSettingsManager())
+    private fun createViewModel() = SpringboardViewModel(createSettingsManagerForTest())
 
     @Test
-    fun testInitialState() {
+    fun `initial state has no springboard loaded`() {
         val vm = createViewModel()
         assertNull(vm.springboard)
         assertNull(vm.selectedEnvironmentId)
@@ -42,7 +43,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testLoadConfig() {
+    fun `load config parses springboard and selects first environment`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -54,7 +55,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testDefaultEnvironmentPrefersAll() {
+    fun `default environment prefers all`() {
         val jsonWithAll = """
         {
           "name": "Test",
@@ -76,7 +77,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testEnvironmentSelection() {
+    fun `environment selection clears downstream selections`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -87,7 +88,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testAppSelection() {
+    fun `app selection updates selected app`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -96,7 +97,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testResourceSelection() {
+    fun `resource selection updates selected resource`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -106,7 +107,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testAppEnabledStates() {
+    fun `app enabled states reflect activator availability`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -117,7 +118,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testResourceEnabledStates() {
+    fun `resource enabled states reflect activator availability`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -128,7 +129,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testActivateButtonDisabledWithoutFullSelection() {
+    fun `activate button is disabled without full selection`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -142,7 +143,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testEnvironmentChangeClearsDownstream() {
+    fun `environment change clears downstream selections`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -155,7 +156,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testAppChangeClearsInvalidResource() {
+    fun `app change clears invalid resource`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -168,7 +169,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testGetActivatorForCell() {
+    fun `get activator for cell returns correct activator`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -180,7 +181,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testMultiSelect() {
+    fun `multi select toggles coordinates`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -227,7 +228,7 @@ class SpringboardViewModelTest {
     """.trimIndent()
 
     @Test
-    fun testGuidanceDataAvailableAfterLoad() {
+    fun `guidance data is available after load`() {
         val vm = createViewModel()
         vm.loadConfig(jsonWithGuidance, "/test.json")
 
@@ -242,7 +243,7 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun testNoGuidanceDataStillLoads() {
+    fun `no guidance data still loads successfully`() {
         // The original validJson has no guidanceData
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")

@@ -7,7 +7,7 @@ import kotlin.test.*
 class SettingsSerializerTest {
 
     @Test
-    fun testRoundTripBooleans() {
+    fun `round trip booleans`() {
         val original = UserSettingsDto(
             surfaceAppleScriptErrors = true,
             openUrlsInNewWindowSingle = false,
@@ -21,7 +21,7 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testRoundTripFilePath() {
+    fun `round trip file path`() {
         val original = UserSettingsDto(startupSpringboard = "/some/file.json")
         val json = SettingsSerializer.toJson(original)
         val restored = SettingsSerializer.fromJson(json)
@@ -31,7 +31,7 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testUnsetFieldsAreOmitted() {
+    fun `unset fields are omitted from json`() {
         val dto = UserSettingsDto(surfaceAppleScriptErrors = true)
         val json = SettingsSerializer.toJson(dto)
 
@@ -41,7 +41,7 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testMissingFieldsDefaultToNull() {
+    fun `missing fields default to null`() {
         val json = """{"surfaceAppleScriptErrors": true}"""
         val restored = SettingsSerializer.fromJson(json)
 
@@ -52,13 +52,13 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testInvalidJsonReturnsNull() {
+    fun `invalid json returns null`() {
         val result = SettingsSerializer.fromJson("not valid json")
         assertNull(result)
     }
 
     @Test
-    fun testEmptyJsonObjectReturnsAllNulls() {
+    fun `empty json object returns all nulls`() {
         val result = SettingsSerializer.fromJson("{}")
         assertNotNull(result)
         assertNull(result.startupSpringboard)
@@ -66,7 +66,7 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testUnknownFieldsAreIgnored() {
+    fun `unknown fields are ignored`() {
         val json = """{"unknownField": "value", "surfaceAppleScriptErrors": true}"""
         val restored = SettingsSerializer.fromJson(json)
 
@@ -75,7 +75,7 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun testOutputIsPrettyPrinted() {
+    fun `output is pretty printed`() {
         val dto = UserSettingsDto(surfaceAppleScriptErrors = true)
         val json = SettingsSerializer.toJson(dto)
         assertTrue(json.contains("\n"), "Output should be pretty-printed")

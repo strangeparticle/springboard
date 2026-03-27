@@ -31,7 +31,7 @@ class SpringboardFactoryTest {
     """.trimIndent()
 
     @Test
-    fun testParseValidConfig() {
+    fun `parse valid config`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test/path.json")
         assertEquals("Test Springboard", sb.name)
         assertEquals(2, sb.environments.size)
@@ -42,7 +42,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testActivatorTypes() {
+    fun `activator types are parsed correctly`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
         val urlActivator = sb.activators.filterIsInstance<UrlActivator>()
         val cmdActivator = sb.activators.filterIsInstance<CommandActivator>()
@@ -56,7 +56,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testInvalidAppReference() {
+    fun `invalid app reference throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -74,7 +74,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testInvalidEnvironmentReference() {
+    fun `invalid environment reference throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -92,7 +92,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testInvalidResourceReference() {
+    fun `invalid resource reference throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -110,7 +110,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testMissingRequiredFields() {
+    fun `missing required fields throws`() {
         val badJson = """{ "name": "Bad" }"""
         assertFails {
             SpringboardFactory.fromJson(badJson, "/test")
@@ -118,7 +118,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testUnknownActivatorType() {
+    fun `unknown activator type throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -136,7 +136,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testIndexConstruction() {
+    fun `index construction builds activator by coordinate`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
 
         // Activator by coordinate
@@ -151,7 +151,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testActivatableResourcesByApp() {
+    fun `activatable resources by app`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
 
         val app1Resources = sb.indexes.activatableResourcesByApp["app1"]
@@ -166,7 +166,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testActivatableAppsByResource() {
+    fun `activatable apps by resource`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
 
         val res1Apps = sb.indexes.activatableAppsByResource["res1"]
@@ -176,7 +176,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testActivatableResourcesByEnvApp() {
+    fun `activatable resources by env and app`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
 
         val stagingApp1 = sb.indexes.activatableResourcesByEnvApp["staging" to "app1"]
@@ -194,7 +194,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testDisplayHints() {
+    fun `display hints are parsed`() {
         val jsonWithHints = """
         {
           "name": "With Hints",
@@ -212,7 +212,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testNoDisplayHints() {
+    fun `no display hints returns null`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
         assertNull(sb.displayHints)
     }
@@ -249,7 +249,7 @@ class SpringboardFactoryTest {
     """.trimIndent()
 
     @Test
-    fun testGuidanceDataParsed() {
+    fun `guidance data is parsed`() {
         val sb = SpringboardFactory.fromJson(jsonWithGuidance, "/test")
         assertEquals(1, sb.guidanceData.size)
         assertEquals("staging", sb.guidanceData[0].environmentId)
@@ -259,7 +259,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testGuidanceIndexConstruction() {
+    fun `guidance index construction`() {
         val sb = SpringboardFactory.fromJson(jsonWithGuidance, "/test")
         val coord = Coordinate("staging", "app1", "res1")
         val guidance = sb.indexes.guidanceByCoordinate[coord]
@@ -272,7 +272,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testNoGuidanceDataBackwardCompat() {
+    fun `no guidance data is backward compatible`() {
         // The original validJson has no guidanceData field -- should still parse fine
         val sb = SpringboardFactory.fromJson(validJson, "/test")
         assertTrue(sb.guidanceData.isEmpty())
@@ -280,7 +280,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testGuidanceReferencesNonExistentEnvironment() {
+    fun `guidance referencing non-existent environment throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -301,7 +301,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testGuidanceReferencesNonExistentApp() {
+    fun `guidance referencing non-existent app throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -322,7 +322,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testGuidanceReferencesNonExistentResource() {
+    fun `guidance referencing non-existent resource throws`() {
         val badJson = """
         {
           "name": "Bad",
@@ -343,7 +343,7 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun testGuidanceReferencesCoordinateWithoutActivator() {
+    fun `guidance referencing coordinate without activator throws`() {
         val badJson = """
         {
           "name": "Bad",

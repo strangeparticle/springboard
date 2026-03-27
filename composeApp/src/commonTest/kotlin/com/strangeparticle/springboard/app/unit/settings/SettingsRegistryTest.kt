@@ -11,7 +11,7 @@ import kotlin.test.*
 class SettingsRegistryTest {
 
     @Test
-    fun testAllSettingsKeysAreRegistered() {
+    fun `all settings keys are registered`() {
         for (key in SettingsKey.entries) {
             assertNotNull(
                 SettingsRegistry.get(key),
@@ -21,7 +21,7 @@ class SettingsRegistryTest {
     }
 
     @Test
-    fun testRequireThrowsForMissingKey() {
+    fun `require throws for missing key`() {
         // This test validates that require() works — since all keys are registered,
         // we just verify it returns non-null for a known key.
         val item = SettingsRegistry.require(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
@@ -29,25 +29,25 @@ class SettingsRegistryTest {
     }
 
     @Test
-    fun testRegistryEntriesHaveUniqueEnvVarNames() {
+    fun `registry entries have unique env var names`() {
         val names = SettingsRegistry.allSettings().map { it.envVarName }
         assertEquals(names.size, names.distinct().size, "Environment variable names must be unique")
     }
 
     @Test
-    fun testRegistryEntriesHaveUniqueCliParamNames() {
+    fun `registry entries have unique cli param names`() {
         val names = SettingsRegistry.allSettings().map { it.cliParamName }
         assertEquals(names.size, names.distinct().size, "CLI parameter names must be unique")
     }
 
     @Test
-    fun testRegistryEntriesHaveUniqueJsonKeys() {
+    fun `registry entries have unique json keys`() {
         val names = SettingsRegistry.allSettings().map { it.key.jsonKey }
         assertEquals(names.size, names.distinct().size, "JSON keys must be unique")
     }
 
     @Test
-    fun testEnvVarNamesFollowConvention() {
+    fun `env var names follow convention`() {
         for (item in SettingsRegistry.allSettings()) {
             assertTrue(
                 item.envVarName.startsWith("SPRINGBOARD_"),
@@ -61,7 +61,7 @@ class SettingsRegistryTest {
     }
 
     @Test
-    fun testCliParamNamesFollowConvention() {
+    fun `cli param names follow convention`() {
         for (item in SettingsRegistry.allSettings()) {
             assertTrue(
                 item.cliParamName.startsWith("--"),
@@ -76,7 +76,7 @@ class SettingsRegistryTest {
     }
 
     @Test
-    fun testSettingsForTargetFiltersCorrectly() {
+    fun `settings for target filters correctly`() {
         val osxSettings = SettingsRegistry.settingsForEnvironment(RuntimeEnvironment.DesktopOsx)
         val wasmSettings = SettingsRegistry.settingsForEnvironment(RuntimeEnvironment.WASM)
 
@@ -96,35 +96,35 @@ class SettingsRegistryTest {
     }
 
     @Test
-    fun testFindByEnvVarName() {
+    fun `find by env var name`() {
         val item = SettingsRegistry.findByEnvVarName("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS")
         assertNotNull(item)
         assertEquals(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, item.key)
     }
 
     @Test
-    fun testFindByCliParamName() {
+    fun `find by cli param name`() {
         val item = SettingsRegistry.findByCliParamName("--surface-applescript-errors")
         assertNotNull(item)
         assertEquals(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, item.key)
     }
 
     @Test
-    fun testFindByJsonKey() {
+    fun `find by json key`() {
         val item = SettingsRegistry.findByJsonKey(SettingsKey.SURFACE_APPLESCRIPT_ERRORS.jsonKey)
         assertNotNull(item)
         assertEquals(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, item.key)
     }
 
     @Test
-    fun testFindByNonexistentNameReturnsNull() {
+    fun `find by nonexistent name returns null`() {
         assertNull(SettingsRegistry.findByEnvVarName("NONEXISTENT"))
         assertNull(SettingsRegistry.findByCliParamName("--nonexistent"))
         assertNull(SettingsRegistry.findByJsonKey("nonexistent"))
     }
 
     @Test
-    fun testDefaultValuesMatchExpectedTypes() {
+    fun `default values match expected types`() {
         for (item in SettingsRegistry.allSettings()) {
             val defaultValue = item.defaultValue
             if (defaultValue != null) {

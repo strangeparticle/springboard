@@ -5,13 +5,9 @@ import kotlin.test.Test
 
 class KeyNavDesktopTests {
 
-    class MacEnterKeyActivation {
-        @Ignore @Test fun `enter key triggers activation on Mac`() =
-            KeyNavDesktopTestScenarios.enterKeyTriggersActivationOnMac()
-    }
+    @Ignore @Test fun `enter key triggers activation on Mac`() =
+        KeyNavDesktopTestScenarios.enterKeyTriggersActivationOnMac()
 
-    class LinuxCtrlEnterActivation {
-        @Ignore @Test fun `ctrl-enter triggers activation on Linux`() =
-            KeyNavDesktopTestScenarios.ctrlEnterTriggersActivationOnLinux()
-    }
+    @Ignore @Test fun `ctrl-enter triggers activation on Linux`() =
+        KeyNavDesktopTestScenarios.ctrlEnterTriggersActivationOnLinux()
 }

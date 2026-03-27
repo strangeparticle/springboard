@@ -5,6 +5,7 @@ enum class RuntimeEnvironment {
     DesktopLinux,
     DesktopWindows,
     WASM,
+    Test,
     Unknown,
 }
 

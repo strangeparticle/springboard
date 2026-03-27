@@ -11,10 +11,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.theme.StatusBarBackground
 import com.strangeparticle.springboard.app.ui.theme.StatusBarText
@@ -52,7 +54,7 @@ fun StatusBar(
             text = "Source: ${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
             fontSize = 11.sp,
             color = StatusBarText,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),
         )
         IconButton(
             onClick = onOpenSettings,

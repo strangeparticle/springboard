@@ -113,12 +113,44 @@ Use this after major refactors or if you see stale-resource errors from the Comp
 
 ## Tests
 
-Tests live in `composeApp/src/commonTest/`. They cover domain model parsing, factory validation,
-index construction, and ViewModel state transitions. All tests are pure Kotlin with no platform
-dependencies and run on the JVM.
+Test output is formatted by the `com.adarshr.test-logger` Gradle plugin for readable
+pass/fail/skip output in the console.
 
+Tests are organized into two sibling package families:
+
+- `...app.unit...` for conventional unit tests
+- `...app.acceptance...` for CMP UI acceptance tests
+
+Shared tests are under `composeApp/src/commonTest/`; desktop-specific tests are under
+`composeApp/src/desktopTest/`.
+
+### Run all tests
 ```shell
 ./gradlew allTests
+```
+
+### Run only unit tests
+
+```shell
+./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.unit.*"
+```
+
+### Run only acceptance tests
+
+```shell
+./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.acceptance.*"
+```
+
+### Run a specific test class
+
+```shell
+./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.acceptance.ActivatorDesktopTests"
+```
+
+### Open HTML test report summary
+
+```shell
+open composeApp/build/reports/tests/desktopTest/index.html
 ```
 
 A sample springboard config used by the tests is at:
@@ -155,8 +187,9 @@ bypass it on your own machine.
 ```
 composeApp/src/
 ├── commonMain/       # All domain logic, ViewModels, and Compose UI
-├── commonTest/       # All unit tests
+├── commonTest/       # Shared tests (`unit` + `acceptance` packages)
 ├── desktopMain/      # Code specific to the Desktop platform
+├── desktopTest/      # Desktop-specific tests (`unit` + `acceptance` packages)
 └── wasmJsMain/       # Code specific to the WASM platform (experimental)
 ```
 

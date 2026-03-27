@@ -19,11 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.selection.SelectionContainer
 import com.strangeparticle.springboard.app.platform.copyToClipboard
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,7 +120,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                     color = textColor,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).testTag(TestTags.TOAST_SEVERITY_LABEL)
                 )
                 IconButton(
                     onClick = {
@@ -156,7 +158,8 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                 Text(
                     text = toast.message,
                     color = textColor,
-                    fontSize = 13.sp
+                    fontSize = 13.sp,
+                    modifier = Modifier.testTag(TestTags.TOAST_MESSAGE)
                 )
             }
         }

@@ -59,33 +59,33 @@ fun ActiveSettingsScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(SettingsColumnBackground)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(horizontal = 24.dp, vertical = 10.dp),
         ) {
             Text(
                 text = "Setting",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SettingsColumnHeaderText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "Value",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SettingsColumnHeaderText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(80.dp),
             )
             Text(
                 text = "Source",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = SettingsColumnHeaderText,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(72.dp),
             )
         }
 
-        HorizontalDivider(thickness = 1.dp, color = SettingsDivider)
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outline)
 
         // Scrollable entries
         Column(
@@ -95,7 +95,7 @@ fun ActiveSettingsScreen(
         ) {
             for (entry in viewModel.activeSettingsEntries) {
                 ActiveSettingsRow(entry)
-                HorizontalDivider(thickness = 1.dp, color = SettingsSubDivider)
+                HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.surfaceContainerLow)
             }
         }
     }
@@ -113,7 +113,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
         Text(
             text = entry.displayName,
             fontSize = 13.sp,
-            color = SettingsKeyText,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
         if (entry.tooltipText != null) {
@@ -176,9 +176,10 @@ private fun formatSourceLabel(source: SettingsSource): String = when (source) {
     SettingsSource.COMMAND_LINE -> "CLI"
 }
 
+@Composable
 private fun sourceColor(source: SettingsSource): Color = when (source) {
     SettingsSource.APP_DEFAULT -> SettingsSourceAppDefault
-    SettingsSource.USER_SETTINGS -> SettingsSourceUserSettings
+    SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
     SettingsSource.ENVIRONMENT_VARIABLE -> SettingsSourceEnvironmentVariable
     SettingsSource.COMMAND_LINE -> SettingsSourceCommandLine
 }

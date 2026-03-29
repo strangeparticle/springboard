@@ -78,7 +78,9 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
 
     val (background, borderColor, textColor, icon, severityLabel) = when (toast.severity) {
         ToastSeverity.ERROR -> ToastStyle(
-            ToastErrorBackground, ToastErrorBorder, ToastErrorText,
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.error,
+            MaterialTheme.colorScheme.onErrorContainer,
             Icons.Outlined.Warning, "Error"
         )
         ToastSeverity.WARNING -> ToastStyle(

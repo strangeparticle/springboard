@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,8 +19,6 @@ import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
-import com.strangeparticle.springboard.app.ui.theme.color.StatusBarBackground
-import com.strangeparticle.springboard.app.ui.theme.color.StatusBarText
 
 @Composable
 fun StatusBar(
@@ -34,7 +33,7 @@ fun StatusBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(CommonUiConstants.StatusBarHeight)
-            .background(StatusBarBackground)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -46,14 +45,14 @@ fun StatusBar(
                 Icons.Default.Refresh,
                 contentDescription = "Reload",
                 modifier = Modifier.size(16.dp),
-                tint = StatusBarText
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = "Source: ${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
             fontSize = 11.sp,
-            color = StatusBarText,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),
         )
         IconButton(
@@ -64,7 +63,7 @@ fun StatusBar(
                 Icons.Default.Settings,
                 contentDescription = "Settings",
                 modifier = Modifier.size(16.dp),
-                tint = StatusBarText
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

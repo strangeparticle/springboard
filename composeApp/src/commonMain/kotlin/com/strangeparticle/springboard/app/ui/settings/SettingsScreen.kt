@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
@@ -94,7 +93,7 @@ private fun SettingsGroupSection(
         text = group.name,
         fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold,
-        color = SettingsHeaderText,
+        color = MaterialTheme.colorScheme.onSurface,
     )
     Spacer(modifier = Modifier.height(10.dp))
 
@@ -118,7 +117,7 @@ private fun SettingRow(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { this.alpha = alpha },
-        color = SettingsCardBackground,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
@@ -134,7 +133,7 @@ private fun SettingRow(
                     text = item.displayName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = SettingsKeyText,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = item.description,
@@ -274,11 +273,11 @@ private fun FilePathActions(
             onClick = {
                 viewModel.designateCurrentFileAsStartup()
             },
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryActionButton),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             modifier = Modifier.height(32.dp),
         ) {
-            Text("Use Current File", fontSize = 12.sp, color = Color.White)
+            Text("Use Current File", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary)
         }
 
         if (currentValue != null) {

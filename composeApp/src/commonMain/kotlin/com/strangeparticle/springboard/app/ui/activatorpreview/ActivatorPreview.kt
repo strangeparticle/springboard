@@ -2,14 +2,14 @@ package com.strangeparticle.springboard.app.ui.activatorpreview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.strangeparticle.springboard.app.ui.theme.color.ActivatorPreviewText
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
-import com.strangeparticle.springboard.app.ui.theme.color.ActivatorPreviewText
 
 @Composable
 fun ActivatorPreview(previewText: String?) {
@@ -20,7 +20,7 @@ fun ActivatorPreview(previewText: String?) {
             color = ActivatorPreviewText,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 2.dp),
+            modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(horizontal = 8.dp, vertical = 2.dp),
         )
     }
 }

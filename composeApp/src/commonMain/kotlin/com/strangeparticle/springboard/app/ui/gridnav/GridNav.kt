@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,7 +28,6 @@ import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.theme.*
-import com.strangeparticle.springboard.app.ui.theme.color.*
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -96,7 +96,7 @@ fun GridNav(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
             .focusProperties { canFocus = false }
     ) {
@@ -121,7 +121,7 @@ fun GridNav(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .background(if (isHighlighted) HeaderHoverBackground else Color.Transparent)
+                        .background(if (isHighlighted) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent)
                         .focusProperties { canFocus = false }
                         .clickable { viewModel.activateColumn(app.id) }
                         .pointerInput(app.id) {
@@ -164,7 +164,7 @@ fun GridNav(
             }
         }
 
-        HorizontalDivider(color = GridDividerColor, thickness = 1.dp)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
 
         Column(
             modifier = Modifier.verticalScroll(verticalScroll)
@@ -177,7 +177,7 @@ fun GridNav(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(if (rowHighlighted) RowHighlight else Color.Transparent)
+                        .background(if (rowHighlighted) MaterialTheme.colorScheme.surfaceContainer else Color.Transparent)
                 ) {
                     Box(
                         modifier = Modifier
@@ -254,9 +254,9 @@ fun GridNav(
                         val isInMultiSelect = coordinate in viewModel.multiSelectSet
 
                         val cellBackground = when {
-                            isCellHovered && hasActivator -> CellHighlight
-                            isInMultiSelect -> CellHighlight
-                            isColumnHighlighted -> ColumnHighlight
+                            isCellHovered && hasActivator -> MaterialTheme.colorScheme.surfaceContainer
+                            isInMultiSelect -> MaterialTheme.colorScheme.surfaceContainer
+                            isColumnHighlighted -> MaterialTheme.colorScheme.surfaceContainer
                             else -> Color.Transparent
                         }
 
@@ -287,13 +287,13 @@ fun GridNav(
                                         modifier = Modifier
                                             .size(18.dp)
                                             .clip(CircleShape)
-                                            .background(ActiveCellIndicator)
+                                            .background(MaterialTheme.colorScheme.primaryContainer)
                                     )
                                 } else {
                                     Box(
                                         modifier = Modifier
                                             .size(18.dp)
-                                            .border(2.dp, ActiveCellIndicator, CircleShape)
+                                            .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                                     )
                                 }
                             }
@@ -310,7 +310,7 @@ fun GridNav(
                     }
                 }
 
-                HorizontalDivider(color = GridDividerColor, thickness = 0.5.dp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
             }
         }
     }

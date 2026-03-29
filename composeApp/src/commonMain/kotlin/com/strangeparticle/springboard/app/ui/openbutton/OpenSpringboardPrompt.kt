@@ -5,15 +5,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.platform.openFileDialog
-import com.strangeparticle.springboard.app.ui.theme.color.PrimaryActionButton
 
 @Composable
 fun OpenSpringboardPrompt(onFileSelected: (String) -> Unit) {
@@ -29,13 +28,13 @@ fun OpenSpringboardPrompt(onFileSelected: (String) -> Unit) {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = PrimaryActionButton
+                containerColor = MaterialTheme.colorScheme.primary
             ),
             modifier = Modifier.height(44.dp)
         ) {
             Text(
                 "Open Springboard...",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontSize = 15.sp
             )
         }

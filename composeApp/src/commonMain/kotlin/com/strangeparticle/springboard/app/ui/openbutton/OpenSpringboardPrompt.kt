@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.platform.openFileDialog
+import com.strangeparticle.springboard.app.ui.theme.color.PrimaryActionButton
 
 @Composable
 fun OpenSpringboardPrompt(onFileSelected: (String) -> Unit) {
@@ -28,7 +29,7 @@ fun OpenSpringboardPrompt(onFileSelected: (String) -> Unit) {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF1976D2)
+                containerColor = PrimaryActionButton
             ),
             modifier = Modifier.height(44.dp)
         ) {

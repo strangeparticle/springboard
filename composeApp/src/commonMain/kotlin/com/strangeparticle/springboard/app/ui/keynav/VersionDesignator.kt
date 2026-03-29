@@ -7,7 +7,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.AppVersion
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.NavbarText
+import com.strangeparticle.springboard.app.ui.theme.color.NavbarText
 
 @Composable
 fun VersionDesignator() {

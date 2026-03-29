@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -18,8 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.SettingsSource
-import com.strangeparticle.springboard.app.ui.theme.NavbarBackground
-import com.strangeparticle.springboard.app.ui.theme.NavbarText
+import com.strangeparticle.springboard.app.ui.theme.color.*
 import com.strangeparticle.springboard.app.viewmodel.ActiveSettingsEntry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
@@ -61,33 +59,33 @@ fun ActiveSettingsScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5))
+                .background(SettingsColumnBackground)
                 .padding(horizontal = 24.dp, vertical = 10.dp),
         ) {
             Text(
                 text = "Setting",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF666666),
+                color = SettingsColumnHeaderText,
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "Value",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF666666),
+                color = SettingsColumnHeaderText,
                 modifier = Modifier.width(80.dp),
             )
             Text(
                 text = "Source",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF666666),
+                color = SettingsColumnHeaderText,
                 modifier = Modifier.width(72.dp),
             )
         }
 
-        HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
+        HorizontalDivider(thickness = 1.dp, color = SettingsDivider)
 
         // Scrollable entries
         Column(
@@ -97,7 +95,7 @@ fun ActiveSettingsScreen(
         ) {
             for (entry in viewModel.activeSettingsEntries) {
                 ActiveSettingsRow(entry)
-                HorizontalDivider(thickness = 1.dp, color = Color(0xFFF0F0F0))
+                HorizontalDivider(thickness = 1.dp, color = SettingsSubDivider)
             }
         }
     }
@@ -115,7 +113,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
         Text(
             text = entry.displayName,
             fontSize = 13.sp,
-            color = Color(0xFF333333),
+            color = SettingsKeyText,
             modifier = Modifier.weight(1f),
         )
         if (entry.tooltipText != null) {
@@ -132,7 +130,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                     Text(
                         text = entry.resolvedValue,
                         fontSize = 13.sp,
-                        color = Color(0xFF4A4A4A),
+                        color = SettingsTooltipValueText,
                         modifier = Modifier
                             .wrapContentWidth()
                             .drawBehind {
@@ -143,7 +141,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                                 while (x < size.width) {
                                     val endX = minOf(x + dashWidth, size.width)
                                     drawLine(
-                                        color = Color(0xFF5F5F5F),
+                                        color = SettingsTooltipUnderline,
                                         start = Offset(x, y),
                                         end = Offset(endX, y),
                                         strokeWidth = 1.4.dp.toPx(),
@@ -158,7 +156,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
             Text(
                 text = entry.resolvedValue,
                 fontSize = 13.sp,
-                color = Color(0xFF555555),
+                color = SettingsValueText,
                 modifier = Modifier.width(80.dp),
             )
         }
@@ -179,8 +177,8 @@ private fun formatSourceLabel(source: SettingsSource): String = when (source) {
 }
 
 private fun sourceColor(source: SettingsSource): Color = when (source) {
-    SettingsSource.APP_DEFAULT -> Color(0xFF999999)
-    SettingsSource.USER_SETTINGS -> Color(0xFF1976D2)
-    SettingsSource.ENVIRONMENT_VARIABLE -> Color(0xFFE65100)
-    SettingsSource.COMMAND_LINE -> Color(0xFF6A1B9A)
+    SettingsSource.APP_DEFAULT -> SettingsSourceAppDefault
+    SettingsSource.USER_SETTINGS -> SettingsSourceUserSettings
+    SettingsSource.ENVIRONMENT_VARIABLE -> SettingsSourceEnvironmentVariable
+    SettingsSource.COMMAND_LINE -> SettingsSourceCommandLine
 }

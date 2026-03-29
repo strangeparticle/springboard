@@ -17,6 +17,8 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.theme.color.KeyNavFocusIndicator
+import com.strangeparticle.springboard.app.ui.theme.color.KeyNavFocusIndicatorUnfocused
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 @Composable
@@ -110,7 +112,7 @@ private fun MinimalDropdown(
                 .background(Color.White, RectangleShape)
                 .border(
                     width = if (isFocused) 3.dp else 1.dp,
-                    color = if (isFocused) Color(0xFF1E6FFF) else Color.White.copy(alpha = 0.3f),
+                    color = if (isFocused) KeyNavFocusIndicator else KeyNavFocusIndicatorUnfocused,
                     shape = RectangleShape
                 )
                 .focusRequester(focusRequester)

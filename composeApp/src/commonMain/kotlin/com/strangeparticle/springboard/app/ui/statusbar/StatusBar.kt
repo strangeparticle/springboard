@@ -18,8 +18,8 @@ import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
-import com.strangeparticle.springboard.app.ui.theme.StatusBarBackground
-import com.strangeparticle.springboard.app.ui.theme.StatusBarText
+import com.strangeparticle.springboard.app.ui.theme.color.StatusBarBackground
+import com.strangeparticle.springboard.app.ui.theme.color.StatusBarText
 
 @Composable
 fun StatusBar(

@@ -9,8 +9,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
-
-private val ActivatorPreviewText = Color(0xFF888888)
+import com.strangeparticle.springboard.app.ui.theme.color.ActivatorPreviewText
 
 @Composable
 fun ActivatorPreview(previewText: String?) {

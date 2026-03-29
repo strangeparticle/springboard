@@ -22,8 +22,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.*
-import com.strangeparticle.springboard.app.ui.theme.NavbarBackground
-import com.strangeparticle.springboard.app.ui.theme.NavbarText
+import com.strangeparticle.springboard.app.ui.theme.color.*
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
 @Composable
@@ -95,7 +94,7 @@ private fun SettingsGroupSection(
         text = group.name,
         fontSize = 15.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF333333),
+        color = SettingsHeaderText,
     )
     Spacer(modifier = Modifier.height(10.dp))
 
@@ -119,7 +118,7 @@ private fun SettingRow(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { this.alpha = alpha },
-        color = Color(0xFFF8F8F6),
+        color = SettingsCardBackground,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
@@ -135,12 +134,12 @@ private fun SettingRow(
                     text = item.displayName,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF333333),
+                    color = SettingsKeyText,
                 )
                 Text(
                     text = item.description,
                     fontSize = 12.sp,
-                    color = Color(0xFF888888),
+                    color = SettingsDescriptionText,
                 )
 
                 if (item.type == FilePath::class) {
@@ -190,7 +189,6 @@ private fun OverrideMessage(
     sourceName: String,
     onShowActiveSettings: () -> Unit,
 ) {
-    val linkBaseColor = Color(0xFFAA6600)
     val activeSettings = "Active Settings"
     val fullText = "Overridden by $sourceName. See $activeSettings for details."
     val linkStart = fullText.indexOf(activeSettings)
@@ -202,23 +200,23 @@ private fun OverrideMessage(
                 tag = "active_settings",
                 styles = TextLinkStyles(
                     style = SpanStyle(
-                        color = linkBaseColor,
+                        color = SettingsLinkBase,
                         textDecoration = TextDecoration.Underline,
                     ),
                     hoveredStyle = SpanStyle(
-                        color = Color(0xFFCC8800),
+                        color = SettingsLinkHover,
                         textDecoration = TextDecoration.Underline,
-                        background = Color(0x18AA6600),
+                        background = SettingsLinkBackgroundHover,
                     ),
                     pressedStyle = SpanStyle(
-                        color = Color(0xFF884400),
+                        color = SettingsLinkPressed,
                         textDecoration = TextDecoration.Underline,
-                        background = Color(0x28AA6600),
+                        background = SettingsLinkBackgroundPressed,
                     ),
                     focusedStyle = SpanStyle(
-                        color = linkBaseColor,
+                        color = SettingsLinkBase,
                         textDecoration = TextDecoration.Underline,
-                        background = Color(0x10AA6600),
+                        background = SettingsLinkBackgroundDefault,
                     ),
                 ),
                 linkInteractionListener = { onShowActiveSettings() },
@@ -233,7 +231,7 @@ private fun OverrideMessage(
         style = LocalTextStyle.current.copy(
             fontSize = 11.sp,
             fontStyle = FontStyle.Italic,
-            color = linkBaseColor,
+            color = SettingsLinkBase,
         ),
     )
 }
@@ -247,7 +245,7 @@ private fun FilePathControl(
             Text(
                 text = currentValue.path,
                 fontSize = 12.sp,
-                color = Color(0xFF555555),
+                color = SettingsValueText,
             )
             Spacer(modifier = Modifier.height(4.dp))
         } else {
@@ -255,7 +253,7 @@ private fun FilePathControl(
                 text = "No startup springboard configured",
                 fontSize = 12.sp,
                 fontStyle = FontStyle.Italic,
-                color = Color(0xFF999999),
+                color = SettingsNoValueText,
             )
             Spacer(modifier = Modifier.height(4.dp))
         }
@@ -276,7 +274,7 @@ private fun FilePathActions(
             onClick = {
                 viewModel.designateCurrentFileAsStartup()
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryActionButton),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
             modifier = Modifier.height(32.dp),
         ) {

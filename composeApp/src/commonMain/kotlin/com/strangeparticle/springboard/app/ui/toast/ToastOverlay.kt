@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import com.strangeparticle.springboard.app.platform.copyToClipboard
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.theme.*
+import com.strangeparticle.springboard.app.ui.theme.color.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

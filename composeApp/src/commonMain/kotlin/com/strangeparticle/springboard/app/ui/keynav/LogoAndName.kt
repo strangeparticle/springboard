@@ -13,7 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.NavbarText
+import com.strangeparticle.springboard.app.ui.theme.color.NavbarText
 import org.jetbrains.compose.resources.painterResource
 import springboard.composeapp.generated.resources.Res
 import springboard.composeapp.generated.resources.springboard_icon_512

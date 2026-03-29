@@ -24,7 +24,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.strangeparticle.springboard.app.platform.copyToClipboard
-import com.strangeparticle.springboard.app.ui.theme.*
+import com.strangeparticle.springboard.app.ui.theme.color.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

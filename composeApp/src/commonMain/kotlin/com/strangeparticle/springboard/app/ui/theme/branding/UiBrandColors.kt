@@ -60,6 +60,11 @@ data class UiBrandColors(
     val settingsColumnSubheaderText: Color? = null,
     val settingsKeyText: Color? = null,
     val settingsValueText: Color? = null,
+    val settingsTooltipValueText: Color? = null,
+    val settingsTooltipUnderline: Color? = null,
+    val settingsDescriptionText: Color? = null,
+    val settingsCardBackground: Color? = null,
+    val settingsNoValueText: Color? = null,
     val settingsDivider: Color? = null,
     val settingsSubDivider: Color? = null,
 

@@ -1,5 +1,10 @@
 package com.strangeparticle.springboard.app.ui.statusbar
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Icon
@@ -7,8 +12,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +35,15 @@ fun StatusBar(
     val currentSpringboard = springboard ?: return
     val currentUiBrand = LocalUiBrand.current
 
+    val infiniteTransition = rememberInfiniteTransition()
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing)
+        )
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -38,12 +54,15 @@ fun StatusBar(
     ) {
         IconButton(
             onClick = onReload,
-            modifier = Modifier.size(24.dp)
+            enabled = !isReloading,
+            modifier = Modifier.size(24.dp).testTag(TestTags.RELOAD_BUTTON)
         ) {
             Icon(
                 imageVector = currentUiBrand.vectorImages.reload,
-                contentDescription = "Reload",
-                modifier = Modifier.size(16.dp),
+                contentDescription = if (isReloading) "Reloading" else "Reload",
+                modifier = Modifier
+                    .size(16.dp)
+                    .graphicsLayer(rotationZ = if (isReloading) rotation else 0f),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

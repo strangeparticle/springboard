@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.ui.theme
+package com.strangeparticle.springboard.app.ui.brand
 
 import androidx.compose.ui.unit.dp
 

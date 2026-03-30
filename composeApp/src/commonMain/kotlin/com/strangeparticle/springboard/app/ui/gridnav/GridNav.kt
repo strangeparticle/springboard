@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
-import com.strangeparticle.springboard.app.ui.theme.*
+import com.strangeparticle.springboard.app.ui.brand.*
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

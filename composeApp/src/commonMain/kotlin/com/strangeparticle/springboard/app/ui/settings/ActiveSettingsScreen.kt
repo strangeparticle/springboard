@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.SettingsSource
-import com.strangeparticle.springboard.app.ui.theme.color.*
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.ActiveSettingsEntry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
@@ -30,26 +29,27 @@ fun ActiveSettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
 ) {
+    val currentUiBrand = LocalUiBrand.current
     Column(modifier = Modifier.fillMaxSize()) {
         // Header bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
-                .background(NavbarBackground)
+                .background(currentUiBrand.customColors.navbarBackground)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = currentUiBrand.vectorImages.backNavigation,
                     contentDescription = "Back",
-                    tint = NavbarText,
+                    tint = currentUiBrand.customColors.navbarText,
                 )
             }
             Text(
                 text = "Active Settings",
-                color = NavbarText,
+                color = currentUiBrand.customColors.navbarText,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
             )
@@ -104,6 +104,7 @@ fun ActiveSettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
+    val currentUiBrand = LocalUiBrand.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -117,6 +118,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
             modifier = Modifier.weight(1f),
         )
         if (entry.tooltipText != null) {
+            val tooltipUnderlineColor = currentUiBrand.customColors.settingsTooltipUnderline
             Box(modifier = Modifier.width(80.dp)) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
@@ -130,7 +132,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                     Text(
                         text = entry.resolvedValue,
                         fontSize = 13.sp,
-                        color = SettingsTooltipValueText,
+                        color = currentUiBrand.customColors.settingsTooltipValueText,
                         modifier = Modifier
                             .wrapContentWidth()
                             .drawBehind {
@@ -141,7 +143,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                                 while (x < size.width) {
                                     val endX = minOf(x + dashWidth, size.width)
                                     drawLine(
-                                        color = SettingsTooltipUnderline,
+                                        color = tooltipUnderlineColor,
                                         start = Offset(x, y),
                                         end = Offset(endX, y),
                                         strokeWidth = 1.4.dp.toPx(),
@@ -156,7 +158,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
             Text(
                 text = entry.resolvedValue,
                 fontSize = 13.sp,
-                color = SettingsValueText,
+                color = currentUiBrand.customColors.settingsValueText,
                 modifier = Modifier.width(80.dp),
             )
         }
@@ -177,9 +179,12 @@ private fun formatSourceLabel(source: SettingsSource): String = when (source) {
 }
 
 @Composable
-private fun sourceColor(source: SettingsSource): Color = when (source) {
-    SettingsSource.APP_DEFAULT -> SettingsSourceAppDefault
-    SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
-    SettingsSource.ENVIRONMENT_VARIABLE -> SettingsSourceEnvironmentVariable
-    SettingsSource.COMMAND_LINE -> SettingsSourceCommandLine
+private fun sourceColor(source: SettingsSource): Color {
+    val currentUiBrand = LocalUiBrand.current
+    return when (source) {
+        SettingsSource.APP_DEFAULT -> currentUiBrand.customColors.settingsSourceAppDefault
+        SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
+        SettingsSource.ENVIRONMENT_VARIABLE -> currentUiBrand.customColors.settingsSourceEnvironmentVariable
+        SettingsSource.COMMAND_LINE -> currentUiBrand.customColors.settingsSourceCommandLine
+    }
 }

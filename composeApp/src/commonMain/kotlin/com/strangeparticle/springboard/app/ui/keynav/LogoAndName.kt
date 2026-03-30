@@ -13,22 +13,21 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.color.NavbarText
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import org.jetbrains.compose.resources.painterResource
-import springboard.composeapp.generated.resources.Res
-import springboard.composeapp.generated.resources.springboard_icon_512
 
 @Composable
 fun LogoAndName(modifier: Modifier = Modifier) {
+    val currentUiBrand = LocalUiBrand.current
     Image(
-        painter = painterResource(Res.drawable.springboard_icon_512),
+        painter = painterResource(currentUiBrand.drawableResources.appLogo),
         contentDescription = "Springboard",
-        modifier = Modifier.size(36.dp).offset(y = 6.dp).testTag(TestTags.SPRINGBOARD_ICON).then(modifier)
+        modifier = Modifier.size(36.dp).offset(y = 6.dp).testTag(TestTags.SPRINGBOARD_ICON).then(modifier),
     )
     Spacer(modifier = Modifier.width(10.dp))
     Text(
         text = "Springboard",
-        color = NavbarText,
+        color = currentUiBrand.customColors.navbarText,
         fontSize = 22.sp,
         fontWeight = FontWeight.Bold,
         modifier = modifier

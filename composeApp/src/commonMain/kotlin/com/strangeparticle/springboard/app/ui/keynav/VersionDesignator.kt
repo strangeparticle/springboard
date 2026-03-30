@@ -7,13 +7,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.AppVersion
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.color.NavbarText
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 
 @Composable
 fun VersionDesignator() {
     Text(
         text = "v${AppVersion.VERSION}",
-        color = NavbarText.copy(alpha = 0.6f),
+        color = LocalUiBrand.current.customColors.navbarText.copy(alpha = 0.6f),
         fontSize = 12.sp,
         modifier = Modifier.testTag(TestTags.VERSION_DESIGNATOR)
     )

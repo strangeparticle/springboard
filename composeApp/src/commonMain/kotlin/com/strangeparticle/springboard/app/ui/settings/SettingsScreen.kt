@@ -4,8 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,7 +20,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.*
-import com.strangeparticle.springboard.app.ui.theme.color.*
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
 @Composable
@@ -59,24 +58,25 @@ private fun SettingsHeaderBar(
     title: String,
     onBack: () -> Unit,
 ) {
+    val currentUiBrand = LocalUiBrand.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(NavbarBackground)
+            .background(currentUiBrand.customColors.navbarBackground)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
+                imageVector = currentUiBrand.vectorImages.backNavigation,
                 contentDescription = "Back",
-                tint = NavbarText,
+                tint = currentUiBrand.customColors.navbarText,
             )
         }
         Text(
             text = title,
-            color = NavbarText,
+            color = currentUiBrand.customColors.navbarText,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
         )
@@ -138,7 +138,7 @@ private fun SettingRow(
                 Text(
                     text = item.description,
                     fontSize = 12.sp,
-                    color = SettingsDescriptionText,
+                    color = LocalUiBrand.current.customColors.settingsDescriptionText,
                 )
 
                 if (item.type == FilePath::class) {
@@ -188,6 +188,7 @@ private fun OverrideMessage(
     sourceName: String,
     onShowActiveSettings: () -> Unit,
 ) {
+    val currentUiBrand = LocalUiBrand.current
     val activeSettings = "Active Settings"
     val fullText = "Overridden by $sourceName. See $activeSettings for details."
     val linkStart = fullText.indexOf(activeSettings)
@@ -199,23 +200,23 @@ private fun OverrideMessage(
                 tag = "active_settings",
                 styles = TextLinkStyles(
                     style = SpanStyle(
-                        color = SettingsLinkBase,
+                        color = currentUiBrand.customColors.settingsLinkBase,
                         textDecoration = TextDecoration.Underline,
                     ),
                     hoveredStyle = SpanStyle(
-                        color = SettingsLinkHover,
+                        color = currentUiBrand.customColors.settingsLinkHover,
                         textDecoration = TextDecoration.Underline,
-                        background = SettingsLinkBackgroundHover,
+                        background = currentUiBrand.customColors.settingsLinkBackgroundHover,
                     ),
                     pressedStyle = SpanStyle(
-                        color = SettingsLinkPressed,
+                        color = currentUiBrand.customColors.settingsLinkPressed,
                         textDecoration = TextDecoration.Underline,
-                        background = SettingsLinkBackgroundPressed,
+                        background = currentUiBrand.customColors.settingsLinkBackgroundPressed,
                     ),
                     focusedStyle = SpanStyle(
-                        color = SettingsLinkBase,
+                        color = currentUiBrand.customColors.settingsLinkBase,
                         textDecoration = TextDecoration.Underline,
-                        background = SettingsLinkBackgroundDefault,
+                        background = currentUiBrand.customColors.settingsLinkBackgroundDefault,
                     ),
                 ),
                 linkInteractionListener = { onShowActiveSettings() },
@@ -230,7 +231,7 @@ private fun OverrideMessage(
         style = LocalTextStyle.current.copy(
             fontSize = 11.sp,
             fontStyle = FontStyle.Italic,
-            color = SettingsLinkBase,
+            color = currentUiBrand.customColors.settingsLinkBase,
         ),
     )
 }
@@ -239,12 +240,13 @@ private fun OverrideMessage(
 private fun FilePathControl(
     currentValue: FilePath?,
 ) {
+    val currentUiBrand = LocalUiBrand.current
     Column {
         if (currentValue != null) {
             Text(
                 text = currentValue.path,
                 fontSize = 12.sp,
-                color = SettingsValueText,
+                color = currentUiBrand.customColors.settingsValueText,
             )
             Spacer(modifier = Modifier.height(4.dp))
         } else {
@@ -252,7 +254,7 @@ private fun FilePathControl(
                 text = "No startup springboard configured",
                 fontSize = 12.sp,
                 fontStyle = FontStyle.Italic,
-                color = SettingsNoValueText,
+                color = currentUiBrand.customColors.settingsNoValueText,
             )
             Spacer(modifier = Modifier.height(4.dp))
         }

@@ -6,9 +6,7 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,7 +22,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import com.strangeparticle.springboard.app.platform.copyToClipboard
-import com.strangeparticle.springboard.app.ui.theme.color.*
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -55,6 +53,7 @@ fun GuidanceTooltip(
         onTooltipHoverChanged(isTooltipHovered)
     }
 
+    val currentUiBrand = LocalUiBrand.current
     Popup(
         popupPositionProvider = popupPositionProvider,
         properties = PopupProperties(
@@ -75,29 +74,29 @@ fun GuidanceTooltip(
         ) {
             Column(
                 modifier = Modifier
-                    .background(GuidanceBackground, shape)
-                    .border(1.dp, GuidanceBorder, shape)
+                    .background(currentUiBrand.customColors.guidanceBackground, shape)
+                    .border(1.dp, currentUiBrand.customColors.guidanceBorder, shape)
             ) {
                 // Header row
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(GuidanceHeaderBackground, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(currentUiBrand.customColors.guidanceHeaderBackground, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                         .padding(horizontal = 10.dp, vertical = 3.dp)
                 ) {
                     Text(
                         text = "Guidance",
-                        color = GuidanceHeadingText,
+                        color = currentUiBrand.customColors.guidanceHeadingText,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp,
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
-                        if (showCopied) Icons.Default.Check else Icons.Default.ContentCopy,
+                        imageVector = if (showCopied) currentUiBrand.vectorImages.copyConfirmed else currentUiBrand.vectorImages.copy,
                         contentDescription = if (showCopied) "Copied" else "Copy guidance",
-                        tint = GuidanceCopyIcon,
+                        tint = currentUiBrand.customColors.guidanceCopyIcon,
                         modifier = Modifier
                             .size(12.dp)
                             .clickable {
@@ -111,7 +110,7 @@ fun GuidanceTooltip(
                     )
                 }
 
-                HorizontalDivider(color = GuidanceBorder, thickness = 0.5.dp)
+                HorizontalDivider(color = currentUiBrand.customColors.guidanceBorder, thickness = 0.5.dp)
 
                 // Scrollable content
                 SelectionContainer {
@@ -124,7 +123,7 @@ fun GuidanceTooltip(
                         guidanceLines.forEach { line ->
                             Text(
                                 text = line,
-                                color = GuidanceBodyText,
+                                color = currentUiBrand.customColors.guidanceBodyText,
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
                             )

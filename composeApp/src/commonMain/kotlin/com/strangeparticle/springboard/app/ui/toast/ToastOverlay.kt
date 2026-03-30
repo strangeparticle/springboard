@@ -7,12 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,8 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.selection.SelectionContainer
 import com.strangeparticle.springboard.app.platform.copyToClipboard
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.*
-import com.strangeparticle.springboard.app.ui.theme.color.*
+import com.strangeparticle.springboard.app.ui.brand.*
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -76,20 +71,28 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
     var showCopied by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    val currentUiBrand = LocalUiBrand.current
     val (background, borderColor, textColor, icon, severityLabel) = when (toast.severity) {
         ToastSeverity.ERROR -> ToastStyle(
             MaterialTheme.colorScheme.errorContainer,
             MaterialTheme.colorScheme.error,
             MaterialTheme.colorScheme.onErrorContainer,
-            Icons.Outlined.Warning, "Error"
+            currentUiBrand.vectorImages.severityError,
+            "Error"
         )
         ToastSeverity.WARNING -> ToastStyle(
-            ToastWarningBackground, ToastWarningBorder, ToastWarningText,
-            Icons.Outlined.Info, "Warning"
+            currentUiBrand.customColors.toastWarningBackground,
+            currentUiBrand.customColors.toastWarningBorder,
+            currentUiBrand.customColors.toastWarningText,
+            currentUiBrand.vectorImages.severityWarning,
+            "Warning"
         )
         ToastSeverity.INFO -> ToastStyle(
-            ToastInfoBackground, ToastInfoBorder, ToastInfoText,
-            Icons.Outlined.Info, "Info"
+            currentUiBrand.customColors.toastInfoBackground,
+            currentUiBrand.customColors.toastInfoBorder,
+            currentUiBrand.customColors.toastInfoText,
+            currentUiBrand.vectorImages.severityInfo,
+            "Info"
         )
     }
 
@@ -112,7 +115,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    icon,
+                    imageVector = icon,
                     contentDescription = null,
                     tint = textColor,
                     modifier = Modifier.size(18.dp)
@@ -137,7 +140,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                     modifier = Modifier.size(20.dp)
                 ) {
                     Icon(
-                        if (showCopied) Icons.Default.Check else Icons.Default.ContentCopy,
+                        imageVector = if (showCopied) currentUiBrand.vectorImages.copyConfirmed else currentUiBrand.vectorImages.copy,
                         contentDescription = if (showCopied) "Copied" else "Copy",
                         tint = textColor,
                         modifier = Modifier.size(14.dp)
@@ -146,7 +149,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
                     Icon(
-                        Icons.Default.Close,
+                        imageVector = currentUiBrand.vectorImages.dismiss,
                         contentDescription = "Dismiss",
                         tint = textColor,
                         modifier = Modifier.size(16.dp)

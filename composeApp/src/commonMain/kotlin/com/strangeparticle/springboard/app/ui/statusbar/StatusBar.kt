@@ -2,9 +2,6 @@ package com.strangeparticle.springboard.app.ui.statusbar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -18,7 +15,8 @@ import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 
 @Composable
 fun StatusBar(
@@ -28,6 +26,7 @@ fun StatusBar(
     onOpenSettings: () -> Unit = {},
 ) {
     val currentSpringboard = springboard ?: return
+    val currentUiBrand = LocalUiBrand.current
 
     Row(
         modifier = Modifier
@@ -42,7 +41,7 @@ fun StatusBar(
             modifier = Modifier.size(24.dp)
         ) {
             Icon(
-                Icons.Default.Refresh,
+                imageVector = currentUiBrand.vectorImages.reload,
                 contentDescription = "Reload",
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -60,7 +59,7 @@ fun StatusBar(
             modifier = Modifier.size(24.dp)
         ) {
             Icon(
-                Icons.Default.Settings,
+                imageVector = currentUiBrand.vectorImages.settings,
                 contentDescription = "Settings",
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant

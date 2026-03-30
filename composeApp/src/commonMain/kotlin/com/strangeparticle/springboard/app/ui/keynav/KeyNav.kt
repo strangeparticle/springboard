@@ -15,9 +15,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.ui.theme.CommonUiConstants
-import com.strangeparticle.springboard.app.ui.theme.color.KeyNavFocusIndicator
-import com.strangeparticle.springboard.app.ui.theme.color.KeyNavFocusIndicatorUnfocused
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 @Composable
@@ -98,6 +97,8 @@ private fun MinimalDropdown(
         }
     }
 
+    val currentUiBrand = LocalUiBrand.current
+
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
@@ -111,7 +112,10 @@ private fun MinimalDropdown(
                 .background(MaterialTheme.colorScheme.surface, RectangleShape)
                 .border(
                     width = if (isFocused) 3.dp else 1.dp,
-                    color = if (isFocused) KeyNavFocusIndicator else KeyNavFocusIndicatorUnfocused,
+                    color = if (isFocused)
+                        currentUiBrand.customColors.keyNavFocusIndicator
+                    else
+                        currentUiBrand.customColors.keyNavFocusIndicatorUnfocused,
                     shape = RectangleShape
                 )
                 .focusRequester(focusRequester)

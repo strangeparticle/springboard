@@ -5,7 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
-import com.strangeparticle.springboard.app.platform.readFileContents
+import com.strangeparticle.springboard.app.platform.PlatformFileContentService
+import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenSpringboardPrompt
@@ -23,6 +24,7 @@ fun MainScreen(
     firstDropdownFocusRequester: FocusRequester,
     isShiftHeld: Boolean,
     onOpenSettings: () -> Unit,
+    fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
 ) {
     var lastLoadedPath by remember { mutableStateOf<String?>(null) }
     var isReloading by remember { mutableStateOf(false) }
@@ -45,7 +47,7 @@ fun MainScreen(
         if (!viewModel.isConfigLoaded) {
             OpenSpringboardPrompt(
                 onFileSelected = { path ->
-                    val contents = readFileContents(path)
+                    val contents = fileContentService.readFileContents(path)
                     if (contents != null) {
                         lastLoadedPath = path
                         viewModel.loadConfig(contents, path)
@@ -78,7 +80,7 @@ fun MainScreen(
                         isReloading = true
                         val startTime = currentTimeMillis()
                         try {
-                            val contents = readFileContents(path)
+                            val contents = fileContentService.readFileContents(path)
                             if (contents != null) {
                                 viewModel.loadConfig(contents, path)
                             } else {

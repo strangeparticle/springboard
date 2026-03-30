@@ -8,7 +8,7 @@ import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
-import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemory
+import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemoryFake
 import kotlin.test.*
 
 class SettingsManagerTest {
@@ -19,7 +19,7 @@ class SettingsManagerTest {
         envVars: Map<String, String> = emptyMap(),
         cliArgs: List<String> = emptyList(),
     ): SettingsManager {
-        val persistence = SettingsPersistenceManagerInMemory()
+        val persistence = SettingsPersistenceManagerInMemoryFake()
         if (persistedDto != null) {
             persistence.saveDto(persistedDto)
         }
@@ -181,7 +181,7 @@ class SettingsManagerTest {
 
     @Test
     fun `set user setting persists`() {
-        val persistence = SettingsPersistenceManagerInMemory()
+        val persistence = SettingsPersistenceManagerInMemoryFake()
         val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
         manager.loadSettingsAtStartup()
 

@@ -5,6 +5,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.*
+import com.strangeparticle.springboard.app.platform.PlatformFileContentService
+import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
@@ -22,7 +24,8 @@ fun SpringboardApp(
     onOpenSettings: () -> Unit = { showSettings.value = true },
     onOpenActiveSettingsFromSettings: () -> Unit = { showActiveSettings.value = true },
     onCloseActiveSettings: () -> Unit = { showActiveSettings.value = false },
-    onRequestFocusFirstDropdown: (() -> Unit)? = null
+    onRequestFocusFirstDropdown: (() -> Unit)? = null,
+    fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
 
@@ -66,6 +69,7 @@ fun SpringboardApp(
                     firstDropdownFocusRequester = firstDropdownFocusRequester,
                     isShiftHeld = isShiftHeld,
                     onOpenSettings = onOpenSettings,
+                    fileContentService = fileContentService,
                 )
             }
 

@@ -6,7 +6,7 @@ import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
 /**
  * An in-memory persistence manager for tests.
  */
-class SettingsPersistenceManagerInMemory : SettingsPersistenceManager {
+class SettingsPersistenceManagerInMemoryFake : SettingsPersistenceManager {
     private var stored: UserSettingsDto? = null
 
     override fun loadDto(): UserSettingsDto? = stored

@@ -28,4 +28,30 @@ object TestFixtureJson {
       ]
     }
     """.trimIndent()
+
+    val ALTERNATIVE_URL_ONLY = """
+    {
+      "name": "Alternative Springboard",
+      "environments": [{ "id": "staging", "name": "Staging" }],
+      "apps": [{ "id": "web", "name": "Web App" }],
+      "resources": [{ "id": "dashboard", "name": "Dashboard" }],
+      "activators": [
+        { "type": "url", "appId": "web", "resourceId": "dashboard", "environmentId": "staging", "url": "https://alt.example.com" }
+      ]
+    }
+    """.trimIndent()
+
+    val MALFORMED_JSON = "{ this is not valid json"
+
+    val INVALID_ACTIVATOR_REFERENCE = """
+    {
+      "name": "Invalid Reference",
+      "environments": [{ "id": "dev", "name": "Dev" }],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "url", "appId": "nonexistent", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com" }
+      ]
+    }
+    """.trimIndent()
 }

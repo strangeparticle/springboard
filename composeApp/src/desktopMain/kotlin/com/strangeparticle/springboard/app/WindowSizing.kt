@@ -17,7 +17,7 @@ private const val EnvironmentTitleHeightDp = 40
 private const val WindowVerticalBufferDp = 40
 
 private const val ResourceLabelWidthDp = 200
-private const val AppColumnWidthDp = 60
+private const val AppColumnWidthDp = 40
 private const val GridHorizontalPaddingDp = 72
 
 private const val NavbarDropdownCount = 3

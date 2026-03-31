@@ -34,13 +34,15 @@ breakpoints and hot-swap for small code changes.
 ./gradlew :composeApp:run
 ```
 
-### Run with a config pre-loaded
+### Run with a pre-designated springboard
 
-Pass a path to a springboard JSON file as a launch argument to skip the Open prompt and boot straight into the grid:
+Pass the startup springboard setting as a named CLI parameter to skip the Open prompt and boot straight into the grid:
 
 ```shell
-./gradlew :composeApp:run --args="springboard-example.json"
+./gradlew :composeApp:run --args="--startup-springboard springboard-example.json"
 ```
+
+Positional CLI paths are ignored by startup loading. Use the named `--startup-springboard` parameter.
 
 The sample config at `springboard-example.json` is intended as the public desktop example. The test
 fixture at `composeApp/src/commonTest/resources/springboard-test-fixture.json` is also suitable for

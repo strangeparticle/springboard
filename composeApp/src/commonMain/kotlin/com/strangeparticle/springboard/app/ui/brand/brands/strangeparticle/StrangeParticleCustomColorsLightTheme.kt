@@ -4,9 +4,9 @@ import androidx.compose.ui.graphics.Color
 import com.strangeparticle.springboard.app.ui.brand.infrastructure.CustomColors
 
 /**
- * Default custom color values for the StrangeParticle brand.
+ * Default custom color values for the StrangeParticle light theme.
  */
-val StrangeParticleCustomColors = CustomColors(
+val StrangeParticleCustomColorsLightTheme = CustomColors(
     // Navbar
     navbarBackground = Color(0xFF1E1E2E),
     navbarText = Color(0xFFCDD6F4),

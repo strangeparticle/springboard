@@ -9,8 +9,8 @@ import com.strangeparticle.springboard.app.ui.brand.infrastructure.UiBrand
  */
 @Composable
 fun StrangeParticleBrand(): UiBrand = UiBrand(
-    colorScheme = strangeParticleColorScheme(),
-    customColors = StrangeParticleCustomColors,
+    colorScheme = strangeParticleLightColorScheme(),
+    customColors = StrangeParticleCustomColorsLightTheme,
     typography = StrangeParticleTypography(),
     shapes = Shapes(),  // we don't currently use any custom shapes
     vectorImages = StrangeParticleImageVectors,

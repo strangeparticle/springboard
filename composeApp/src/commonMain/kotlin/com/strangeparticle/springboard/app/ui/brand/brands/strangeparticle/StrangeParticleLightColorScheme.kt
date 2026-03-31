@@ -4,7 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-fun strangeParticleColorScheme(
+fun strangeParticleLightColorScheme(
     primary: Color = Color(0xFF1976D2),
     onPrimary: Color = Color.White,
     primaryContainer: Color = Color(0xFF89B4FA),

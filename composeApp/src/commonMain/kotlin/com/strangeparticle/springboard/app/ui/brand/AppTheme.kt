@@ -1,9 +1,12 @@
 package com.strangeparticle.springboard.app.ui.brand
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.ui.Modifier
 import com.strangeparticle.springboard.app.ui.brand.brands.strangeparticle.StrangeParticleBrand
 import com.strangeparticle.springboard.app.ui.brand.infrastructure.UiBrand
 
@@ -21,7 +24,13 @@ fun AppTheme(content: @Composable () -> Unit) {
             colorScheme = activeUiBrand.colorScheme,
             typography = activeUiBrand.typography,
             shapes = activeUiBrand.shapes,
-            content = content,
-        )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                content()
+            }
+        }
     }
 }

@@ -8,15 +8,15 @@ import androidx.lifecycle.ViewModel
 import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.loading.SpringboardLoader
-import com.strangeparticle.springboard.app.platform.executeCommand
-import com.strangeparticle.springboard.app.platform.openUrl
-import com.strangeparticle.springboard.app.platform.openNewBrowserWindowIfAppropriate
+import com.strangeparticle.springboard.app.platform.PlatformActivationService
+import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel(
     private val settingsManager: SettingsManager,
+    private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
 ) : ViewModel() {
 
     var springboard by mutableStateOf<Springboard?>(null)
@@ -255,12 +255,12 @@ class SpringboardViewModel(
     private fun executeActivator(activator: Activator) {
         try {
             when (activator) {
-                is UrlActivator -> openUrl(activator.url)
+                is UrlActivator -> platformActivationService.openUrl(activator.url)
                 is UrlTemplateActivator -> {
                     ToastBroadcaster.info("URL Template activators will be supported in Phase 2.")
                 }
                 is CommandActivator -> {
-                    executeCommand(activator.commandTemplate)
+                    platformActivationService.executeCommand(activator.commandTemplate)
                 }
             }
         } catch (e: Exception) {
@@ -277,7 +277,7 @@ class SpringboardViewModel(
                 settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE)
             }
             if (shouldOpenNewWindow) {
-                openNewBrowserWindowIfAppropriate()
+                platformActivationService.openNewBrowserWindowIfAppropriate()
             }
         }
         activators.forEach(::executeActivator)

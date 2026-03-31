@@ -13,8 +13,10 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -38,7 +40,8 @@ fun KeyNav(
             enabledStates = viewModel.appEnabledStates,
             onSelect = { viewModel.selectApp(it) },
             focusRequester = firstDropdownFocusRequester,
-            onTab = { resourceFocusRequester.requestFocus() }
+            onTab = { resourceFocusRequester.requestFocus() },
+            testTag = TestTags.APP_DROPDOWN,
         )
 
         // Dropdown 2: Resource
@@ -48,7 +51,8 @@ fun KeyNav(
             enabledStates = viewModel.resourceEnabledStates,
             onSelect = { viewModel.selectResource(it) },
             focusRequester = resourceFocusRequester,
-            onTab = { environmentFocusRequester.requestFocus() }
+            onTab = { environmentFocusRequester.requestFocus() },
+            testTag = TestTags.RESOURCE_DROPDOWN,
         )
 
         // Dropdown 3: Environment
@@ -58,6 +62,7 @@ fun KeyNav(
             enabledStates = viewModel.environments.associate { it.id to true },
             onSelect = { viewModel.selectEnvironment(it) },
             focusRequester = environmentFocusRequester,
+            testTag = TestTags.ENVIRONMENT_DROPDOWN,
             onTab = {
                 if (viewModel.isActivateEnabled) {
                     viewModel.activateCurrentSelection()
@@ -82,7 +87,8 @@ private fun MinimalDropdown(
     onSelect: (String) -> Unit,
     focusRequester: FocusRequester,
     onTab: () -> Unit,
-    onEnter: (() -> Unit)? = null
+    testTag: String? = null,
+    onEnter: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
@@ -121,6 +127,7 @@ private fun MinimalDropdown(
                 .focusRequester(focusRequester)
                 .onFocusChanged { isFocused = it.isFocused }
                 .focusable()
+                .let { if (testTag != null) it.testTag(testTag) else it }
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         when (event.key) {

@@ -1,43 +1,43 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import kotlin.test.Ignore
 import kotlin.test.Test
 
 class KeyNavTests {
 
-    @Ignore @Test fun `app dropdown gets focus on startup`() =
+    @Test fun `app dropdown gets focus on startup`() =
         KeyNavTestScenarios.appDropdownGetsFocusOnStartup()
 
-    @Ignore @Test fun `app dropdown gets focus after switching away and back`() =
-        KeyNavTestScenarios.appDropdownGetsFocusAfterSwitchingAwayAndBack()
-
-    @Ignore @Test fun `app dropdown gets focus after toast auto-closes`() =
+    @Test fun `app dropdown gets focus after toast auto-closes`() =
         KeyNavTestScenarios.appDropdownGetsFocusAfterToastAutoCloses()
 
-    @Ignore @Test fun `app dropdown gets focus after toast is manually closed`() =
+    @Test fun `app dropdown gets focus after toast is manually closed`() =
         KeyNavTestScenarios.appDropdownGetsFocusAfterToastIsManuallyClosed()
 
-    @Ignore @Test fun `dropdowns reset to defaults after keynav activation`() =
+    @Test fun `dropdowns reset to defaults after keynav activation`() =
         KeyNavTestScenarios.dropdownsResetToDefaultsAfterKeyNavActivation()
 
-    @Ignore @Test fun `environment defaults to all - environment defaults to all when present`() =
+    @Test fun `environment defaults to all - environment defaults to all when present`() =
         KeyNavTestScenarios.environmentDefaultsToAllWhenPresent()
 
-    @Ignore @Test fun `environment defaults to all - environment defaults to first when all is not present`() =
+    @Test fun `environment defaults to all - environment defaults to first when all is not present`() =
         KeyNavTestScenarios.environmentDefaultsToFirstWhenAllIsNotPresent()
 
-    @Ignore @Test fun `unavailable resources are disabled for selected app`() =
+    @Test fun `unavailable resources are disabled for selected app`() =
         KeyNavTestScenarios.unavailableResourcesAreDisabledForSelectedApp()
 
-    @Ignore @Test fun `selected resource resets when unavailable after app change`() =
+    @Test fun `selected resource resets when unavailable after app change`() =
         KeyNavTestScenarios.selectedResourceResetsWhenUnavailableAfterAppChange()
 
-    @Ignore @Test fun `selected resource is retained when available after app change`() =
+    @Test fun `selected resource is retained when available after app change`() =
         KeyNavTestScenarios.selectedResourceIsRetainedWhenAvailableAfterAppChange()
 
-    @Ignore @Test fun `keynav activation works for pre-prod environment`() =
+    @Test fun `keynav activation works for pre-prod environment`() =
         KeyNavTestScenarios.keyNavActivationWorksForPreProdEnvironment()
 
-    @Ignore @Test fun `keynav activation works for prod environment`() =
+    @Test fun `keynav activation works for prod environment`() =
         KeyNavTestScenarios.keyNavActivationWorksForProdEnvironment()
 }
+
+// Window refocus test (AppDropdownFocusAfterWindowRefocus) is manual-only:
+// Window focus management lives in platform-specific main.kt (desktop and WASM),
+// outside the compose tree that CMP UI tests can control.

@@ -147,7 +147,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
-                IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp).testTag(TestTags.TOAST_DISMISS_BUTTON)) {
                     Icon(
                         imageVector = currentUiBrand.vectorImages.dismiss,
                         contentDescription = "Dismiss",

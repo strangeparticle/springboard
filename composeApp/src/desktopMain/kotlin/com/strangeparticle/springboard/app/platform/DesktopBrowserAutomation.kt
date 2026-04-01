@@ -6,33 +6,41 @@ package com.strangeparticle.springboard.app.platform
 internal var surfaceAppleScriptErrors = false
 
 actual fun openNewBrowserWindowIfAppropriate(): Boolean {
-    val browser = detectDefaultBrowser()
-    val openNewWindowScriptPath = when (browser) {
+    return openNewBrowserWindow(
+        PlatformBrowserDetectionServiceDefaultImpl(),
+        PlatformAppleScriptRunnerServiceDefaultImpl(),
+        surfaceAppleScriptErrors,
+    )
+}
+
+internal fun openNewBrowserWindow(
+    browserDetectionService: PlatformBrowserDetectionService,
+    appleScriptRunnerService: PlatformAppleScriptRunnerService,
+    surfaceErrors: Boolean,
+): Boolean {
+    val browser = browserDetectionService.detectDefaultBrowser()
+    val scriptPath = when (browser) {
         DesktopBrowser.Chrome -> "applescript/chrome/open_new_window.applescript"
         DesktopBrowser.Safari -> "applescript/safari/open_new_window.applescript"
         DesktopBrowser.Unsupported -> return false
     }
 
     return try {
-        val result = runAppleScriptFile(openNewWindowScriptPath)
+        val result = appleScriptRunnerService.runAppleScriptFile(scriptPath)
         if (result.exitCode != 0) {
-            throwForToastIfAppropriate("AppleScript failed: ${result.errorSummary()}")
+            if (surfaceErrors) {
+                throw IllegalStateException("AppleScript failed: ${result.errorSummary()}")
+            }
             false
         } else {
             true
         }
+    } catch (e: IllegalStateException) {
+        throw e
     } catch (e: Exception) {
-        throwForToastIfAppropriate("AppleScript execution failed: ${e.message}", e)
+        if (surfaceErrors) {
+            throw IllegalStateException("AppleScript execution failed: ${e.message}", e)
+        }
         false
-    }
-}
-
-/**
- * When SURFACE_APPLESCRIPT_ERRORS is true, throws an exception, which gets caught higher up
- * and turns into an error toast, otherwise does nothing
- */
-private fun throwForToastIfAppropriate(message: String, cause: Exception? = null) {
-    if (surfaceAppleScriptErrors) {
-        throw IllegalStateException(message, cause)
     }
 }

@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.platform
 
-internal data class ScriptRunResult(
+data class ScriptRunResult(
     val exitCode: Int,
     val stdout: String,
     val stderr: String,

@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.platform
 
-internal enum class DesktopBrowser {
+enum class DesktopBrowser {
     Chrome,
     Safari,
     Unsupported,

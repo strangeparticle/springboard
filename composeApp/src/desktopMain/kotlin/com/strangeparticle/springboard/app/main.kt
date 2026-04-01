@@ -12,6 +12,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDesktopImpl
 import com.strangeparticle.springboard.app.platform.expandTildePath
 import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
 import com.strangeparticle.springboard.app.platform.openFileDialog
@@ -50,7 +51,12 @@ fun main(args: Array<String>) {
     )
 
     // Propagate the resolved surfaceAppleScriptErrors value to the browser automation module
-    surfaceAppleScriptErrors = settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
+    val resolvedSurfaceAppleScriptErrors = settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
+    surfaceAppleScriptErrors = resolvedSurfaceAppleScriptErrors
+
+    val activationService = PlatformActivationServiceDesktopImpl(
+        surfaceAppleScriptErrors = resolvedSurfaceAppleScriptErrors,
+    )
 
     // Determine the startup config path from the explicit startup-springboard setting.
     val startupSpringboardPath = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
@@ -67,7 +73,7 @@ fun main(args: Array<String>) {
             position = WindowPosition(Alignment.Center)
         )
 
-        val viewModel = remember { SpringboardViewModel(settingsManager) }
+        val viewModel = remember { SpringboardViewModel(settingsManager, activationService) }
         val settingsViewModel = remember {
             SettingsViewModel(
                 settingsManager = settingsManager,

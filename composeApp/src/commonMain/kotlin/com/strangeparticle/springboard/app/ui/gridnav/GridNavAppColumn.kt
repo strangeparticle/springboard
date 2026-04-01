@@ -133,10 +133,6 @@ fun GridNavAppColumn(
                         onGuidanceCoordinateChange(coordinate)
                     }
                 } else {
-                    if (hoveredAppId == app.id && hoveredResourceId == resource.id) {
-                        onCellHover(null, null)
-                        viewModel.hoveredActivatorPreview = null
-                    }
                     if (isTooltipHovered && guidanceData != null) {
                         onGuidanceDismissJobChange(null)
                         guidanceDismissJob?.cancel()

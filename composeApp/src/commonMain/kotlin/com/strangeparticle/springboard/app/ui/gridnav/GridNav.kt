@@ -8,6 +8,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -85,7 +87,22 @@ fun GridNav(
             .padding(16.dp)
             .focusProperties { canFocus = false }
     ) {
-        Row(modifier = Modifier.verticalScroll(verticalScroll)) {
+        Row(modifier = Modifier
+            .verticalScroll(verticalScroll)
+            .padding(end = gridHeaderHeight)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Exit) {
+                            hoveredAppId = null
+                            hoveredResourceId = null
+                            viewModel.hoveredActivatorPreview = null
+                        }
+                    }
+                }
+            }
+        ) {
             GridNavResourceLabelColumn(
                 environmentName = environmentName,
                 resources = currentSpringboard.resources,

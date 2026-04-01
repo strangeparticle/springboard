@@ -21,9 +21,19 @@ fun SpringboardApp(
     firstDropdownFocusRequester: FocusRequester,
     showSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     showActiveSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
+    activeSettingsOpenedFromSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     onOpenSettings: () -> Unit = { showSettings.value = true },
-    onOpenActiveSettingsFromSettings: () -> Unit = { showActiveSettings.value = true },
-    onCloseActiveSettings: () -> Unit = { showActiveSettings.value = false },
+    onOpenActiveSettingsFromSettings: () -> Unit = {
+        activeSettingsOpenedFromSettings.value = true
+        showActiveSettings.value = true
+    },
+    onCloseActiveSettings: () -> Unit = {
+        showActiveSettings.value = false
+        if (!activeSettingsOpenedFromSettings.value) {
+            showSettings.value = false
+        }
+        activeSettingsOpenedFromSettings.value = false
+    },
     onRequestFocusFirstDropdown: (() -> Unit)? = null,
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
 ) {

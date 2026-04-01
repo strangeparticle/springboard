@@ -17,9 +17,11 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.*
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
@@ -29,7 +31,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onShowActiveSettings: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN)) {
         // Header bar
         SettingsHeaderBar(title = "Settings", onBack = onBack)
 
@@ -67,7 +69,10 @@ private fun SettingsHeaderBar(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier.testTag(TestTags.SETTINGS_BACK_BUTTON),
+        ) {
             Icon(
                 imageVector = currentUiBrand.vectorImages.backNavigation,
                 contentDescription = "Back",
@@ -233,6 +238,7 @@ private fun OverrideMessage(
             fontStyle = FontStyle.Italic,
             color = currentUiBrand.customColors.settingsLinkBase,
         ),
+        modifier = Modifier.testTag(TestTags.SETTINGS_OVERRIDE_WARNING),
     )
 }
 
@@ -277,7 +283,7 @@ private fun FilePathActions(
             },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp),
+            modifier = Modifier.height(32.dp).testTag(TestTags.SETTINGS_USE_CURRENT_FILE_BUTTON),
         ) {
             Text("Use Current File", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary)
         }
@@ -287,7 +293,7 @@ private fun FilePathActions(
             OutlinedButton(
                 onClick = { viewModel.clearStartupSpringboard() },
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.height(32.dp),
+                modifier = Modifier.height(32.dp).testTag(TestTags.SETTINGS_CLEAR_BUTTON),
             ) {
                 Text("Clear", fontSize = 12.sp)
             }

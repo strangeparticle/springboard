@@ -12,8 +12,18 @@ object TestTags {
     const val TOAST_SEVERITY_LABEL = "toastSeverityLabel"
     const val TOAST_DISMISS_BUTTON = "toastDismissButton"
     const val GRID_ENVIRONMENT_TITLE = "gridEnvironmentTitle"
+    const val SETTINGS_GEAR_ICON = "settingsGearIcon"
+    const val SETTINGS_SCREEN = "settingsScreen"
+    const val SETTINGS_BACK_BUTTON = "settingsBackButton"
+    const val ACTIVE_SETTINGS_SCREEN = "activeSettingsScreen"
+    const val ACTIVE_SETTINGS_BACK_BUTTON = "activeSettingsBackButton"
+    const val SETTINGS_USE_CURRENT_FILE_BUTTON = "settingsUseCurrentFileButton"
+    const val SETTINGS_CLEAR_BUTTON = "settingsClearButton"
+    const val SETTINGS_OVERRIDE_WARNING = "settingsOverrideWarning"
 
     fun gridCell(appId: String, resourceId: String) = "gridCell_${appId}_${resourceId}"
     fun gridCellActivatorIndicator(appId: String, resourceId: String) = "gridCellActivator_${appId}_${resourceId}"
     fun gridRowLabel(resourceId: String) = "gridRowLabel_${resourceId}"
+    fun activeSettingsSourceLabel(displayName: String) = "activeSettingsSource_${displayName}"
+    fun activeSettingsValue(displayName: String) = "activeSettingsValue_${displayName}"
 }

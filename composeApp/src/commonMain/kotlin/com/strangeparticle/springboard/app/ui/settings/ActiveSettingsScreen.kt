@@ -12,10 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.settings.SettingsSource
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.ActiveSettingsEntry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
@@ -30,7 +32,7 @@ fun ActiveSettingsScreen(
     onBack: () -> Unit,
 ) {
     val currentUiBrand = LocalUiBrand.current
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().testTag(TestTags.ACTIVE_SETTINGS_SCREEN)) {
         // Header bar
         Row(
             modifier = Modifier
@@ -40,7 +42,10 @@ fun ActiveSettingsScreen(
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.testTag(TestTags.ACTIVE_SETTINGS_BACK_BUTTON),
+            ) {
                 Icon(
                     imageVector = currentUiBrand.vectorImages.backNavigation,
                     contentDescription = "Back",
@@ -134,6 +139,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                         fontSize = 13.sp,
                         color = currentUiBrand.customColors.settingsTooltipValueText,
                         modifier = Modifier
+                            .testTag(TestTags.activeSettingsValue(entry.displayName))
                             .wrapContentWidth()
                             .drawBehind {
                                 val y = size.height - 1.5.dp.toPx()
@@ -159,14 +165,14 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                 text = entry.resolvedValue,
                 fontSize = 13.sp,
                 color = currentUiBrand.customColors.settingsValueText,
-                modifier = Modifier.width(80.dp),
+                modifier = Modifier.width(80.dp).testTag(TestTags.activeSettingsValue(entry.displayName)),
             )
         }
         Text(
             text = formatSourceLabel(entry.source),
             fontSize = 13.sp,
             color = sourceColor(entry.source),
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier.width(72.dp).testTag(TestTags.activeSettingsSourceLabel(entry.displayName)),
         )
     }
 }

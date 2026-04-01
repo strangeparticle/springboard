@@ -13,12 +13,14 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Resource
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 
 @Composable
@@ -42,7 +44,7 @@ fun GridNavResourceLabelColumn(
                 text = environmentName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp).testTag(TestTags.GRID_ENVIRONMENT_TITLE)
             )
         }
 
@@ -61,6 +63,7 @@ fun GridNavResourceLabelColumn(
                     .height(CommonUiConstants.GridCellSize)
                     .background(rowBackground)
                     .focusProperties { canFocus = false }
+                    .testTag(TestTags.gridRowLabel(resource.id))
                     .clickable { onResourceClick(resource.id) }
                     .pointerInput(resource.id) {
                         awaitPointerEventScope {

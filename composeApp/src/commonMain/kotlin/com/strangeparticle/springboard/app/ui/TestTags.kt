@@ -11,4 +11,9 @@ object TestTags {
     const val TOAST_MESSAGE = "toastMessage"
     const val TOAST_SEVERITY_LABEL = "toastSeverityLabel"
     const val TOAST_DISMISS_BUTTON = "toastDismissButton"
+    const val GRID_ENVIRONMENT_TITLE = "gridEnvironmentTitle"
+
+    fun gridCell(appId: String, resourceId: String) = "gridCell_${appId}_${resourceId}"
+    fun gridCellActivatorIndicator(appId: String, resourceId: String) = "gridCellActivator_${appId}_${resourceId}"
+    fun gridRowLabel(resourceId: String) = "gridRowLabel_${resourceId}"
 }

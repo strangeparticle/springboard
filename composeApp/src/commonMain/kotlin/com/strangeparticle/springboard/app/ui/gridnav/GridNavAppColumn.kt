@@ -19,12 +19,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.strangeparticle.springboard.app.domain.model.*
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -167,6 +169,7 @@ fun GridNavAppColumn(
                     .fillMaxWidth()
                     .height(CommonUiConstants.GridCellSize)
                     .background(cellBackground)
+                    .testTag(TestTags.gridCell(app.id, resource.id))
                     .hoverable(cellInteractionSource)
                     .then(
                         if (hasActivator) {
@@ -184,10 +187,12 @@ fun GridNavAppColumn(
                 contentAlignment = Alignment.Center
             ) {
                 if (hasActivator) {
+                    val indicatorTag = TestTags.gridCellActivatorIndicator(app.id, resource.id)
                     if (isCellHovered) {
                         Box(
                             modifier = Modifier
                                 .size(18.dp)
+                                .testTag(indicatorTag)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primaryContainer)
                         )
@@ -195,6 +200,7 @@ fun GridNavAppColumn(
                         Box(
                             modifier = Modifier
                                 .size(18.dp)
+                                .testTag(indicatorTag)
                                 .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                         )
                     }

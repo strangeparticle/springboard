@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.domain.model.*
+import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import kotlin.test.*
 
 class SpringboardFactoryTest {
@@ -339,6 +340,89 @@ class SpringboardFactoryTest {
         """.trimIndent()
         assertFailsWith<IllegalArgumentException> {
             SpringboardFactory.fromJson(badJson, "/test")
+        }
+    }
+
+    // --- Wildcard environment tests ---
+
+    @Test
+    fun `wildcard activator expands into all environments`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+
+        // No activator should retain the wildcard environment ID
+        assertTrue(sb.activators.none { it.environmentId == "*" })
+
+        // 1 wildcard expanded into 2 envs + 1 env-specific = 3 total
+        assertEquals(3, sb.activators.size)
+
+        // The wildcard (app1, res1) should exist for both dev and prod
+        val app1Res1 = sb.activators.filter { it.appId == "app1" && it.resourceId == "res1" }
+        assertEquals(2, app1Res1.size)
+        assertEquals(setOf("dev", "prod"), app1Res1.map { it.environmentId }.toSet())
+    }
+
+    @Test
+    fun `wildcard activator populates indexes for all environments`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+
+        val devCoord = Coordinate("dev", "app1", "res1")
+        val prodCoord = Coordinate("prod", "app1", "res1")
+        assertNotNull(sb.indexes.activatorByCoordinate[devCoord])
+        assertNotNull(sb.indexes.activatorByCoordinate[prodCoord])
+
+        // Both should have the same URL (expanded from the wildcard)
+        val devActivator = sb.indexes.activatorByCoordinate[devCoord] as UrlActivator
+        val prodActivator = sb.indexes.activatorByCoordinate[prodCoord] as UrlActivator
+        assertEquals("https://example.com/app1/dash", devActivator.url)
+        assertEquals("https://example.com/app1/dash", prodActivator.url)
+    }
+
+    @Test
+    fun `wildcard does not appear in environments list`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+        assertTrue(sb.environments.none { it.id == "*" })
+        assertEquals(2, sb.environments.size)
+    }
+
+    @Test
+    fun `wildcard activator env-app-resource index`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+
+        val devApp1 = sb.indexes.activatableResourcesByEnvApp["dev" to "app1"]
+        assertNotNull(devApp1)
+        assertTrue(devApp1.contains("res1"))
+
+        val prodApp1 = sb.indexes.activatableResourcesByEnvApp["prod" to "app1"]
+        assertNotNull(prodApp1)
+        assertTrue(prodApp1.contains("res1"))
+    }
+
+    @Test
+    fun `wildcard activator conflict throws`() {
+        assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_CONFLICT, "/test")
+        }
+    }
+
+    @Test
+    fun `wildcard guidance expands into all environments`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_GUIDANCE, "/test")
+
+        assertTrue(sb.guidanceData.none { it.environmentId == "*" })
+        assertEquals(2, sb.guidanceData.size)
+
+        val devGuidance = sb.indexes.guidanceByCoordinate[Coordinate("dev", "app1", "res1")]
+        val prodGuidance = sb.indexes.guidanceByCoordinate[Coordinate("prod", "app1", "res1")]
+        assertNotNull(devGuidance)
+        assertNotNull(prodGuidance)
+        assertEquals(listOf("Step one.", "Step two."), devGuidance.guidanceLines)
+        assertEquals(listOf("Step one.", "Step two."), prodGuidance.guidanceLines)
+    }
+
+    @Test
+    fun `wildcard guidance conflict throws`() {
+        assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_GUIDANCE_CONFLICT, "/test")
         }
     }
 

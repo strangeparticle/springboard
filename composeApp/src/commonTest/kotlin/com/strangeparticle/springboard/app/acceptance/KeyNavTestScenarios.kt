@@ -236,4 +236,44 @@ object KeyNavTestScenarios {
 
         assertTrue(components.activationService.openedUrls.contains("https://example.com/prod/app1/dash"))
     }
+
+    // --- Wildcard environment ---
+
+    fun wildcardActivatorAppIsEnabledForAllEnvironments() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // In dev env, app1 should be enabled (wildcard activator)
+        components.viewModel.selectEnvironment("dev")
+        waitForIdle()
+        assertEquals(true, components.viewModel.appEnabledStates["app1"])
+
+        // In prod env, app1 should still be enabled (wildcard activator)
+        components.viewModel.selectEnvironment("prod")
+        waitForIdle()
+        assertEquals(true, components.viewModel.appEnabledStates["app1"])
+    }
+
+    fun wildcardActivatorResourceIsEnabledAfterSelectingApp() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // Select dev env and app1 — res1 should be enabled (wildcard activator)
+        components.viewModel.selectEnvironment("dev")
+        components.viewModel.selectApp("app1")
+        waitForIdle()
+        assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
+
+        // Switch to prod — res1 should still be enabled
+        components.viewModel.selectEnvironment("prod")
+        components.viewModel.selectApp("app1")
+        waitForIdle()
+        assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
+    }
 }

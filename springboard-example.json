@@ -91,7 +91,7 @@
       "type": "url",
       "appId": "springboard",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "*",
       "url": "https://example.com/"
     },
     {
@@ -130,13 +130,6 @@
       "url": "https://example.com/"
     },
     {
-      "type": "url",
-      "appId": "springboard",
-      "resourceId": "github",
-      "environmentId": "staging",
-      "url": "https://example.com/"
-    },
-    {
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
@@ -172,13 +165,6 @@
       "url": "https://example.com/"
     },
     {
-      "type": "url",
-      "appId": "springboard",
-      "resourceId": "github",
-      "environmentId": "pre-prod",
-      "url": "https://example.com/"
-    },
-    {
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
@@ -211,13 +197,6 @@
       "appId": "springboard",
       "resourceId": "database",
       "environmentId": "pre-prod",
-      "url": "https://example.com/"
-    },
-    {
-      "type": "url",
-      "appId": "springboard",
-      "resourceId": "github",
-      "environmentId": "prod",
       "url": "https://example.com/"
     },
     {

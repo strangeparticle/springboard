@@ -56,13 +56,13 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `activators[].type` | yes | `"url"` or `"cmd"` |
 | `activators[].appId` | yes | Must match a declared `apps[].id` |
 | `activators[].resourceId` | yes | Must match a declared `resources[].id` |
-| `activators[].environmentId` | yes | Must match a declared `environments[].id` |
+| `activators[].environmentId` | yes | Must match a declared `environments[].id`, or `"*"` for all environments |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
 | `displayHints.width` | optional | Preferred window width in pixels |
 | `displayHints.height` | optional | Preferred window height in pixels |
 | `guidanceData` | optional | List of per-coordinate guidance entries (see below) |
-| `guidanceData[].environmentId` | yes | Must match a declared `environments[].id` |
+| `guidanceData[].environmentId` | yes | Must match a declared `environments[].id`, or `"*"` for all environments |
 | `guidanceData[].appId` | yes | Must match a declared `apps[].id` |
 | `guidanceData[].resourceId` | yes | Must match a declared `resources[].id` |
 | `guidanceData[].guidanceLines` | yes | Ordered list of plain-text strings shown in the guidance tooltip |
@@ -92,6 +92,21 @@ Each guidance entry is associated with a coordinate (environment + app + resourc
 - The tooltip is selectable and includes a copy icon for easy clipboard access.
 - Guidance data is entirely optional — files without the `guidanceData` field continue to work unchanged.
 - Guidance data is maintained by hand-editing the JSON file, just like activators.
+
+## Wildcard Environment
+
+Use `"environmentId": "*"` on an activator (or guidance entry) to make it apply to all declared environments. The `*` environment is not declared in the `environments` array — it is a built-in shorthand.
+
+```json
+"activators": [
+  { "type": "url", "appId": "my-service", "resourceId": "github", "environmentId": "*", "url": "https://github.com/..." }
+]
+```
+
+- A wildcard activator appears in the grid and is activatable in every environment.
+- The `*` environment does not appear in the environment dropdown.
+- A given (app, resource) pair cannot have both a `*` activator and an environment-specific activator — this is rejected at load time.
+- Guidance data supports `*` with the same rules.
 
 ## Rules
 

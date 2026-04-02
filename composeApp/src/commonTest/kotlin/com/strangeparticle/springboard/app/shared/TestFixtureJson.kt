@@ -87,6 +87,85 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
+    val WILDCARD_ACTIVATORS = """
+    {
+      "name": "Wildcard Springboard",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" },
+        { "id": "app2", "name": "App Two" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" },
+        { "id": "res2", "name": "Logs" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/app1/dash" },
+        { "type": "url", "appId": "app2", "resourceId": "res2", "environmentId": "prod", "url": "https://example.com/prod/app2/logs" }
+      ]
+    }
+    """.trimIndent()
+
+    val WILDCARD_GUIDANCE = """
+    {
+      "name": "Wildcard Guidance Springboard",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/app1/dash" }
+      ],
+      "guidanceData": [
+        { "environmentId": "*", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Step one.", "Step two."] }
+      ]
+    }
+    """.trimIndent()
+
+    val WILDCARD_CONFLICT = """
+    {
+      "name": "Wildcard Conflict",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/star" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/dev" }
+      ]
+    }
+    """.trimIndent()
+
+    val WILDCARD_GUIDANCE_CONFLICT = """
+    {
+      "name": "Wildcard Guidance Conflict",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/star" }
+      ],
+      "guidanceData": [
+        { "environmentId": "*", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Wildcard guidance."] },
+        { "environmentId": "dev", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Dev guidance."] }
+      ]
+    }
+    """.trimIndent()
+
     val MALFORMED_JSON = "{ this is not valid json"
 
     val INVALID_ACTIVATOR_REFERENCE = """

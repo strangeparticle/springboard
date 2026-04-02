@@ -30,4 +30,10 @@ class GridNavTests {
 
     @Test fun `keynav dropdowns reset to defaults after grid activation`() =
         GridNavTestScenarios.keyNavDropdownsResetToDefaultsAfterGridActivation()
+
+    @Test fun `wildcard cells show in all environments`() =
+        GridNavTestScenarios.wildcardCellsShowInAllEnvironments()
+
+    @Test fun `wildcard cell activation works across environments`() =
+        GridNavTestScenarios.wildcardCellActivationWorksAcrossEnvironments()
 }

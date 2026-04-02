@@ -223,4 +223,49 @@ object GridNavTestScenarios {
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
     }
+
+    // --- Wildcard environment ---
+
+    fun wildcardCellsShowInAllEnvironments() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // Default env is "dev" (first in list, no "all" declared)
+        assertEquals("dev", components.viewModel.selectedEnvironmentId)
+
+        // Wildcard (app1, res1) should show in dev
+        onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
+            .assertExists()
+
+        // Switch to prod — wildcard cell should still show
+        components.viewModel.selectEnvironment("prod")
+        waitForIdle()
+        onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
+            .assertExists()
+    }
+
+    fun wildcardCellActivationWorksAcrossEnvironments() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // Activate wildcard cell in dev
+        onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
+        waitForIdle()
+        assertEquals(1, components.activationService.openedUrls.size)
+        assertEquals("https://example.com/app1/dash", components.activationService.openedUrls.first())
+
+        // Switch to prod and activate same cell
+        components.viewModel.selectEnvironment("prod")
+        waitForIdle()
+        onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
+        waitForIdle()
+        assertEquals(2, components.activationService.openedUrls.size)
+        assertEquals("https://example.com/app1/dash", components.activationService.openedUrls[1])
+    }
 }

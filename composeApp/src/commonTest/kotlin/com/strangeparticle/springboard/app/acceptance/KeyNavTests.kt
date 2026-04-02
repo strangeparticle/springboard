@@ -36,6 +36,12 @@ class KeyNavTests {
 
     @Test fun `keynav activation works for prod environment`() =
         KeyNavTestScenarios.keyNavActivationWorksForProdEnvironment()
+
+    @Test fun `wildcard activator app is enabled for all environments`() =
+        KeyNavTestScenarios.wildcardActivatorAppIsEnabledForAllEnvironments()
+
+    @Test fun `wildcard activator resource is enabled after selecting app`() =
+        KeyNavTestScenarios.wildcardActivatorResourceIsEnabledAfterSelectingApp()
 }
 
 // Window refocus test (AppDropdownFocusAfterWindowRefocus) is manual-only:

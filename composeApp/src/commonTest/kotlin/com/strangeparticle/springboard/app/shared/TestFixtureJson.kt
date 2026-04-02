@@ -67,6 +67,40 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
+    val MULTI_ENV_WITH_GUIDANCE = """
+    {
+      "name": "Multi-Env With Guidance",
+      "environments": [
+        { "id": "all", "name": "All" },
+        { "id": "preprod", "name": "Preprod" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" },
+        { "id": "app2", "name": "App Two" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" },
+        { "id": "res2", "name": "Logs" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app1/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "all", "url": "https://example.com/all/app1/logs" },
+        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app2/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "preprod", "url": "https://example.com/preprod/app1/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://example.com/prod/app1/dash" }
+      ],
+      "guidanceData": [
+        {
+          "environmentId": "all",
+          "appId": "app1",
+          "resourceId": "res1",
+          "guidanceLines": ["Open the dashboard for this environment."]
+        }
+      ]
+    }
+    """.trimIndent()
+
     val MULTI_ENV_WITHOUT_ALL = """
     {
       "name": "Multi-Env Without All",

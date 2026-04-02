@@ -24,6 +24,7 @@ data class CustomColors(
     val guidanceBackground: Color,
     val guidanceHeaderBackground: Color,
     val guidanceBorder: Color,
+    val guidanceIndicator: Color,
     val guidanceHeadingText: Color,
     val guidanceBodyText: Color,
     val guidanceCopyIcon: Color,

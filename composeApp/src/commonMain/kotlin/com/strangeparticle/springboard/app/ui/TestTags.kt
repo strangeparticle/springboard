@@ -23,6 +23,7 @@ object TestTags {
 
     fun gridCell(appId: String, resourceId: String) = "gridCell_${appId}_${resourceId}"
     fun gridCellActivatorIndicator(appId: String, resourceId: String) = "gridCellActivator_${appId}_${resourceId}"
+    fun gridCellGuidanceIndicator(appId: String, resourceId: String) = "gridCellGuidance_${appId}_${resourceId}"
     fun gridRowLabel(resourceId: String) = "gridRowLabel_${resourceId}"
     fun activeSettingsSourceLabel(displayName: String) = "activeSettingsSource_${displayName}"
     fun activeSettingsValue(displayName: String) = "activeSettingsValue_${displayName}"

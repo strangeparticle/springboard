@@ -13,6 +13,15 @@ class GridNavTests {
     @Test fun `grid cells show and hide based on selected environment`() =
         GridNavTestScenarios.gridCellsShowAndHideBasedOnSelectedEnvironment()
 
+    @Test fun `guidance marker appears for cells with guidance`() =
+        GridNavTestScenarios.guidanceMarkerAppearsForCellsWithGuidance()
+
+    @Test fun `guidance marker absent for cells without guidance`() =
+        GridNavTestScenarios.guidanceMarkerAbsentForCellsWithoutGuidance()
+
+    @Test fun `guidance marker visibility follows environment selection`() =
+        GridNavTestScenarios.guidanceMarkerVisibilityFollowsEnvironmentSelection()
+
     @Test fun `cell click activation - cell click activates pre-prod resource`() =
         GridNavTestScenarios.cellClickActivatesPreProdResource()
 

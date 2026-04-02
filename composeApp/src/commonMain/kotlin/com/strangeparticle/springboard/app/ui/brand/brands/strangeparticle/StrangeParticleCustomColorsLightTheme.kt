@@ -25,6 +25,7 @@ val StrangeParticleCustomColorsLightTheme = CustomColors(
     guidanceBackground = Color(0xFFFFFCF4),
     guidanceHeaderBackground = Color(0xFFF5EFE0),
     guidanceBorder = Color(0xFFDCCFB0),
+    guidanceIndicator = Color(0xFFCCCCCC),
     guidanceHeadingText = Color(0xFF5F4B32),
     guidanceBodyText = Color(0xFF2E2A25),
     guidanceCopyIcon = Color(0xFF8A7D6B),

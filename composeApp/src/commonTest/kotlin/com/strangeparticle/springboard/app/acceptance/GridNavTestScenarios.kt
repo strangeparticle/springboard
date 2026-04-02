@@ -101,6 +101,44 @@ object GridNavTestScenarios {
         onNodeWithTag(TestTags.gridCellActivatorIndicator("app2", "res2"), useUnmergedTree = true).assertDoesNotExist()
     }
 
+    // --- Guidance marker visibility ---
+
+    fun guidanceMarkerAppearsForCellsWithGuidance() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridCellGuidanceIndicator("app1", "res1"), useUnmergedTree = true).assertExists()
+    }
+
+    fun guidanceMarkerAbsentForCellsWithoutGuidance() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridCellGuidanceIndicator("app1", "res2"), useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag(TestTags.gridCellGuidanceIndicator("app2", "res1"), useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    fun guidanceMarkerVisibilityFollowsEnvironmentSelection() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridCellGuidanceIndicator("app1", "res1"), useUnmergedTree = true).assertExists()
+
+        components.viewModel.selectEnvironment("preprod")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridCellGuidanceIndicator("app1", "res1"), useUnmergedTree = true).assertDoesNotExist()
+    }
+
     // --- Cell click activation ---
 
     fun cellClickActivatesPreProdResource() = runComposeUiTest {

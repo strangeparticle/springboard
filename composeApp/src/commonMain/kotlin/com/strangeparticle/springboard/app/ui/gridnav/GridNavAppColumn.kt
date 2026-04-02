@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.ui.TestTags
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -53,6 +54,7 @@ fun GridNavAppColumn(
     onGuidanceDismissJobChange: (Job?) -> Unit,
 ) {
     val currentSpringboard = viewModel.springboard ?: return
+    val currentUiBrand = LocalUiBrand.current
     val guidanceDismissScope = rememberCoroutineScope()
 
     val headerHighlightColor = if (isHeaderHovered)
@@ -204,6 +206,17 @@ fun GridNavAppColumn(
                                 .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                         )
                     }
+                }
+
+                if (hasActivator && guidanceData != null) {
+                    GridNavGuidanceCornerIndicator(
+                        color = currentUiBrand.customColors.guidanceIndicator,
+                        creaseColor = currentUiBrand.customColors.settingsTooltipUnderline,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(8.dp)
+                            .testTag(TestTags.gridCellGuidanceIndicator(app.id, resource.id))
+                    )
                 }
 
                 if (isGuidanceActive && guidanceData != null) {

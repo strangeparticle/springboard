@@ -25,16 +25,19 @@ fun NavBar(
     ) {
         LogoAndName(modifier = Modifier.align(Alignment.CenterVertically))
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
 
         if (viewModel.isConfigLoaded) {
             KeyNav(
                 viewModel = viewModel,
-                firstDropdownFocusRequester = firstDropdownFocusRequester
+                firstDropdownFocusRequester = firstDropdownFocusRequester,
+                modifier = Modifier.weight(1f),
             )
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
 
         VersionDesignator()
     }

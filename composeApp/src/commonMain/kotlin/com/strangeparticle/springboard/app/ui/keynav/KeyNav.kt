@@ -14,55 +14,71 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+
+private const val MinWeightChars = 12
 
 @Composable
 fun KeyNav(
     viewModel: SpringboardViewModel,
-    firstDropdownFocusRequester: FocusRequester
+    firstDropdownFocusRequester: FocusRequester,
+    modifier: Modifier = Modifier,
 ) {
     val resourceFocusRequester = remember { FocusRequester() }
     val environmentFocusRequester = remember { FocusRequester() }
 
+    val appItems = viewModel.apps.map { it.id to it.name }
+    val resourceItems = viewModel.resources.map { it.id to it.name }
+    val environmentItems = viewModel.environments.map { it.id to it.name }
+
+    fun longestNameWeight(items: List<Pair<String, String>>): Float {
+        val longest = items.maxOfOrNull { it.second.length } ?: 0
+        return maxOf(longest, MinWeightChars).toFloat()
+    }
+
     Row(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Dropdown 1: App
         MinimalDropdown(
-            items = viewModel.apps.map { it.id to it.name },
+            items = appItems,
             selectedId = viewModel.selectedAppId,
             enabledStates = viewModel.appEnabledStates,
             onSelect = { viewModel.selectApp(it) },
             focusRequester = firstDropdownFocusRequester,
             onTab = { resourceFocusRequester.requestFocus() },
             testTag = TestTags.APP_DROPDOWN,
+            modifier = Modifier.weight(longestNameWeight(appItems)),
         )
 
         // Dropdown 2: Resource
         MinimalDropdown(
-            items = viewModel.resources.map { it.id to it.name },
+            items = resourceItems,
             selectedId = viewModel.selectedResourceId,
             enabledStates = viewModel.resourceEnabledStates,
             onSelect = { viewModel.selectResource(it) },
             focusRequester = resourceFocusRequester,
             onTab = { environmentFocusRequester.requestFocus() },
             testTag = TestTags.RESOURCE_DROPDOWN,
+            modifier = Modifier.weight(longestNameWeight(resourceItems)),
         )
 
         // Dropdown 3: Environment
         MinimalDropdown(
-            items = viewModel.environments.map { it.id to it.name },
+            items = environmentItems,
             selectedId = viewModel.selectedEnvironmentId,
             enabledStates = viewModel.environments.associate { it.id to true },
             onSelect = { viewModel.selectEnvironment(it) },
             focusRequester = environmentFocusRequester,
             testTag = TestTags.ENVIRONMENT_DROPDOWN,
+            modifier = Modifier.weight(longestNameWeight(environmentItems)),
             onTab = {
                 if (viewModel.isActivateEnabled) {
                     viewModel.activateCurrentSelection()
@@ -88,6 +104,7 @@ private fun MinimalDropdown(
     focusRequester: FocusRequester,
     onTab: () -> Unit,
     testTag: String? = null,
+    modifier: Modifier = Modifier,
     onEnter: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -108,7 +125,7 @@ private fun MinimalDropdown(
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
-        modifier = Modifier.width(CommonUiConstants.DropdownWidth)
+        modifier = modifier
     ) {
         Box(
             modifier = Modifier
@@ -166,7 +183,9 @@ private fun MinimalDropdown(
                 text = selectedName,
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = 10.dp)
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
             )
         }
 

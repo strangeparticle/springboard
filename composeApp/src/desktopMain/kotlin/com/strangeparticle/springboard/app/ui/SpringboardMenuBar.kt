@@ -10,6 +10,7 @@ import androidx.compose.ui.window.MenuBar
 fun FrameWindowScope.SpringboardMenuBar(
     hasActiveSpringboard: Boolean,
     onOpen: () -> Unit,
+    onOpenFromNetwork: () -> Unit,
     onSaveLocalCopyAs: () -> Unit,
     onReload: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -18,8 +19,11 @@ fun FrameWindowScope.SpringboardMenuBar(
 ) {
     MenuBar {
         Menu("File") {
-            Item("Open…", shortcut = KeyShortcut(Key.O, meta = true)) {
+            Item("Open from File…", shortcut = KeyShortcut(Key.O, meta = true)) {
                 onOpen()
+            }
+            Item("Open from Network…", shortcut = KeyShortcut(Key.O, meta = true, shift = true)) {
+                onOpenFromNetwork()
             }
             Item(
                 "Save a Local Copy As…",

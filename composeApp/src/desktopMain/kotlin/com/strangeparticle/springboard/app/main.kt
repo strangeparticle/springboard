@@ -12,14 +12,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDesktopImpl
-import com.strangeparticle.springboard.app.platform.expandTildePath
-import com.strangeparticle.springboard.app.platform.getHomeDirectoryPath
-import com.strangeparticle.springboard.app.platform.openFileDialog
-import com.strangeparticle.springboard.app.platform.readFileContents
-import com.strangeparticle.springboard.app.platform.saveLocalCopyAsFileDialog
-import com.strangeparticle.springboard.app.platform.surfaceAppleScriptErrors
-import com.strangeparticle.springboard.app.platform.writeFileContents
+import com.strangeparticle.springboard.app.domain.SpringboardSource
+import com.strangeparticle.springboard.app.domain.parseSpringboardSource
+import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.*
 import com.strangeparticle.springboard.app.settings.persistence.DesktopSettingsPersistenceManager
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -28,6 +23,7 @@ import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import kotlinx.coroutines.launch
 import java.io.File
 
 private enum class ActiveSettingsOpenedFrom {
@@ -58,6 +54,8 @@ fun main(args: Array<String>) {
         surfaceAppleScriptErrors = resolvedSurfaceAppleScriptErrors,
     )
 
+    val networkContentService = NetworkContentServiceDesktopImpl()
+
     // Determine the startup config path from the explicit startup-springboard setting.
     val startupSpringboardPath = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
     val configPath = startupSpringboardPath
@@ -69,7 +67,7 @@ fun main(args: Array<String>) {
 
     application {
         val windowState = rememberWindowState(
-            size = DpSize(700.dp, 250.dp),
+            size = DpSize(700.dp, 350.dp),
             position = WindowPosition(Alignment.Center)
         )
 
@@ -84,6 +82,7 @@ fun main(args: Array<String>) {
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
         val showLicenseDialog = remember { mutableStateOf(false) }
+        val showNetworkDialog = remember { mutableStateOf(false) }
         val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
@@ -138,6 +137,9 @@ fun main(args: Array<String>) {
                         }
                     }
                 },
+                onOpenFromNetwork = {
+                    showNetworkDialog.value = true
+                },
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
                     if (springboard == null) {
@@ -179,6 +181,23 @@ fun main(args: Array<String>) {
                 )
             }
 
+            if (showNetworkDialog.value) {
+                com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog(
+                    onConfirm = { url ->
+                        showNetworkDialog.value = false
+                        kotlinx.coroutines.MainScope().launch {
+                            try {
+                                val contents = networkContentService.fetchText(url)
+                                loadSpringboardConfig(url, contents)
+                            } catch (e: Exception) {
+                                ToastBroadcaster.error("Failed to fetch: ${e.message}")
+                            }
+                        }
+                    },
+                    onDismiss = { showNetworkDialog.value = false },
+                )
+            }
+
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
@@ -192,7 +211,8 @@ fun main(args: Array<String>) {
                     try {
                         firstDropdownFocusRequester.requestFocus()
                     } catch (_: Exception) {}
-                }
+                },
+                networkContentService = networkContentService,
             )
 
             // Runs once initially and again whenever the loaded springboard instance changes.
@@ -204,15 +224,28 @@ fun main(args: Array<String>) {
             // It handles optional startup loading from the launch argument, then marks startup complete.
             LaunchedEffect(configPath) {
                 if (configPath != null) {
-                    val homeDirectoryPath = getHomeDirectoryPath()
-                    val expandedConfigPath = expandTildePath(configPath, homeDirectoryPath)
-                    val file = File(expandedConfigPath)
-                    if (file.exists()) {
-                        val contents = file.readText()
-                        loadSpringboardConfig(expandedConfigPath, contents)
-                    } else {
-                        ToastBroadcaster.error("Config file not found: $expandedConfigPath")
-                        println("[Springboard] config file not found: $expandedConfigPath")
+                    when (val source = parseSpringboardSource(configPath)) {
+                        is SpringboardSource.NetworkSource -> {
+                            try {
+                                val contents = networkContentService.fetchText(source.url)
+                                loadSpringboardConfig(source.url, contents)
+                            } catch (e: Exception) {
+                                ToastBroadcaster.error("Failed to fetch config: ${e.message}")
+                                println("[Springboard] failed to fetch config: ${e.message}")
+                            }
+                        }
+                        is SpringboardSource.FileSource -> {
+                            val homeDirectoryPath = getHomeDirectoryPath()
+                            val expandedConfigPath = expandTildePath(source.path, homeDirectoryPath)
+                            val file = File(expandedConfigPath)
+                            if (file.exists()) {
+                                val contents = file.readText()
+                                loadSpringboardConfig(expandedConfigPath, contents)
+                            } else {
+                                ToastBroadcaster.error("Config file not found: $expandedConfigPath")
+                                println("[Springboard] config file not found: $expandedConfigPath")
+                            }
+                        }
                     }
                 }
 

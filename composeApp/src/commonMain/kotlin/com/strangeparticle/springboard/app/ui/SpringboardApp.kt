@@ -5,6 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.*
+import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
@@ -36,6 +37,8 @@ fun SpringboardApp(
     },
     onRequestFocusFirstDropdown: (() -> Unit)? = null,
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
+    networkContentService: NetworkContentService? = null,
+    showFileOpen: Boolean = true,
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
 
@@ -80,6 +83,8 @@ fun SpringboardApp(
                     isShiftHeld = isShiftHeld,
                     onOpenSettings = onOpenSettings,
                     fileContentService = fileContentService,
+                    networkContentService = networkContentService,
+                    showFileOpen = showFileOpen,
                 )
             }
 

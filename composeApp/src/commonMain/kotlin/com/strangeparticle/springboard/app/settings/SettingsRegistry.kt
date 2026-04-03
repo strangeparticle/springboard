@@ -40,15 +40,14 @@ object SettingsRegistry {
             )
         )
         register(
-            SettingItem.Desktop(
+            SettingItem.General(
                 key = SettingsKey.STARTUP_SPRINGBOARD,
                 type = FilePath::class,
                 defaultValue = null,
                 displayName = "Startup Springboard",
-                description = "The springboard file to open automatically on launch.",
+                description = "The springboard file or URL to open automatically on launch.",
                 envVarName = "SPRINGBOARD_STARTUP_SPRINGBOARD",
                 cliParamName = "--startup-springboard",
-                runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx, RuntimeEnvironment.DesktopLinux),
             )
         )
         register(

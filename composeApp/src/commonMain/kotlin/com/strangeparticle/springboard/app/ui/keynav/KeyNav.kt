@@ -22,6 +22,7 @@ import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 private const val MinWeightChars = 12
+private const val MaxWeightChars = 30
 
 @Composable
 fun KeyNav(
@@ -38,7 +39,7 @@ fun KeyNav(
 
     fun longestNameWeight(items: List<Pair<String, String>>): Float {
         val longest = items.maxOfOrNull { it.second.length } ?: 0
-        return maxOf(longest, MinWeightChars).toFloat()
+        return longest.coerceIn(MinWeightChars, MaxWeightChars).toFloat()
     }
 
     Row(

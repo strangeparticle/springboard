@@ -4,12 +4,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
+import com.strangeparticle.springboard.app.domain.parseSpringboardSource
+import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
-import com.strangeparticle.springboard.app.ui.openbutton.OpenSpringboardPrompt
+import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
+import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen
 import com.strangeparticle.springboard.app.ui.activatorpreview.ActivatorPreview
 import com.strangeparticle.springboard.app.ui.statusbar.StatusBar
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
@@ -25,10 +29,45 @@ fun MainScreen(
     isShiftHeld: Boolean,
     onOpenSettings: () -> Unit,
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
+    networkContentService: NetworkContentService? = null,
+    showFileOpen: Boolean = true,
 ) {
     var lastLoadedPath by remember { mutableStateOf<String?>(null) }
     var isReloading by remember { mutableStateOf(false) }
+    var showNetworkDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    val openFromNetwork: (() -> Unit)? = if (networkContentService != null) {
+        { showNetworkDialog = true }
+    } else {
+        null
+    }
+
+    val loadFromNetwork: (String) -> Unit = { url ->
+        if (networkContentService != null) {
+            scope.launch {
+                try {
+                    val contents = networkContentService.fetchText(url)
+                    lastLoadedPath = url
+                    viewModel.loadConfig(contents, url)
+                    println("[Springboard] grid ready")
+                    println("[Springboard] application ready")
+                } catch (e: Exception) {
+                    ToastBroadcaster.error("Failed to fetch: ${e.message}")
+                }
+            }
+        }
+    }
+
+    if (showNetworkDialog) {
+        OpenFromNetworkDialog(
+            onConfirm = { url ->
+                showNetworkDialog = false
+                loadFromNetwork(url)
+            },
+            onDismiss = { showNetworkDialog = false },
+        )
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         NavBar(
@@ -45,7 +84,7 @@ fun MainScreen(
         }
 
         if (!viewModel.isConfigLoaded) {
-            OpenSpringboardPrompt(
+            WelcomeScreen(
                 onFileSelected = { path ->
                     val contents = fileContentService.readFileContents(path)
                     if (contents != null) {
@@ -54,7 +93,9 @@ fun MainScreen(
                         println("[Springboard] grid ready")
                         println("[Springboard] application ready")
                     }
-                }
+                },
+                onOpenFromNetwork = openFromNetwork,
+                showFileOpen = showFileOpen,
             )
         } else {
             Box(modifier = Modifier.weight(1f)) {
@@ -75,16 +116,28 @@ fun MainScreen(
                 springboard = viewModel.springboard,
                 isReloading = isReloading,
                 onReload = {
-                    val path = lastLoadedPath ?: viewModel.springboard?.source ?: return@StatusBar
+                    val source = lastLoadedPath ?: viewModel.springboard?.source ?: return@StatusBar
                     scope.launch {
                         isReloading = true
                         val startTime = currentTimeMillis()
                         try {
-                            val contents = fileContentService.readFileContents(path)
-                            if (contents != null) {
-                                viewModel.loadConfig(contents, path)
-                            } else {
-                                ToastBroadcaster.error("Failed to reload: file not found")
+                            when (val parsed = parseSpringboardSource(source)) {
+                                is SpringboardSource.NetworkSource -> {
+                                    if (networkContentService != null) {
+                                        val contents = networkContentService.fetchText(parsed.url)
+                                        viewModel.loadConfig(contents, source)
+                                    } else {
+                                        ToastBroadcaster.error("Network reload not available")
+                                    }
+                                }
+                                is SpringboardSource.FileSource -> {
+                                    val contents = fileContentService.readFileContents(parsed.path)
+                                    if (contents != null) {
+                                        viewModel.loadConfig(contents, source)
+                                    } else {
+                                        ToastBroadcaster.error("Failed to reload: file not found")
+                                    }
+                                }
                             }
                         } catch (e: Exception) {
                             ToastBroadcaster.error("Failed to reload: ${e.message}")
@@ -97,6 +150,7 @@ fun MainScreen(
                     }
                 },
                 onOpenSettings = onOpenSettings,
+                onOpenFromNetwork = openFromNetwork,
             )
         }
     }

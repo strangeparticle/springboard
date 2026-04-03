@@ -21,7 +21,7 @@ private const val AppColumnWidthDp = 40
 private const val GridHorizontalPaddingDp = 72
 
 private const val NavbarDropdownCount = 3
-private const val NavbarDropdownWidthDp = 140
+private const val NavbarDropdownWidthDp = 100
 private const val NavbarDropdownGapDp = 8
 private const val NavbarLogoAndPaddingBufferDp = 250
 private const val NavbarSafetyMarginFactor = 1.1

@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.ui.gridnav
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,7 @@ fun GridNav(
     }
 
     val verticalScroll = rememberScrollState()
+    val horizontalScroll = rememberScrollState()
 
     val environmentName = currentSpringboard.environments.find { it.id == environmentId }?.name ?: environmentId
 
@@ -86,6 +88,7 @@ fun GridNav(
             .background(MaterialTheme.colorScheme.surface)
             .padding(16.dp)
             .focusProperties { canFocus = false }
+            .horizontalScroll(horizontalScroll)
     ) {
         Row(modifier = Modifier
             .verticalScroll(verticalScroll)

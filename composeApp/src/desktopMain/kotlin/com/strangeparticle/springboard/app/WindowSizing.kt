@@ -32,7 +32,14 @@ private const val HeaderTextHeightDp = 18f
 private const val Sin45 = 0.7071f
 
 fun calculateWindowWidth(springboard: Springboard): Int {
-    val gridWidth = ResourceLabelWidthDp + (springboard.apps.size * AppColumnWidthDp) + GridHorizontalPaddingDp
+    val longestAppNameLength = springboard.apps.maxOfOrNull { minOf(it.name.length, MaxHeaderCharCount) } ?: 0
+    val estimatedHeaderTextWidthDp = longestAppNameLength * HeaderTextAvgCharWidthDp
+    val headerDiagonalOverhangDp = ((estimatedHeaderTextWidthDp + HeaderTextHeightDp) * Sin45).toInt()
+
+    val gridWidth = ResourceLabelWidthDp +
+        (springboard.apps.size * AppColumnWidthDp) +
+        headerDiagonalOverhangDp +
+        GridHorizontalPaddingDp
     val navbarMinWidth = (
         (NavbarDropdownCount * NavbarDropdownWidthDp +
         (NavbarDropdownCount - 1) * NavbarDropdownGapDp +

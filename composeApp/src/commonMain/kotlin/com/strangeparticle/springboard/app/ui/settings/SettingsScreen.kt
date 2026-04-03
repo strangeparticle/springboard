@@ -172,6 +172,11 @@ private fun SettingRow(
                         }
                     },
                     enabled = !isOverridden,
+                    colors = SwitchDefaults.colors(
+                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+                    ),
                     modifier = Modifier.graphicsLayer {
                         scaleX = 0.82f
                         scaleY = 0.82f

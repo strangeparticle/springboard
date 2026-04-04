@@ -12,7 +12,7 @@ import java.io.File
  * Direct user editing of the file is fine but not fully supported
  * - we don't attempt to auto-reload "live" changes to that file
  */
-class DesktopSettingsPersistenceManager : SettingsPersistenceManager {
+class SettingsPersistenceManagerDesktop : SettingsPersistenceManager {
 
     private val configDir: File by lazy {
         File(System.getProperty("user.home"), ".springboard")

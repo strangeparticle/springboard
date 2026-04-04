@@ -8,7 +8,7 @@ import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImp
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
-import com.strangeparticle.springboard.app.settings.persistence.WasmSettingsPersistenceManager
+import com.strangeparticle.springboard.app.settings.persistence.SettingsPersistenceManagerWasm
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
@@ -25,7 +25,7 @@ private external fun addWindowFocusListener(callback: () -> Unit)
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val runtimeEnvironment = detectRuntimeEnvironment()
-    val persistenceManager = WasmSettingsPersistenceManager()
+    val persistenceManager = SettingsPersistenceManagerWasm()
     val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
     // Read the JS variable and pass it as the STARTUP_SPRINGBOARD env var
     val startupSpringboard = getStartupSpringboard()?.toString()

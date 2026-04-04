@@ -16,7 +16,7 @@ import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.parseSpringboardSource
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.*
-import com.strangeparticle.springboard.app.settings.persistence.DesktopSettingsPersistenceManager
+import com.strangeparticle.springboard.app.settings.persistence.SettingsPersistenceManagerDesktop
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
@@ -37,7 +37,7 @@ fun main(args: Array<String>) {
     val runtimeEnvironment = detectRuntimeEnvironment()
 
     // Initialize the settings system
-    val persistenceManager = DesktopSettingsPersistenceManager()
+    val persistenceManager = SettingsPersistenceManagerDesktop()
     val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
 
     // Load all settings sources: persisted user settings, env vars, CLI args

@@ -24,6 +24,7 @@ import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusBar(
     springboard: Springboard?,
@@ -52,19 +53,25 @@ fun StatusBar(
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = onReload,
-            enabled = !isReloading,
-            modifier = Modifier.size(24.dp).testTag(TestTags.RELOAD_BUTTON)
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            tooltip = { PlainTooltip { Text(if (isReloading) "Reloading…" else "Reload") } },
+            state = rememberTooltipState(),
         ) {
-            Icon(
-                imageVector = currentUiBrand.vectorImages.reload,
-                contentDescription = if (isReloading) "Reloading" else "Reload",
-                modifier = Modifier
-                    .size(16.dp)
-                    .graphicsLayer(rotationZ = if (isReloading) rotation else 0f),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            IconButton(
+                onClick = onReload,
+                enabled = !isReloading,
+                modifier = Modifier.size(24.dp).testTag(TestTags.RELOAD_BUTTON)
+            ) {
+                Icon(
+                    imageVector = currentUiBrand.vectorImages.reload,
+                    contentDescription = if (isReloading) "Reloading" else "Reload",
+                    modifier = Modifier
+                        .size(16.dp)
+                        .graphicsLayer(rotationZ = if (isReloading) rotation else 0f),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
@@ -74,7 +81,6 @@ fun StatusBar(
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),
         )
         if (onOpenFromNetwork != null) {
-            @OptIn(ExperimentalMaterial3Api::class)
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                 tooltip = { PlainTooltip { Text("Open from Network…") } },
@@ -94,16 +100,22 @@ fun StatusBar(
             }
             Spacer(modifier = Modifier.width(4.dp))
         }
-        IconButton(
-            onClick = onOpenSettings,
-            modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON)
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            tooltip = { PlainTooltip { Text("Settings") } },
+            state = rememberTooltipState(),
         ) {
-            Icon(
-                imageVector = currentUiBrand.vectorImages.settings,
-                contentDescription = "Settings",
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON)
+            ) {
+                Icon(
+                    imageVector = currentUiBrand.vectorImages.settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

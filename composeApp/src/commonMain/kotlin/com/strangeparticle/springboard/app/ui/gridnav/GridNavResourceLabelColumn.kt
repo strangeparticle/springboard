@@ -14,7 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -78,13 +80,35 @@ fun GridNavResourceLabelColumn(
                     },
                 contentAlignment = Alignment.CenterStart
             ) {
-                Text(
-                    text = resource.name,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Column(modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text(
+                        text = resource.name,
+                        style = TextStyle(
+                            fontSize = 13.sp,
+                            lineHeight = 13.sp,
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both,
+                            ),
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = resource.id.uppercase(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            lineHeight = 9.sp,
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both,
+                            ),
+                        ),
+                        maxLines = 1,
+                    )
+                }
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)

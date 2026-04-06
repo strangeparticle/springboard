@@ -10,7 +10,7 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 private const val NavbarHeightDp = 56
 private const val StatusBarHeightDp = 32
-private const val GridCellHeightDp = 40
+private const val GridCellHeightDp = 46
 private const val GridTopPaddingDp = 16
 private const val GridBottomPaddingDp = 16
 private const val EnvironmentTitleHeightDp = 40

@@ -166,7 +166,9 @@ private fun MinimalDropdown(
                                 val hasModifier = event.isMetaPressed || event.isCtrlPressed || event.isAltPressed
                                 if (char.isLetterOrDigit() && !hasModifier) {
                                     typeaheadBuffer += char.lowercaseChar()
-                                    val match = items.find { (_, name) ->
+                                    val match = items.find { (id, _) ->
+                                        id.lowercase().startsWith(typeaheadBuffer)
+                                    } ?: items.find { (_, name) ->
                                         name.lowercase().startsWith(typeaheadBuffer)
                                     }
                                     if (match != null && enabledStates[match.first] != false) {

@@ -224,7 +224,7 @@ fun GridNavAppColumn(
                     if (isCellHovered) {
                         Box(
                             modifier = Modifier
-                                .size(18.dp)
+                                .size(14.dp)
                                 .testTag(indicatorTag)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primaryContainer)
@@ -232,7 +232,7 @@ fun GridNavAppColumn(
                     } else {
                         Box(
                             modifier = Modifier
-                                .size(18.dp)
+                                .size(14.dp)
                                 .testTag(indicatorTag)
                                 .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                         )

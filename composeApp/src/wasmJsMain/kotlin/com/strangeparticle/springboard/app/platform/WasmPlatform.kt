@@ -14,11 +14,6 @@ actual fun readFileContents(path: String): String? {
     return null
 }
 
-actual fun formatTimestamp(millis: Long): String {
-    // Simple timestamp for WASM - just show the millis as a readable date would require JS interop
-    return millis.toString()
-}
-
 actual fun getPlatformName(): String = "Web"
 
 actual fun openNewBrowserWindowIfAppropriate(): Boolean = false

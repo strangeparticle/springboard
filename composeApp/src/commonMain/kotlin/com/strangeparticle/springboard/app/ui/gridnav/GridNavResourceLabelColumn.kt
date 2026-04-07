@@ -99,8 +99,8 @@ fun GridNavResourceLabelColumn(
                         text = resource.id.uppercase(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = TextStyle(
-                            fontSize = 9.sp,
-                            lineHeight = 9.sp,
+                            fontSize = GridNavHeaderIdTextSizeSp.sp,
+                            lineHeight = GridNavHeaderIdTextSizeSp.sp,
                             lineHeightStyle = LineHeightStyle(
                                 alignment = LineHeightStyle.Alignment.Center,
                                 trim = LineHeightStyle.Trim.Both,

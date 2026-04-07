@@ -1,11 +1,17 @@
 package com.strangeparticle.springboard.app.unit.ui.gridnav
 
 import com.strangeparticle.springboard.app.ui.gridnav.truncateHeaderText
+import com.strangeparticle.springboard.app.ui.gridnav.GridNavHeaderIdTextSizeSp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class HeaderTextUtilsTest {
+
+    @Test
+    fun `grid nav header id text size is 8sp`() {
+        assertEquals(8, GridNavHeaderIdTextSizeSp)
+    }
 
     @Test
     fun `short text is unchanged`() {

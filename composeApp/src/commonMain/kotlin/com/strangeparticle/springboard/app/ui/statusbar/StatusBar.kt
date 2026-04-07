@@ -75,7 +75,7 @@ fun StatusBar(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Source: ${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
+            text = "${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),

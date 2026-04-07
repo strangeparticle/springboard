@@ -20,7 +20,9 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -103,13 +105,42 @@ fun GridNavAppColumn(
                     .rotate(-45f)
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             ) {
-                Text(
-                    text = truncateHeaderText(app.name),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    softWrap = false,
-                )
+                Column {
+                    Text(
+                        text = truncateHeaderText(app.name),
+                        style = TextStyle(
+                            fontSize = 13.sp,
+                            lineHeight = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both,
+                            ),
+                        ),
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    // Shift the id right by (spacer + id line height) pre-rotation so
+                    // that after the -45° rotation its left-bottom corner lands on the
+                    // same horizontal line as the name's left-bottom corner.
+                    Text(
+                        text = app.id.uppercase(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = TextStyle(
+                            fontSize = 9.sp,
+                            lineHeight = 9.sp,
+                            lineHeightStyle = LineHeightStyle(
+                                alignment = LineHeightStyle.Alignment.Center,
+                                trim = LineHeightStyle.Trim.Both,
+                            ),
+                        ),
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.offset(x = 14.dp),  // shift is here
+                    )
+                }
             }
         }
 

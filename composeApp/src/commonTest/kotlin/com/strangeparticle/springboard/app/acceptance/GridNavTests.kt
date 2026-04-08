@@ -4,6 +4,24 @@ import kotlin.test.Test
 
 class GridNavTests {
 
+    @Test fun `header resize thumb shows drag handle icon`() =
+        GridNavTestScenarios.headerResizeThumbShowsDragHandleIcon()
+
+    @Test fun `header resize thumb has test tag`() =
+        GridNavTestScenarios.headerResizeThumbHasTestTag()
+
+    @Test fun `header resize grip glyph has test tag`() =
+        GridNavTestScenarios.headerResizeGripGlyphHasTestTag()
+
+    @Test fun `dragging header resize thumb down grows header height`() =
+        GridNavTestScenarios.draggingHeaderResizeThumbDownGrowsHeaderHeight()
+
+    @Test fun `dragging header resize thumb up shrinks header height`() =
+        GridNavTestScenarios.draggingHeaderResizeThumbUpShrinksHeaderHeight()
+
+    @Test fun `dragging header resize thumb clamps at max height`() =
+        GridNavTestScenarios.draggingHeaderResizeThumbClampsAtMaxHeight()
+
     @Test fun `selected environment shows as title in grid header`() =
         GridNavTestScenarios.selectedEnvironmentShowsAsTitleInGridHeader()
 

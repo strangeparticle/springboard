@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun GridNavAppColumn(
     app: App,
+    displayName: String,
     environmentId: String,
     resources: List<Resource>,
     gridHeaderHeight: Dp,
@@ -107,7 +108,7 @@ fun GridNavAppColumn(
             ) {
                 Column {
                     Text(
-                        text = truncateHeaderText(app.name),
+                        text = displayName,
                         style = TextStyle(
                             fontSize = 13.sp,
                             lineHeight = 13.sp,
@@ -144,7 +145,7 @@ fun GridNavAppColumn(
             }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+        // Header/data boundary divider is rendered by GridNavHeaderResizeBoundary in GridNav.
 
         // Data cells
         resources.forEach { resource ->

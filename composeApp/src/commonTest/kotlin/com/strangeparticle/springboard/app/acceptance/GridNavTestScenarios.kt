@@ -1,8 +1,11 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
+import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
@@ -23,6 +26,8 @@ private data class GridNavTestComponents(
 
 @OptIn(ExperimentalTestApi::class)
 object GridNavTestScenarios {
+
+    private const val HEADER_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION = "Header resize drag handle"
 
     private fun createTestComponents(
         activationService: PlatformActivationServiceInMemoryFake = PlatformActivationServiceInMemoryFake(),
@@ -45,6 +50,136 @@ object GridNavTestScenarios {
     }
 
     // --- Environment title displayed ---
+
+    fun headerResizeThumbShowsDragHandleIcon() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithContentDescription(HEADER_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION)
+            .assertExists()
+    }
+
+    // --- Header resize thumb presence and drag behavior ---
+
+    fun headerResizeThumbHasTestTag() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).assertExists()
+    }
+
+    fun headerResizeGripGlyphHasTestTag() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_GRIP_GLYPH, useUnmergedTree = true)
+            .assertExists()
+    }
+
+    fun draggingHeaderResizeThumbDownGrowsHeaderHeight() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        val thumb = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+        val initialTop = thumb.fetchSemanticsNode().boundsInRoot.top
+
+        thumb.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 40f))
+            up()
+        }
+        waitForIdle()
+
+        val newTop = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            newTop > initialTop,
+            "Expected thumb top to increase after dragging down: was $initialTop, now $newTop",
+        )
+    }
+
+    fun draggingHeaderResizeThumbUpShrinksHeaderHeight() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        // First drag down so we have headroom to shrink back.
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 60f))
+            up()
+        }
+        waitForIdle()
+
+        val afterGrow = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, -40f))
+            up()
+        }
+        waitForIdle()
+
+        val afterShrink = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            afterShrink < afterGrow,
+            "Expected thumb top to decrease after dragging up: was $afterGrow, now $afterShrink",
+        )
+    }
+
+    fun draggingHeaderResizeThumbClampsAtMaxHeight() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        // Drag well past the maximum bound.
+        val excessivePx = with(density) {
+            (GridNavSizingConstants.MaxHeaderHeight + 200.dp).toPx()
+        }
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, excessivePx))
+            up()
+        }
+        waitForIdle()
+
+        val afterFirstDrag = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+
+        // A second downward drag should not move the thumb further: already clamped.
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 50f))
+            up()
+        }
+        waitForIdle()
+
+        val afterSecondDrag = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertEquals(
+            afterFirstDrag,
+            afterSecondDrag,
+            "Expected thumb position to remain clamped after additional downward drag",
+        )
+    }
 
     fun selectedEnvironmentShowsAsTitleInGridHeader() = runComposeUiTest {
         val components = createTestComponents()

@@ -12,6 +12,8 @@ object TestTags {
     const val TOAST_SEVERITY_LABEL = "toastSeverityLabel"
     const val TOAST_DISMISS_BUTTON = "toastDismissButton"
     const val GRID_ENVIRONMENT_TITLE = "gridEnvironmentTitle"
+    const val GRID_HEADER_RESIZE_THUMB = "gridHeaderResizeThumb"
+    const val GRID_HEADER_RESIZE_GRIP_GLYPH = "gridHeaderResizeGripGlyph"
     const val SETTINGS_GEAR_ICON = "settingsGearIcon"
     const val SETTINGS_SCREEN = "settingsScreen"
     const val SETTINGS_BACK_BUTTON = "settingsBackButton"

@@ -50,7 +50,7 @@ fun GridNavResourceLabelColumn(
             )
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 1.dp)
+        // Header/data boundary divider is rendered by GridNavHeaderResizeBoundary in GridNav.
 
         resources.forEach { resource ->
             val isRowHighlighted = hoveredHeaderResourceId == resource.id || hoveredResourceId == resource.id

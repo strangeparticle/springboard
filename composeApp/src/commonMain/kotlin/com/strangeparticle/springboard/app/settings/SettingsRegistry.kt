@@ -1,5 +1,7 @@
 package com.strangeparticle.springboard.app.settings
 
+import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
+
 /**
  * The central settings registry — the single source of truth for all settings metadata.
  *
@@ -48,6 +50,20 @@ object SettingsRegistry {
                 description = "The springboard file or URL to open automatically on launch.",
                 envVarName = "SPRINGBOARD_STARTUP_SPRINGBOARD",
                 cliParamName = "--startup-springboard",
+            )
+        )
+        register(
+            SettingItem.General(
+                key = SettingsKey.ACTIVE_BRAND,
+                type = StringFromDropDown::class,
+                defaultValue = StringFromDropDown(
+                    defaultDropDownOptionId = BrandRegistry.defaultBrand.id,
+                    dropDownOptions = BrandRegistry.entries.map { DropDownOption(it.id, it.displayName) },
+                ),
+                displayName = "Active Brand",
+                description = "Choose the visual brand theme for the app.",
+                envVarName = "SPRINGBOARD_ACTIVE_BRAND",
+                cliParamName = "--active-brand",
             )
         )
         register(

@@ -14,6 +14,7 @@ enum class SettingsKey {
     SURFACE_APPLESCRIPT_ERRORS,
     RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION,
     RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION,
+    ACTIVE_BRAND,
     ;
 
     /** The camelCase JSON key derived from this enum name. */

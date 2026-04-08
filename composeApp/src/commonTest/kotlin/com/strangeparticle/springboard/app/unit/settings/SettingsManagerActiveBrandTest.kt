@@ -1,0 +1,103 @@
+package com.strangeparticle.springboard.app.unit.settings
+
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
+import com.strangeparticle.springboard.app.settings.SettingsSource
+import com.strangeparticle.springboard.app.settings.StringFromDropDown
+import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
+import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemoryFake
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class SettingsManagerActiveBrandTest {
+
+    private fun createManager(
+        target: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
+        persistedDto: UserSettingsDto? = null,
+        envVars: Map<String, String> = emptyMap(),
+        cliArgs: List<String> = emptyList(),
+    ): SettingsManager {
+        val persistence = SettingsPersistenceManagerInMemoryFake()
+        if (persistedDto != null) {
+            persistence.saveDto(persistedDto)
+        }
+        val manager = SettingsManager(target, persistence)
+        manager.loadSettingsAtStartup(envVars, cliArgs)
+        return manager
+    }
+
+    @Test
+    fun `default active brand is strange particle light`() {
+        val manager = createManager()
+        assertEquals("strangeparticle-light", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `user settings override default active brand`() {
+        val manager = createManager(persistedDto = UserSettingsDto(activeBrand = "strangeparticle-dark"))
+        assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `environment variable overrides user settings for active brand`() {
+        val manager = createManager(
+            persistedDto = UserSettingsDto(activeBrand = "strangeparticle-light"),
+            envVars = mapOf("SPRINGBOARD_ACTIVE_BRAND" to "strangeparticle-dark"),
+        )
+        assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `cli arg overrides environment variable for active brand`() {
+        val manager = createManager(
+            envVars = mapOf("SPRINGBOARD_ACTIVE_BRAND" to "strangeparticle-light"),
+            cliArgs = listOf("--active-brand", "strangeparticle-dark"),
+        )
+        assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.COMMAND_LINE, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `unknown brand id from env var is ignored and default is used`() {
+        val manager = createManager(
+            envVars = mapOf("SPRINGBOARD_ACTIVE_BRAND" to "bogus-brand"),
+        )
+        assertEquals("strangeparticle-light", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `unknown brand id from cli is ignored and default is used`() {
+        val manager = createManager(
+            cliArgs = listOf("--active-brand", "bogus-brand"),
+        )
+        assertEquals("strangeparticle-light", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `set user setting persists active brand through dto`() {
+        val persistence = SettingsPersistenceManagerInMemoryFake()
+        val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
+        manager.loadSettingsAtStartup()
+        manager.setUserSetting(SettingsKey.ACTIVE_BRAND, "strangeparticle-dark")
+
+        val reloaded = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
+        reloaded.loadSettingsAtStartup()
+        assertEquals("strangeparticle-dark", reloaded.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
+    }
+
+    @Test
+    fun `registry declaration exposes full options list with default id`() {
+        val declaration = SettingsRegistry.require(SettingsKey.ACTIVE_BRAND).defaultValue as StringFromDropDown
+        assertEquals("strangeparticle-light", declaration.defaultDropDownOptionId)
+        assertEquals(2, declaration.dropDownOptions.size)
+        kotlin.test.assertTrue(declaration.dropDownOptions.any { it.id == "strangeparticle-light" })
+        kotlin.test.assertTrue(declaration.dropDownOptions.any { it.id == "strangeparticle-dark" })
+    }
+}

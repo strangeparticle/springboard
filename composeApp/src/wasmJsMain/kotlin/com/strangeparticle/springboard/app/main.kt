@@ -19,6 +19,9 @@ import kotlinx.coroutines.delay
 @JsFun("() => window.startupSpringboard")
 private external fun getStartupSpringboard(): JsAny?
 
+@JsFun("() => window.activeBrand")
+private external fun getActiveBrand(): JsAny?
+
 @JsFun("(callback) => window.addEventListener('focus', callback)")
 private external fun addWindowFocusListener(callback: () -> Unit)
 
@@ -27,13 +30,18 @@ fun main() {
     val runtimeEnvironment = detectRuntimeEnvironment()
     val persistenceManager = SettingsPersistenceManagerWasm()
     val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
-    // Read the JS variable and pass it as the STARTUP_SPRINGBOARD env var
+    // Read JS globals and forward them to the settings manager as env-var overrides.
     val startupSpringboard = getStartupSpringboard()?.toString()
+        ?.takeIf { it != "undefined" && it != "null" && it.isNotBlank() }
+    val activeBrand = getActiveBrand()?.toString()
         ?.takeIf { it != "undefined" && it != "null" && it.isNotBlank() }
 
     val environmentVariables = buildMap {
         if (startupSpringboard != null) {
             put("SPRINGBOARD_STARTUP_SPRINGBOARD", startupSpringboard)
+        }
+        if (activeBrand != null) {
+            put("SPRINGBOARD_ACTIVE_BRAND", activeBrand)
         }
     }
 

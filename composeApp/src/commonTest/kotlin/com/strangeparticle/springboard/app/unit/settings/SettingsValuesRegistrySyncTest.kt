@@ -4,6 +4,7 @@ import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsValues
+import com.strangeparticle.springboard.app.settings.StringFromDropDown
 
 import kotlin.test.*
 
@@ -62,10 +63,17 @@ class SettingsValuesRegistrySyncTest {
     @Test
     fun `every settings key is covered by withSetting`() {
         // Verify that SettingsValues.withSetting() handles every SettingsKey without throwing.
+        // For StringFromDropDown-typed settings, the registry default is a declaration
+        // (options + default id), but the per-layer stored value is the plain id String,
+        // so we extract that here to mirror what SettingsManager.initDefaultSettings does.
         var values = SettingsValues()
         for (key in SettingsKey.entries) {
             val entry = SettingsRegistry.require(key)
-            val testValue = entry.defaultValue
+            val testValue: Any? = if (entry.type == StringFromDropDown::class) {
+                (entry.defaultValue as StringFromDropDown).defaultDropDownOptionId
+            } else {
+                entry.defaultValue
+            }
             values = values.withSetting(key, testValue)
             assertEquals(testValue, values.get(key), "withSetting should store the value for $key")
         }

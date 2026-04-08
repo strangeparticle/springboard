@@ -69,4 +69,13 @@ class SettingsTests {
 
     @Test fun `settings persistence - reset keynav-after-gridnav-activation setting persists across relaunch`() =
         SettingsTestScenarios.resetKeyNavAfterGridNavActivationSettingPersistsAcrossRelaunch()
+
+    @Test fun `active brand dropdown is present`() =
+        SettingsTestScenarios.activeBrandDropdownIsPresent()
+
+    @Test fun `selecting dark brand from dropdown updates active brand`() =
+        SettingsTestScenarios.selectingDarkBrandFromDropdownUpdatesActiveBrand()
+
+    @Test fun `active brand dropdown shows override warning when set by cli`() =
+        SettingsTestScenarios.activeBrandDropdownShowsOverrideWarningWhenSetByCli()
 }

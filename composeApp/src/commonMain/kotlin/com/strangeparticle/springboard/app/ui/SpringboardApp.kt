@@ -44,7 +44,7 @@ fun SpringboardApp(
 
     println("[Springboard] window ready")
 
-    AppTheme {
+    AppTheme(brandId = settingsViewModel.activeBrandId) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

@@ -471,6 +471,61 @@ object SettingsTestScenarios {
         assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
     }
 
+    // --- Active brand dropdown ---
+
+    fun activeBrandDropdownIsPresent() = runComposeUiTest {
+        val components = createTestComponents(
+            currentFilePath = "/test/springboard.json",
+            showSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
+        onNodeWithTag(TestTags.settingsDropdown(SettingsKey.ACTIVE_BRAND.jsonKey)).assertExists()
+    }
+
+    fun selectingDarkBrandFromDropdownUpdatesActiveBrand() = runComposeUiTest {
+        val components = createTestComponents(
+            currentFilePath = "/test/springboard.json",
+            showSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
+        assertEquals("strangeparticle-light", components.settingsViewModel.activeBrandId)
+
+        onNodeWithTag(TestTags.settingsDropdown(SettingsKey.ACTIVE_BRAND.jsonKey)).performClick()
+        waitForIdle()
+
+        onNodeWithTag(
+            TestTags.settingsDropdownOption(SettingsKey.ACTIVE_BRAND.jsonKey, "strangeparticle-dark"),
+        ).performClick()
+        waitForIdle()
+
+        assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
+        assertEquals(SettingsSource.USER_SETTINGS, components.settingsManager.getSource(SettingsKey.ACTIVE_BRAND))
+    }
+
+    fun activeBrandDropdownShowsOverrideWarningWhenSetByCli() = runComposeUiTest {
+        val components = createTestComponents(
+            commandLineArgs = listOf("--active-brand", "strangeparticle-dark"),
+            currentFilePath = "/test/springboard.json",
+            showSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
+        assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
+        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
+
+        // The dropdown is still rendered — it's just disabled — but the row's override
+        // warning should be present (there may be multiple override warnings on the
+        // screen if other settings are overridden as well, so use assertAny).
+        onAllNodesWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertAny(
+            hasText("command-line", substring = true),
+        )
+    }
+
     fun resetKeyNavAfterGridNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {
         val persistenceManager = SettingsPersistenceManagerInMemoryFake()
 

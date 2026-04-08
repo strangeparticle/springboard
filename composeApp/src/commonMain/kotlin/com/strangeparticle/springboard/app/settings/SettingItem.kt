@@ -5,6 +5,11 @@ import kotlin.reflect.KClass
 /**
  * Metadata for a single setting. Sealed so that exhaustive `when` checks
  * cover all subclasses without an `else` branch.
+  *
+ * The [type] KClass acts as the discriminator that drives both value
+ * coercion (env/CLI parsing) and UI rendering. For example, settings with
+ * `type = StringFromDropDown::class` are rendered as dropdowns; settings with
+ * `type = Boolean::class` are rendered as switches.
  */
 sealed class SettingItem(
     val key: SettingsKey,

@@ -1,7 +1,9 @@
 package com.strangeparticle.springboard.app.settings.persistence
 
 import com.strangeparticle.springboard.app.settings.FilePath
+import com.strangeparticle.springboard.app.settings.StringFromDropDown
 import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsValues
 import kotlinx.serialization.Serializable
 
@@ -24,6 +26,7 @@ data class UserSettingsDto(
     val surfaceAppleScriptErrors: Boolean? = null,
     val resetKeyNavAfterKeyNavActivation: Boolean? = null,
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
+    val activeBrand: String? = null,
 ) {
     /** Converts this DTO to a [SettingsValues] instance. */
     fun toSettingsValues(): SettingsValues {
@@ -46,6 +49,12 @@ data class UserSettingsDto(
         if (resetKeyNavAfterGridNavActivation != null) {
             values = values.withSetting(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION, resetKeyNavAfterGridNavActivation)
         }
+        if (activeBrand != null) {
+            val declaration = SettingsRegistry.require(SettingsKey.ACTIVE_BRAND).defaultValue as StringFromDropDown
+            if (declaration.isAllowed(activeBrand)) {
+                values = values.withSetting(SettingsKey.ACTIVE_BRAND, activeBrand)
+            }
+        }
         return values
     }
 
@@ -59,6 +68,7 @@ data class UserSettingsDto(
                 surfaceAppleScriptErrors = values.surfaceApplescriptErrors,
                 resetKeyNavAfterKeyNavActivation = values.resetKeyNavAfterKeyNavActivation,
                 resetKeyNavAfterGridNavActivation = values.resetKeyNavAfterGridNavActivation,
+                activeBrand = values.activeBrand,
             )
         }
     }

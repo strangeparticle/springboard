@@ -24,6 +24,7 @@ data class SettingsValues(
     val surfaceApplescriptErrors: Boolean? = null,
     val resetKeyNavAfterKeyNavActivation: Boolean? = null,
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
+    val activeBrand: String? = null,
 ) {
     /** Returns true if this source provided a non-null value for the given key. */
     fun isSet(key: SettingsKey): Boolean = get(key) != null
@@ -36,6 +37,7 @@ data class SettingsValues(
         SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> surfaceApplescriptErrors
         SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> resetKeyNavAfterKeyNavActivation
         SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> resetKeyNavAfterGridNavActivation
+        SettingsKey.ACTIVE_BRAND -> activeBrand
     }
 
     /** Returns a copy with the given key/value set. */
@@ -47,6 +49,7 @@ data class SettingsValues(
             SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> copy(surfaceApplescriptErrors = value as Boolean?)
             SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> copy(resetKeyNavAfterKeyNavActivation = value as Boolean?)
             SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> copy(resetKeyNavAfterGridNavActivation = value as Boolean?)
+            SettingsKey.ACTIVE_BRAND -> copy(activeBrand = value as String?)
         }
     }
 
@@ -62,6 +65,7 @@ data class SettingsValues(
             "surfaceApplescriptErrors",
             "resetKeyNavAfterKeyNavActivation",
             "resetKeyNavAfterGridNavActivation",
+            "activeBrand",
         )
     }
 }

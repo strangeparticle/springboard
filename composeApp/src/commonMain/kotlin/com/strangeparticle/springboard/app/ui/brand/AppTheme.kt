@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
-import com.strangeparticle.springboard.app.ui.brand.brands.strangeparticle.StrangeParticleBrand
 import com.strangeparticle.springboard.app.ui.brand.infrastructure.UiBrand
 
 val LocalUiBrand = compositionLocalOf<UiBrand> {
@@ -15,10 +14,16 @@ val LocalUiBrand = compositionLocalOf<UiBrand> {
 }
 
 @Composable
-fun AppTheme(content: @Composable () -> Unit) {
+fun AppTheme(
+    brandId: String,
+    content: @Composable () -> Unit,
+) {
     // Expose brand-only tokens (custom colors/icons) to the subtree while
-    // MaterialTheme handles colorScheme/typography/shapes.
-    CompositionLocalProvider(LocalUiBrand provides StrangeParticleBrand()) {
+    // MaterialTheme handles colorScheme/typography/shapes. The active brand is
+    // resolved from the registry each composition so that changing the
+    // Active Brand setting re-themes the UI live.
+    val brandEntry = BrandRegistry.find(brandId)
+    CompositionLocalProvider(LocalUiBrand provides brandEntry.produceBrand()) {
         val activeUiBrand = LocalUiBrand.current
         MaterialTheme(
             colorScheme = activeUiBrand.colorScheme,

@@ -48,7 +48,7 @@ class SettingsViewModel(
     val activeSettingsEntries by derivedStateOf {
         settingsVersion // read to establish dependency
         SettingsRegistry.allSettings().map { item ->
-            val valueDisplay = formatValue(settingsManager.resolveValue(item.key))
+            val valueDisplay = formatValue(item, settingsManager.resolveValue(item.key))
             ActiveSettingsEntry(
                 displayName = item.displayName,
                 resolvedValue = valueDisplay.displayText,
@@ -57,6 +57,16 @@ class SettingsViewModel(
             )
         }
     }
+
+    /**
+     * The currently resolved active-brand id, reading through [settingsVersion]
+     * so that callers recompose when the setting changes.
+     */
+    val activeBrandId: String
+        get() {
+            settingsVersion // read to establish dependency
+            return settingsManager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND)
+        }
 
     fun getResolvedValue(key: SettingsKey): Any? {
         settingsVersion // read to establish dependency
@@ -91,10 +101,18 @@ class SettingsViewModel(
         setUserSetting(SettingsKey.STARTUP_SPRINGBOARD, null)
     }
 
-    private fun formatValue(value: Any?): ActiveSettingsValueDisplay = when (value) {
-        null -> ActiveSettingsValueDisplay(displayText = "null")
-        is FilePath -> ActiveSettingsValueDisplay(displayText = "path", tooltipText = value.path)
-        else -> ActiveSettingsValueDisplay(displayText = value.toString())
+    private fun formatValue(item: SettingItem, value: Any?): ActiveSettingsValueDisplay {
+        if (item.type == StringFromDropDown::class) {
+            val id = value as? String
+            val declaration = item.defaultValue as? StringFromDropDown
+            val displayText = id?.let { declaration?.displayNameFor(it) } ?: id ?: "null"
+            return ActiveSettingsValueDisplay(displayText = displayText)
+        }
+        return when (value) {
+            null -> ActiveSettingsValueDisplay(displayText = "null")
+            is FilePath -> ActiveSettingsValueDisplay(displayText = "path", tooltipText = value.path)
+            else -> ActiveSettingsValueDisplay(displayText = value.toString())
+        }
     }
 }
 

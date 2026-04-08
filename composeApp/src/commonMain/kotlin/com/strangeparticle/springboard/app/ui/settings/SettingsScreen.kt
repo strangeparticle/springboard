@@ -4,9 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -162,7 +168,24 @@ private fun SettingRow(
                 }
             }
 
-            if (item.type == Boolean::class) {
+            if (item.type == StringFromDropDown::class) {
+                val declaration = item.defaultValue as? StringFromDropDown
+                val selectedId = resolvedValue as? String
+                if (declaration != null && selectedId != null) {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    SettingsDropdown(
+                        settingKey = item.key,
+                        declaration = declaration,
+                        selectedId = selectedId,
+                        isEnabled = !isOverridden,
+                        onSelect = { newId ->
+                            if (!isOverridden) {
+                                viewModel.setUserSetting(item.key, newId)
+                            }
+                        },
+                    )
+                }
+            } else if (item.type == Boolean::class) {
                 Spacer(modifier = Modifier.width(16.dp))
                 Switch(
                     checked = resolvedValue as? Boolean ?: false,
@@ -301,6 +324,70 @@ private fun FilePathActions(
                 modifier = Modifier.height(32.dp).testTag(TestTags.SETTINGS_CLEAR_BUTTON),
             ) {
                 Text("Clear", fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsDropdown(
+    settingKey: SettingsKey,
+    declaration: StringFromDropDown,
+    selectedId: String,
+    isEnabled: Boolean,
+    onSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedDisplayName = declaration.displayNameFor(selectedId) ?: selectedId
+    val options = declaration.dropDownOptions
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && isEnabled,
+        onExpandedChange = { if (isEnabled) expanded = it },
+        modifier = Modifier
+            .width(220.dp)
+            .testTag(TestTags.settingsDropdown(settingKey.jsonKey)),
+    ) {
+        Row(
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth()
+                .height(36.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.small,
+                )
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedDisplayName,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        ExposedDropdownMenu(
+            expanded = expanded && isEnabled,
+            onDismissRequest = { expanded = false },
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName, fontSize = 13.sp) },
+                    onClick = {
+                        onSelect(option.id)
+                        expanded = false
+                    },
+                    modifier = Modifier.testTag(
+                        TestTags.settingsDropdownOption(settingKey.jsonKey, option.id),
+                    ),
+                )
             }
         }
     }

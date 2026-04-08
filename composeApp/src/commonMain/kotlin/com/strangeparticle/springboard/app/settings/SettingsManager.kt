@@ -76,6 +76,14 @@ class SettingsManager(
         return resolveValue(key) as FilePath?
     }
 
+    fun getSelectedOptionIdFromDropDown(key: SettingsKey): String {
+        val entry = SettingsRegistry.require(key)
+        require(entry.type == StringFromDropDown::class) {
+            "Setting $key is not available in the settings registry and/or is not of type StringFromDropDown (actual type: ${entry.type.simpleName})"
+        }
+        return resolveValue(key) as String
+    }
+
     // -- Source Tracking --
 
     /**
@@ -126,6 +134,13 @@ class SettingsManager(
      * Updates a user setting value and persists it immediately.
      */
     fun setUserSetting(key: SettingsKey, value: Any?) {
+        val entry = SettingsRegistry.require(key)
+        if (entry.type == StringFromDropDown::class && value is String) {
+            val declaration = entry.defaultValue as StringFromDropDown
+            require(declaration.isAllowed(value)) {
+                "'$value' is not an allowed value for $key"
+            }
+        }
         layers[SettingsSource.USER_SETTINGS] = layers.getValue(SettingsSource.USER_SETTINGS).withSetting(key, value)
         persistUserSettings()
     }
@@ -135,7 +150,12 @@ class SettingsManager(
     private fun initDefaultSettings() {
         var defaults = SettingsValues()
         for (item in SettingsRegistry.settingsForEnvironment(runtimeEnvironment)) {
-            defaults = defaults.withSetting(item.key, item.defaultValue)
+            val storedDefault: Any? = if (item.type == StringFromDropDown::class) {
+                (item.defaultValue as StringFromDropDown).defaultDropDownOptionId
+            } else {
+                item.defaultValue
+            }
+            defaults = defaults.withSetting(item.key, storedDefault)
         }
         layers[SettingsSource.APP_DEFAULT] = defaults
     }
@@ -189,7 +209,7 @@ class SettingsManager(
                     Boolean::class -> {
                         cliValues = cliValues.withSetting(entry.key, true)
                     }
-                    String::class, FilePath::class -> {
+                    String::class, FilePath::class, StringFromDropDown::class -> {
                         val nextArg = args.getOrNull(i + 1)
                         if (nextArg == null || nextArg.startsWith("--")) {
                             ToastBroadcaster.warning("CLI parameter '$arg' requires a value")
@@ -226,6 +246,14 @@ class SettingsManager(
                     ?: throw IllegalArgumentException("'$rawValue' is not a valid boolean")
                 String::class -> rawValue
                 FilePath::class -> if (rawValue.isBlank()) null else FilePath(rawValue)
+                StringFromDropDown::class -> {
+                    val declaration = entry.defaultValue as StringFromDropDown
+                    if (!declaration.isAllowed(rawValue)) {
+                        val allowed = declaration.dropDownOptions.joinToString(", ") { it.id }
+                        throw IllegalArgumentException("'$rawValue' is not an allowed value (allowed: $allowed)")
+                    }
+                    rawValue
+                }
                 else -> throw IllegalArgumentException("Unsupported type: ${entry.type.simpleName}")
             }
         }

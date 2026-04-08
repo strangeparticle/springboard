@@ -23,6 +23,9 @@ object TestTags {
     const val SETTINGS_CLEAR_BUTTON = "settingsClearButton"
     const val SETTINGS_OVERRIDE_WARNING = "settingsOverrideWarning"
 
+    fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
+    fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"
+
     fun gridCell(appId: String, resourceId: String) = "gridCell_${appId}_${resourceId}"
     fun gridCellActivatorIndicator(appId: String, resourceId: String) = "gridCellActivator_${appId}_${resourceId}"
     fun gridCellGuidanceIndicator(appId: String, resourceId: String) = "gridCellGuidance_${appId}_${resourceId}"

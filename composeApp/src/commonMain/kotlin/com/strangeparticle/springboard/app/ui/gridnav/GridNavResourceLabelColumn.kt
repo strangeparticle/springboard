@@ -62,7 +62,7 @@ fun GridNavResourceLabelColumn(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(CommonUiConstants.GridCellSize)
+                    .height(CommonUiConstants.GridRowHeight)
                     .background(rowBackground)
                     .focusProperties { canFocus = false }
                     .testTag(TestTags.gridRowLabel(resource.id))

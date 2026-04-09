@@ -7,11 +7,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -126,85 +129,106 @@ fun GridNav(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(16.dp)
             .focusProperties { canFocus = false }
-            .horizontalScroll(horizontalScroll)
+            .horizontalScroll(horizontalScroll),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        Box(modifier = Modifier.verticalScroll(verticalScroll)) {
-            Row(modifier = Modifier
-                .padding(end = gridHeaderHeight)
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Exit) {
-                                hoveredAppId = null
-                                hoveredResourceId = null
-                                viewModel.hoveredActivatorPreview = null
+        // Inner wrapper keeps the scrollable content and the header-hover overlay
+        // jointly centered. The layout modifier reports a stable width
+        // (totalGridWidth) to the centering parent so that header-height resizing —
+        // which grows the Row's end padding and the overlay width — only changes
+        // vertical layout, not horizontal centering. Children are still measured
+        // with unbounded width so the rotated-header overflow draws naturally
+        // past the reported right edge.
+        Box(
+            modifier = Modifier
+                .padding(16.dp)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(
+                        constraints.copy(maxWidth = Constraints.Infinity)
+                    )
+                    val reportedWidth = totalGridWidth.roundToPx()
+                    layout(reportedWidth, placeable.height) {
+                        placeable.place(0, 0)
+                    }
+                }
+        ) {
+            Box(modifier = Modifier.verticalScroll(verticalScroll)) {
+                Row(modifier = Modifier
+                    .padding(end = gridHeaderHeight)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == PointerEventType.Exit) {
+                                    hoveredAppId = null
+                                    hoveredResourceId = null
+                                    viewModel.hoveredActivatorPreview = null
+                                }
                             }
                         }
                     }
-                }
-            ) {
-                GridNavResourceLabelColumn(
-                    environmentName = environmentName,
-                    resources = currentSpringboard.resources,
-                    gridHeaderHeight = gridHeaderHeight,
-                    hoveredHeaderResourceId = hoveredHeaderResourceId,
-                    hoveredResourceId = hoveredResourceId,
-                    onHeaderResourceHover = { hoveredHeaderResourceId = it },
-                    onResourceClick = { viewModel.activateRow(it) },
-                )
-
-                currentSpringboard.apps.forEach { app ->
-                    GridNavAppColumn(
-                        app = app,
-                        displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
-                        environmentId = environmentId,
+                ) {
+                    GridNavResourceLabelColumn(
+                        environmentName = environmentName,
                         resources = currentSpringboard.resources,
                         gridHeaderHeight = gridHeaderHeight,
-                        isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id,
-                        isHeaderHovered = hoveredHeaderAppId == app.id,
-                        viewModel = viewModel,
-                        isShiftHeld = isShiftHeld,
-                        hoveredAppId = hoveredAppId,
+                        hoveredHeaderResourceId = hoveredHeaderResourceId,
                         hoveredResourceId = hoveredResourceId,
-                        onCellHover = { appId, resourceId ->
-                            hoveredAppId = appId
-                            hoveredResourceId = resourceId
-                        },
-                        activeGuidanceCoordinate = activeGuidanceCoordinate,
-                        onGuidanceCoordinateChange = { activeGuidanceCoordinate = it },
-                        guidanceDismissJob = guidanceDismissJob,
-                        onGuidanceDismissJobChange = { guidanceDismissJob = it },
+                        onHeaderResourceHover = { hoveredHeaderResourceId = it },
+                        onResourceClick = { viewModel.activateRow(it) },
                     )
+
+                    currentSpringboard.apps.forEach { app ->
+                        GridNavAppColumn(
+                            app = app,
+                            displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
+                            environmentId = environmentId,
+                            resources = currentSpringboard.resources,
+                            gridHeaderHeight = gridHeaderHeight,
+                            isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id,
+                            isHeaderHovered = hoveredHeaderAppId == app.id,
+                            viewModel = viewModel,
+                            isShiftHeld = isShiftHeld,
+                            hoveredAppId = hoveredAppId,
+                            hoveredResourceId = hoveredResourceId,
+                            onCellHover = { appId, resourceId ->
+                                hoveredAppId = appId
+                                hoveredResourceId = resourceId
+                            },
+                            activeGuidanceCoordinate = activeGuidanceCoordinate,
+                            onGuidanceCoordinateChange = { activeGuidanceCoordinate = it },
+                            guidanceDismissJob = guidanceDismissJob,
+                            onGuidanceDismissJobChange = { guidanceDismissJob = it },
+                        )
+                    }
                 }
+
+                // Boundary divider sits at the header/data junction. It is positioned via
+                // offset (rather than nested between two stacked rows) so the existing
+                // column-oriented layout stays intact.
+                GridNavHeaderResizeBoundary(
+                    totalGridWidth = totalGridWidth,
+                    onDragDelta = { deltaPx ->
+                        val deltaDp = with(density) { deltaPx.toDp() }
+                        gridHeaderHeight = (gridHeaderHeight + deltaDp).coerceIn(
+                            GridNavSizingConstants.MinHeaderHeight,
+                            GridNavSizingConstants.MaxHeaderHeight,
+                        )
+                    },
+                    modifier = Modifier.offset(
+                        y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
+                    ),
+                )
             }
 
-            // Boundary divider sits at the header/data junction. It is positioned via
-            // offset (rather than nested between two stacked rows) so the existing
-            // column-oriented layout stays intact.
-            GridNavHeaderResizeBoundary(
-                totalGridWidth = totalGridWidth,
-                onDragDelta = { deltaPx ->
-                    val deltaDp = with(density) { deltaPx.toDp() }
-                    gridHeaderHeight = (gridHeaderHeight + deltaDp).coerceIn(
-                        GridNavSizingConstants.MinHeaderHeight,
-                        GridNavSizingConstants.MaxHeaderHeight,
-                    )
-                },
-                modifier = Modifier.offset(
-                    y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
-                ),
+            GridNavAppColumnHeadingHoverDetectionOverlay(
+                apps = currentSpringboard.apps,
+                gridHeaderHeight = gridHeaderHeight,
+                horizontalOffset = CommonUiConstants.ResourceLabelWidth,
+                onHoveredAppChange = { hoveredHeaderAppId = it },
+                onColumnClick = { viewModel.activateColumn(it) },
             )
         }
-
-        GridNavAppColumnHeadingHoverDetectionOverlay(
-            apps = currentSpringboard.apps,
-            gridHeaderHeight = gridHeaderHeight,
-            horizontalOffset = CommonUiConstants.ResourceLabelWidth,
-            onHoveredAppChange = { hoveredHeaderAppId = it },
-            onColumnClick = { viewModel.activateColumn(it) },
-        )
     }
 }

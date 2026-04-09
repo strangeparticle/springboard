@@ -123,7 +123,7 @@ fun GridNav(
     }
 
     val totalGridWidth = CommonUiConstants.ResourceLabelWidth +
-        CommonUiConstants.GridCellSize * currentSpringboard.apps.size
+        CommonUiConstants.GridColumnWidth * currentSpringboard.apps.size
 
     Box(
         modifier = Modifier

@@ -46,15 +46,15 @@ fun GridNavAppColumnHeadingHoverDetectionOverlay(
     Box(
         modifier = Modifier
             .offset(x = horizontalOffset)
-            .width(CommonUiConstants.GridCellSize * apps.size + gridHeaderHeight)
+            .width(CommonUiConstants.GridColumnWidth * apps.size + gridHeaderHeight)
             .height(gridHeaderHeight)
             .pointerInput(apps) {
-                val cellSizePx = CommonUiConstants.GridCellSize.toPx()
+                val columnWidthPx = CommonUiConstants.GridColumnWidth.toPx()
 
                 fun columnIndexAtPointer(x: Float, y: Float): Int? {
                     val effectiveX = x + y - size.height
                     if (effectiveX < 0) return null
-                    val index = (effectiveX / cellSizePx).toInt()
+                    val index = (effectiveX / columnWidthPx).toInt()
                     return if (index in apps.indices) index else null
                 }
 

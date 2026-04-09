@@ -65,7 +65,7 @@ fun GridNavAppColumn(
     else
         MaterialTheme.colorScheme.surfaceContainer
 
-    Column(modifier = Modifier.width(CommonUiConstants.GridCellSize)) {
+    Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
         // Header cell with parallelogram highlight
         Box(
             modifier = Modifier
@@ -201,7 +201,7 @@ fun GridNavAppColumn(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(CommonUiConstants.GridCellSize)
+                    .height(CommonUiConstants.GridRowHeight)
                     .background(cellBackground)
                     .testTag(TestTags.gridCell(app.id, resource.id))
                     .hoverable(cellInteractionSource)

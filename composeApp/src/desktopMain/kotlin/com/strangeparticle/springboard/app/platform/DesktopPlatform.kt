@@ -10,6 +10,10 @@ actual fun openUrl(url: String) {
     Desktop.getDesktop().browse(URI(url))
 }
 
+actual fun openUrls(urls: List<String>) {
+    urls.forEach(::openUrl)
+}
+
 actual fun openFileDialog(currentPath: String?): String? {
     val dialog = FileDialog(null as Frame?, "Open Springboard Config", FileDialog.LOAD)
     dialog.setFilenameFilter { _, name -> name.endsWith(".json") }

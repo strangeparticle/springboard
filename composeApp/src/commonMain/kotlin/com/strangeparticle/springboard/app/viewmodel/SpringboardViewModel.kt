@@ -270,7 +270,9 @@ class SpringboardViewModel(
 
     private fun executeActivators(activators: List<Activator>, isSingleSelection: Boolean) {
         if (activators.isEmpty()) return
-        if (activators.any { it is UrlActivator }) {
+
+        val urlActivators = activators.filterIsInstance<UrlActivator>()
+        if (urlActivators.isNotEmpty()) {
             val shouldOpenNewWindow = if (isSingleSelection) {
                 settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE)
             } else {
@@ -279,8 +281,15 @@ class SpringboardViewModel(
             if (shouldOpenNewWindow) {
                 platformActivationService.openNewBrowserWindowIfAppropriate()
             }
+            platformActivationService.openUrls(urlActivators.map { it.url })
         }
-        activators.forEach(::executeActivator)
+
+        // Non-URL activators (commands) are executed individually.
+        activators.forEach { activator ->
+            if (activator !is UrlActivator) {
+                executeActivator(activator)
+            }
+        }
     }
 
     private fun resetKeyNavSelections() {

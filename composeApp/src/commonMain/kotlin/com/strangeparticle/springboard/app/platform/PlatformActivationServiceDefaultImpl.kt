@@ -6,6 +6,10 @@ class PlatformActivationServiceDefaultImpl : PlatformActivationService {
         com.strangeparticle.springboard.app.platform.openUrl(url)
     }
 
+    override fun openUrls(urls: List<String>) {
+        com.strangeparticle.springboard.app.platform.openUrls(urls)
+    }
+
     override fun executeCommand(command: String) {
         com.strangeparticle.springboard.app.platform.executeCommand(command)
     }

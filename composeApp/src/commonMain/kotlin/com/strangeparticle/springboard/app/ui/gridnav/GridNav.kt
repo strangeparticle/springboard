@@ -7,8 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
@@ -135,69 +133,32 @@ fun GridNav(
             .background(MaterialTheme.colorScheme.surface)
             .focusProperties { canFocus = false },
     ) {
-        // Scaling wrapper: graphicsLayer scales visually, layout modifier
-        // reports scaled dimensions so scroll bounds are correct.
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .horizontalScroll(horizontalScroll),
             contentAlignment = Alignment.TopCenter,
         ) {
+            // Zoom + padding + fixed-width reporting. The gridZoomScale modifier
+            // divides constraints by scale and reports scaled dimensions for correct
+            // scroll bounds. The inner layout modifier reports a stable width
+            // (totalGridWidth) so header-height resizing only changes vertical layout,
+            // not horizontal centering. Children are measured with unbounded width so
+            // rotated-header overflow draws past the reported right edge.
             Box(
                 modifier = Modifier
+                    .gridZoomScale(scale)
+                    .padding(16.dp)
                     .layout { measurable, constraints ->
-                        // Measure the content at its natural size (unscaled constraints),
-                        // but keep finite maxHeight so verticalScroll inside works correctly.
-                        val scaledConstraints = if (scale > 0f) {
-                            constraints.copy(
-                                maxWidth = if (constraints.maxWidth == Constraints.Infinity) {
-                                    Constraints.Infinity
-                                } else {
-                                    (constraints.maxWidth / scale).roundToInt()
-                                },
-                                maxHeight = if (constraints.maxHeight == Constraints.Infinity) {
-                                    Constraints.Infinity
-                                } else {
-                                    (constraints.maxHeight / scale).roundToInt()
-                                },
-                            )
-                        } else {
-                            constraints
-                        }
-                        val placeable = measurable.measure(scaledConstraints)
-                        layout(
-                            (placeable.width * scale).roundToInt(),
-                            (placeable.height * scale).roundToInt(),
-                        ) {
+                        val placeable = measurable.measure(
+                            constraints.copy(maxWidth = Constraints.Infinity)
+                        )
+                        val reportedWidth = totalGridWidth.roundToPx()
+                        layout(reportedWidth, placeable.height) {
                             placeable.place(0, 0)
                         }
                     }
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale,
-                        transformOrigin = TransformOrigin(0f, 0f),
-                    )
             ) {
-                // Inner wrapper keeps the scrollable content and the header-hover overlay
-                // jointly centered. The layout modifier reports a stable width
-                // (totalGridWidth) to the centering parent so that header-height resizing —
-                // which grows the Row's end padding and the overlay width — only changes
-                // vertical layout, not horizontal centering. Children are still measured
-                // with unbounded width so the rotated-header overflow draws naturally
-                // past the reported right edge.
-                Box(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .layout { measurable, constraints ->
-                            val placeable = measurable.measure(
-                                constraints.copy(maxWidth = Constraints.Infinity)
-                            )
-                            val reportedWidth = totalGridWidth.roundToPx()
-                            layout(reportedWidth, placeable.height) {
-                                placeable.place(0, 0)
-                            }
-                        }
-                ) {
                     Box(modifier = Modifier.verticalScroll(verticalScroll)) {
                         Row(modifier = Modifier
                             .padding(end = gridHeaderHeight)
@@ -276,7 +237,7 @@ fun GridNav(
                     )
                 }
             }
-        }
+
 
         GridNavScrollbarOverlay(
             verticalScrollState = verticalScroll,

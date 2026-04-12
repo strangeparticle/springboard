@@ -72,7 +72,6 @@ fun GridNav(
     val headerIdTextStyle = TextStyle(fontSize = GridNavHeaderIdTextSizeSp.sp)
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    val sin45 = 0.7071f
 
     // Stacked text height = name line + 2dp spacer + id line. Constant per font sizing
     // and used for both initial header sizing and live truncation math.
@@ -94,8 +93,10 @@ fun GridNav(
         textMeasurer.measure(longestTruncatedName, headerNameTextStyle)
     }
     val computedInitialHeaderHeight = with(density) {
-        val rotatedHeightPx = (measuredLongestHeader.size.width + stackedTextHeightPx) * sin45
-        rotatedHeightPx.toDp() + 12.dp
+        val rotatedHeightPx = computeRotatedHeaderHeightPx(
+            measuredLongestHeader.size.width.toFloat(), stackedTextHeightPx
+        )
+        rotatedHeightPx.toDp() + HeaderRotationVerticalPadding
     }
     val clampedInitialHeaderHeight = computedInitialHeaderHeight.coerceIn(
         GridNavSizingConstants.MinHeaderHeight,
@@ -110,9 +111,9 @@ fun GridNav(
     // 1/sin45 yields the maximum text width per app at this height.
     val visibleHeaderNamesByAppId = remember(currentSpringboard.apps, gridHeaderHeight) {
         val availableRotatedHeightPx = with(density) {
-            (gridHeaderHeight - 12.dp).toPx().coerceAtLeast(0f)
+            (gridHeaderHeight - HeaderRotationVerticalPadding).toPx().coerceAtLeast(0f)
         }
-        val maxNameWidthPx = (availableRotatedHeightPx / sin45) - stackedTextHeightPx
+        val maxNameWidthPx = (availableRotatedHeightPx / Sin45) - stackedTextHeightPx
         currentSpringboard.apps.associate { app ->
             app.id to truncateHeaderTextToFitWidth(
                 text = app.name,

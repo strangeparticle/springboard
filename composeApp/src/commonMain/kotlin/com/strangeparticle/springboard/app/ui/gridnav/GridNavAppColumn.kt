@@ -93,9 +93,8 @@ fun GridNavAppColumn(
                         val placeable = measurable.measure(
                             constraints.copy(maxWidth = 10_000, maxHeight = 10_000)
                         )
-                        val sin45 = 0.7071f
-                        val rotatedBottomY = (placeable.width + placeable.height) * sin45 / 2f
-                        val uniformShift = placeable.height * sin45 / 4f
+                        val rotatedBottomY = (placeable.width + placeable.height) * Sin45 / 2f
+                        val uniformShift = placeable.height * Sin45 / 4f
                         layout(constraints.maxWidth, constraints.maxHeight) {
                             placeable.place(
                                 x = (constraints.maxWidth / 2f + rotatedBottomY - placeable.width / 2f - uniformShift).toInt(),
@@ -139,7 +138,7 @@ fun GridNavAppColumn(
                         ),
                         maxLines = 1,
                         softWrap = false,
-                        modifier = Modifier.offset(x = 14.dp),  // shift is here
+                        modifier = Modifier.offset(x = RotatedHeaderIdTextOffset),
                     )
                 }
             }
@@ -176,7 +175,7 @@ fun GridNavAppColumn(
                         guidanceDismissJob?.cancel()
                         onGuidanceDismissJobChange(
                             guidanceDismissScope.launch {
-                                delay(300L)
+                                delay(GuidanceDismissDelayMs)
                                 if (activeGuidanceCoordinate == coordinate) {
                                     onGuidanceCoordinateChange(null)
                                 }

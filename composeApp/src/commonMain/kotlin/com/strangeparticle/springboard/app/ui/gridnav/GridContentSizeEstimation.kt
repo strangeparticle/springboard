@@ -9,7 +9,6 @@ private const val MaxHeaderCharCount = 20
 private const val HeaderTextAvgCharWidthDp = 7.5f
 // Stacked text height: 13sp name + 2dp spacer + 8sp id ≈ 27dp
 private const val HeaderTextHeightDp = 27f
-private const val Sin45 = 0.7071f
 // Safety factor covers font-metric differences between this character-width estimate
 // and GridNav's actual text measurement (which varies by platform and density).
 private const val HeaderEstimationSafetyFactor = 1.15f
@@ -26,11 +25,9 @@ fun estimateHeaderHeightDp(springboard: Springboard): Int {
         minOf(it.name.length, MaxHeaderCharCount)
     } ?: 0
     val estimatedHeaderTextWidthDp = longestAppNameLength * HeaderTextAvgCharWidthDp
-    // The +12 matches GridNav's computedInitialHeaderHeight which adds 12.dp after the
-    // rotated measurement.
-    val rotatedHeight = ((estimatedHeaderTextWidthDp + HeaderTextHeightDp) *
-        Sin45 * HeaderEstimationSafetyFactor).toInt()
-    return rotatedHeight + 12
+    val rotatedHeight = (computeRotatedHeaderHeightPx(estimatedHeaderTextWidthDp, HeaderTextHeightDp) *
+        HeaderEstimationSafetyFactor).toInt()
+    return rotatedHeight + HeaderRotationVerticalPadding.value.toInt()
 }
 
 /**

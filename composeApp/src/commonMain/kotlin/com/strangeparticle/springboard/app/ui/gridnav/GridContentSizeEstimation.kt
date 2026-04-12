@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.ui.gridnav
 
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import kotlin.math.min
 
 // Character-width estimation for rotated header height. These are rough approximations
 // that track GridNav's runtime text measurement closely enough for pre-composition sizing.
@@ -60,4 +61,39 @@ fun estimateGridContentHeightDp(springboard: Springboard): Int {
         GridContentPaddingDp
 
     return gridContentHeight.toInt()
+}
+
+// Activator preview: 11sp text + 2dp vertical padding on each side ≈ 19dp
+const val ActivatorPreviewHeightDp = 19
+
+/**
+ * Subtracts UI chrome heights (navbar, status bar, activator preview) from a viewport
+ * to determine the space available for grid content. Returns (availableWidth, availableHeight).
+ */
+fun computeAvailableGridArea(viewportWidthDp: Int, viewportHeightDp: Int): Pair<Int, Int> {
+    val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
+    val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
+    val availableHeight = viewportHeightDp - navbarHeightDp - statusBarHeightDp - ActivatorPreviewHeightDp
+    return viewportWidthDp to availableHeight
+}
+
+/**
+ * Computes a conservative zoom preset that fits the springboard content within the
+ * given available area. Pure function — no platform dependencies.
+ */
+fun computeZoomToFit(
+    availableWidthDp: Int,
+    availableHeightDp: Int,
+    springboard: Springboard,
+): GridZoomSelection {
+    val naturalWidth = estimateGridContentWidthDp(springboard)
+    val naturalHeight = estimateGridContentHeightDp(springboard)
+
+    if (naturalWidth <= 0 || naturalHeight <= 0) return GridZoomSelection.FixedZoom(100)
+
+    val fitPercent = min(
+        availableWidthDp * 100 / naturalWidth,
+        availableHeightDp * 100 / naturalHeight,
+    )
+    return GridZoomSelection.conservativePresetFor(fitPercent)
 }

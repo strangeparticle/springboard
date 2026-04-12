@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
-import kotlinx.coroutines.Job
 import kotlin.math.roundToInt
 
 @Composable
@@ -38,9 +37,7 @@ fun GridNav(
     var hoveredHeaderAppId by remember { mutableStateOf<String?>(null) }
     var hoveredHeaderResourceId by remember { mutableStateOf<String?>(null) }
 
-    // Single active guidance tooltip — only one can be visible at a time.
-    var activeGuidanceCoordinate by remember { mutableStateOf<Coordinate?>(null) }
-    var guidanceDismissJob by remember { mutableStateOf<Job?>(null) }
+    val guidanceState = rememberGridNavGuidanceState()
 
     // When keyNav forms a full coordinate, show guidance tooltip and activator preview.
     val keyNavCoordinate = viewModel.keyNavCoordinate
@@ -49,15 +46,11 @@ fun GridNav(
             val activator = currentSpringboard.indexes.activatorByCoordinate[keyNavCoordinate]
             viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
             if (currentSpringboard.indexes.guidanceByCoordinate.containsKey(keyNavCoordinate)) {
-                guidanceDismissJob?.cancel()
-                guidanceDismissJob = null
-                activeGuidanceCoordinate = keyNavCoordinate
+                guidanceState.showGuidance(keyNavCoordinate)
             }
         } else {
             viewModel.hoveredActivatorPreview = null
-            if (activeGuidanceCoordinate != null) {
-                activeGuidanceCoordinate = null
-            }
+            guidanceState.clearGuidance()
         }
     }
 
@@ -202,10 +195,7 @@ fun GridNav(
                                         hoveredAppId = appId
                                         hoveredResourceId = resourceId
                                     },
-                                    activeGuidanceCoordinate = activeGuidanceCoordinate,
-                                    onGuidanceCoordinateChange = { activeGuidanceCoordinate = it },
-                                    guidanceDismissJob = guidanceDismissJob,
-                                    onGuidanceDismissJobChange = { guidanceDismissJob = it },
+                                    guidanceState = guidanceState,
                                 )
                             }
                         }

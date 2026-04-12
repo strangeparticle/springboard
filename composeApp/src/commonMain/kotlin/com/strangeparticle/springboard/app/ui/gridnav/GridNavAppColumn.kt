@@ -33,9 +33,6 @@ import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun GridNavAppColumn(
@@ -51,10 +48,7 @@ fun GridNavAppColumn(
     hoveredAppId: String?,
     hoveredResourceId: String?,
     onCellHover: (appId: String?, resourceId: String?) -> Unit,
-    activeGuidanceCoordinate: Coordinate?,
-    onGuidanceCoordinateChange: (Coordinate?) -> Unit,
-    guidanceDismissJob: Job?,
-    onGuidanceDismissJobChange: (Job?) -> Unit,
+    guidanceState: GridNavGuidanceState,
 ) {
     val currentSpringboard = viewModel.springboard ?: return
     val currentUiBrand = LocalUiBrand.current
@@ -156,31 +150,20 @@ fun GridNavAppColumn(
 
             val guidanceData = currentSpringboard.indexes.guidanceByCoordinate[coordinate]
             var isTooltipHovered by remember { mutableStateOf(false) }
-            val isGuidanceActive = activeGuidanceCoordinate == coordinate
+            val isGuidanceActive = guidanceState.activeCoordinate.value == coordinate
 
             LaunchedEffect(isCellHovered, isTooltipHovered) {
                 if (isCellHovered) {
                     onCellHover(app.id, resource.id)
                     viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
                     if (guidanceData != null) {
-                        onGuidanceDismissJobChange(null)
-                        guidanceDismissJob?.cancel()
-                        onGuidanceCoordinateChange(coordinate)
+                        guidanceState.showGuidance(coordinate)
                     }
                 } else {
                     if (isTooltipHovered && guidanceData != null) {
-                        onGuidanceDismissJobChange(null)
-                        guidanceDismissJob?.cancel()
+                        guidanceState.cancelDismiss()
                     } else if (isGuidanceActive) {
-                        guidanceDismissJob?.cancel()
-                        onGuidanceDismissJobChange(
-                            guidanceDismissScope.launch {
-                                delay(GuidanceDismissDelayMs)
-                                if (activeGuidanceCoordinate == coordinate) {
-                                    onGuidanceCoordinateChange(null)
-                                }
-                            }
-                        )
+                        guidanceState.beginDismiss(guidanceDismissScope, coordinate)
                     }
                 }
             }

@@ -32,6 +32,19 @@ Other browsers and/or other OS's fall back to normal URL opening without the ded
 behavior. The first time Springboard opens a URL, macOS may prompt you to allow the app or terminal
 that launched it to control your browser. The exact wording varies by macOS version.
 
+### Batch Activation (Web)
+
+Clicking a column header or row label activates all URLs in that column or row at once. On web
+builds, browsers restrict opening multiple tabs from a single click. The first time you trigger a
+batch activation, the browser will block the additional tabs. The way to unblock varies by browser:
+
+- **Chrome (macOS):** A "popup blocked" icon appears at the end of the address bar. Click it and
+  allow popups for the site. Then click the row or column again — all future batch activations
+  will work without further prompts.
+- **Safari:** A message appears indicating popups were blocked. An icon at the end of the address
+  bar lets you open the tabs that were blocked. After clicking it once, all future batch
+  activations will work without further prompts.
+
 ## License
 
 Licensed under the BSD 3-Clause License. See `LICENSE` and [Licensing Notes](./README/README-Licensing.md).

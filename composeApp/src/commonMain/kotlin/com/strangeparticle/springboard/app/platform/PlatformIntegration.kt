@@ -6,6 +6,8 @@ import kotlinx.datetime.toLocalDateTime
 
 expect fun openUrl(url: String)
 
+expect fun openUrls(urls: List<String>)
+
 expect fun openFileDialog(currentPath: String?): String?
 
 expect fun readFileContents(path: String): String?

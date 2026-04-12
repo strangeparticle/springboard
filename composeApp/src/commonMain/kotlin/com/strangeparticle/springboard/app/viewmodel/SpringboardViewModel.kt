@@ -12,6 +12,7 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel(
@@ -39,6 +40,8 @@ class SpringboardViewModel(
 
     /** Activator preview text shown when hovering a cell or when keyNav fully selects a coordinate. */
     var hoveredActivatorPreview by mutableStateOf<String?>(null)
+
+    var gridZoomSelection by mutableStateOf<GridZoomSelection>(GridZoomSelection.FixedZoom(100))
 
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
     val apps by derivedStateOf { springboard?.apps ?: emptyList() }
@@ -270,7 +273,9 @@ class SpringboardViewModel(
 
     private fun executeActivators(activators: List<Activator>, isSingleSelection: Boolean) {
         if (activators.isEmpty()) return
-        if (activators.any { it is UrlActivator }) {
+
+        val urlActivators = activators.filterIsInstance<UrlActivator>()
+        if (urlActivators.isNotEmpty()) {
             val shouldOpenNewWindow = if (isSingleSelection) {
                 settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE)
             } else {
@@ -279,8 +284,15 @@ class SpringboardViewModel(
             if (shouldOpenNewWindow) {
                 platformActivationService.openNewBrowserWindowIfAppropriate()
             }
+            platformActivationService.openUrls(urlActivators.map { it.url })
         }
-        activators.forEach(::executeActivator)
+
+        // Non-URL activators (commands) are executed individually.
+        activators.forEach { activator ->
+            if (activator !is UrlActivator) {
+                executeActivator(activator)
+            }
+        }
     }
 
     private fun resetKeyNavSelections() {

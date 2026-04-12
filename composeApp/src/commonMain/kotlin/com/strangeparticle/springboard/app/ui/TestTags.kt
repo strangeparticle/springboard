@@ -22,6 +22,7 @@ object TestTags {
     const val SETTINGS_USE_CURRENT_FILE_BUTTON = "settingsUseCurrentFileButton"
     const val SETTINGS_CLEAR_BUTTON = "settingsClearButton"
     const val SETTINGS_OVERRIDE_WARNING = "settingsOverrideWarning"
+    const val ZOOM_DROPDOWN = "zoomDropdown"
 
     fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
     fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"

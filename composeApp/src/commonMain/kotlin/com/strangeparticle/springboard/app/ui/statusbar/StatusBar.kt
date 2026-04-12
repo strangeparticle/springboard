@@ -21,6 +21,8 @@ import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
+import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 
@@ -29,6 +31,8 @@ import androidx.compose.material.icons.filled.CloudDownload
 fun StatusBar(
     springboard: Springboard?,
     isReloading: Boolean,
+    zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
+    onZoomSelectionChange: (GridZoomSelection) -> Unit = {},
     onReload: () -> Unit,
     onOpenSettings: () -> Unit = {},
     onOpenFromNetwork: (() -> Unit)? = null,
@@ -80,6 +84,12 @@ fun StatusBar(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),
         )
+        ZoomDropdown(
+            zoomSelection = zoomSelection,
+            onZoomSelectionChange = onZoomSelectionChange,
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+
         if (onOpenFromNetwork != null) {
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),

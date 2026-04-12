@@ -98,17 +98,25 @@ fun MainScreen(
                 showFileOpen = showFileOpen,
             )
         } else {
+            val currentSpringboard = viewModel.springboard
+            val currentEnvironmentId = viewModel.selectedEnvironmentId
+
             Box(modifier = Modifier.weight(1f)) {
-                GridNav(
-                    viewModel = viewModel,
-                    isShiftHeld = isShiftHeld,
-                    onShiftRelease = {
-                        if (viewModel.multiSelectSet.isNotEmpty()) {
-                            viewModel.activateMultiSelect()
-                        }
-                    },
-                    zoomSelection = viewModel.gridZoomSelection,
-                )
+                if (currentSpringboard != null && currentEnvironmentId != null) {
+                    GridNav(
+                        springboard = currentSpringboard,
+                        selectedEnvironmentId = currentEnvironmentId,
+                        multiSelectSet = viewModel.multiSelectSet,
+                        keyNavCoordinate = viewModel.keyNavCoordinate,
+                        isShiftHeld = isShiftHeld,
+                        onCellActivate = { viewModel.activateCell(it) },
+                        onColumnActivate = { viewModel.activateColumn(it) },
+                        onRowActivate = { viewModel.activateRow(it) },
+                        onToggleMultiSelect = { viewModel.toggleMultiSelect(it) },
+                        onActivatorPreviewChange = { viewModel.hoveredActivatorPreview = it },
+                        zoomSelection = viewModel.gridZoomSelection,
+                    )
+                }
             }
 
             ActivatorPreview(previewText = viewModel.hoveredActivatorPreview)

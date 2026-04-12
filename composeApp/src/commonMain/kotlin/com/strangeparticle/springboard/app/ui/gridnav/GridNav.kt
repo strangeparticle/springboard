@@ -14,19 +14,24 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
-import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.math.roundToInt
 
 @Composable
 fun GridNav(
-    viewModel: SpringboardViewModel,
+    springboard: Springboard,
+    selectedEnvironmentId: String,
+    multiSelectSet: Set<Coordinate>,
+    keyNavCoordinate: Coordinate?,
     isShiftHeld: Boolean,
-    onShiftRelease: () -> Unit,
+    onCellActivate: (Coordinate) -> Unit,
+    onColumnActivate: (String) -> Unit,
+    onRowActivate: (String) -> Unit,
+    onToggleMultiSelect: (Coordinate) -> Unit,
+    onActivatorPreviewChange: (String?) -> Unit,
     zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
 ) {
-    val currentSpringboard = viewModel.springboard ?: return
-    val environmentId = viewModel.selectedEnvironmentId ?: return
 
     var hoveredAppId by remember { mutableStateOf<String?>(null) }
     var hoveredResourceId by remember { mutableStateOf<String?>(null) }
@@ -36,16 +41,15 @@ fun GridNav(
     val guidanceState = rememberGridNavGuidanceState()
 
     // When keyNav forms a full coordinate, show guidance tooltip and activator preview.
-    val keyNavCoordinate = viewModel.keyNavCoordinate
     LaunchedEffect(keyNavCoordinate) {
         if (keyNavCoordinate != null) {
-            val activator = currentSpringboard.indexes.activatorByCoordinate[keyNavCoordinate]
-            viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
-            if (currentSpringboard.indexes.guidanceByCoordinate.containsKey(keyNavCoordinate)) {
+            val activator = springboard.indexes.activatorByCoordinate[keyNavCoordinate]
+            onActivatorPreviewChange(activatorPreviewText(activator))
+            if (springboard.indexes.guidanceByCoordinate.containsKey(keyNavCoordinate)) {
                 guidanceState.showGuidance(keyNavCoordinate)
             }
         } else {
-            viewModel.hoveredActivatorPreview = null
+            onActivatorPreviewChange(null)
             guidanceState.clearGuidance()
         }
     }
@@ -53,18 +57,18 @@ fun GridNav(
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
 
-    val environmentName = currentSpringboard.environments.find { it.id == environmentId }?.name ?: environmentId
+    val environmentName = springboard.environments.find { it.id == selectedEnvironmentId }?.name ?: selectedEnvironmentId
 
-    val headerSizing = rememberGridNavHeaderSizing(currentSpringboard.apps)
+    val headerSizing = rememberGridNavHeaderSizing(springboard.apps)
     val density = LocalDensity.current
 
     var gridHeaderHeight by remember(headerSizing.initialHeaderHeight) {
         mutableStateOf(headerSizing.initialHeaderHeight)
     }
 
-    val visibleHeaderNamesByAppId = remember(currentSpringboard.apps, gridHeaderHeight) {
+    val visibleHeaderNamesByAppId = remember(springboard.apps, gridHeaderHeight) {
         computeVisibleHeaderNames(
-            currentSpringboard.apps,
+            springboard.apps,
             gridHeaderHeight,
             headerSizing.stackedTextHeightPx,
             headerSizing.textMeasurer,
@@ -73,7 +77,7 @@ fun GridNav(
     }
 
     val totalGridWidth = CommonUiConstants.ResourceLabelWidth +
-        CommonUiConstants.GridColumnWidth * currentSpringboard.apps.size
+        CommonUiConstants.GridColumnWidth * springboard.apps.size
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
@@ -119,7 +123,7 @@ fun GridNav(
                                         if (event.type == PointerEventType.Exit) {
                                             hoveredAppId = null
                                             hoveredResourceId = null
-                                            viewModel.hoveredActivatorPreview = null
+                                            onActivatorPreviewChange(null)
                                         }
                                     }
                                 }
@@ -127,15 +131,15 @@ fun GridNav(
                         ) {
                             GridNavRowHeaderColumn(
                                 environmentName = environmentName,
-                                resources = currentSpringboard.resources,
+                                resources = springboard.resources,
                                 gridHeaderHeight = gridHeaderHeight,
                                 hoveredHeaderResourceId = hoveredHeaderResourceId,
                                 hoveredResourceId = hoveredResourceId,
                                 onHeaderResourceHover = { hoveredHeaderResourceId = it },
-                                onResourceClick = { viewModel.activateRow(it) },
+                                onResourceClick = onRowActivate,
                             )
 
-                            currentSpringboard.apps.forEach { app ->
+                            springboard.apps.forEach { app ->
                                 val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
 
                                 Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
@@ -151,13 +155,18 @@ fun GridNav(
                                     // GridNavHeaderResizeBoundary below.
 
                                     GridNavColumnCells(
-                                        app = app,
-                                        environmentId = environmentId,
-                                        resources = currentSpringboard.resources,
+                                        appId = app.id,
+                                        environmentId = selectedEnvironmentId,
+                                        resources = springboard.resources,
+                                        activatorByCoordinate = springboard.indexes.activatorByCoordinate,
+                                        guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
+                                        multiSelectSet = multiSelectSet,
                                         isColumnHighlighted = isHeaderHighlighted,
-                                        viewModel = viewModel,
                                         isShiftHeld = isShiftHeld,
                                         hoveredResourceId = hoveredResourceId,
+                                        onCellActivate = onCellActivate,
+                                        onToggleMultiSelect = onToggleMultiSelect,
+                                        onActivatorPreviewChange = onActivatorPreviewChange,
                                         onCellHover = { appId, resourceId ->
                                             hoveredAppId = appId
                                             hoveredResourceId = resourceId
@@ -187,11 +196,11 @@ fun GridNav(
                     }
 
                     GridNavAppColumnHeadingHoverDetectionOverlay(
-                        apps = currentSpringboard.apps,
+                        apps = springboard.apps,
                         gridHeaderHeight = gridHeaderHeight,
                         horizontalOffset = CommonUiConstants.ResourceLabelWidth,
                         onHoveredAppChange = { hoveredHeaderAppId = it },
-                        onColumnClick = { viewModel.activateColumn(it) },
+                        onColumnClick = onColumnActivate,
                     )
                 }
             }

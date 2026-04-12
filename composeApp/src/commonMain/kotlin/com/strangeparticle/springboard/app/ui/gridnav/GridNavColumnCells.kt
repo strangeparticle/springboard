@@ -20,7 +20,6 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.guidance.GuidanceTooltip
-import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 /**
  * Renders the data cells for a single app column. Each cell shows an activator indicator
@@ -28,35 +27,39 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
  */
 @Composable
 fun GridNavColumnCells(
-    app: App,
+    appId: String,
     environmentId: String,
     resources: List<Resource>,
+    activatorByCoordinate: Map<Coordinate, Activator>,
+    guidanceByCoordinate: Map<Coordinate, GuidanceData>,
+    multiSelectSet: Set<Coordinate>,
     isColumnHighlighted: Boolean,
-    viewModel: SpringboardViewModel,
     isShiftHeld: Boolean,
     hoveredResourceId: String?,
+    onCellActivate: (Coordinate) -> Unit,
+    onToggleMultiSelect: (Coordinate) -> Unit,
+    onActivatorPreviewChange: (String?) -> Unit,
     onCellHover: (appId: String?, resourceId: String?) -> Unit,
     guidanceState: GridNavGuidanceState,
 ) {
-    val currentSpringboard = viewModel.springboard ?: return
     val currentUiBrand = LocalUiBrand.current
     val guidanceDismissScope = rememberCoroutineScope()
 
     resources.forEach { resource ->
-        val coordinate = Coordinate(environmentId, app.id, resource.id)
-        val activator = viewModel.getActivatorForCell(coordinate)
+        val coordinate = Coordinate(environmentId, appId, resource.id)
+        val activator = activatorByCoordinate[coordinate]
         val hasActivator = activator != null
         val cellInteractionSource = remember { MutableInteractionSource() }
         val isCellHovered by cellInteractionSource.collectIsHoveredAsState()
 
-        val guidanceData = currentSpringboard.indexes.guidanceByCoordinate[coordinate]
+        val guidanceData = guidanceByCoordinate[coordinate]
         var isTooltipHovered by remember { mutableStateOf(false) }
         val isGuidanceActive = guidanceState.activeCoordinate.value == coordinate
 
         LaunchedEffect(isCellHovered, isTooltipHovered) {
             if (isCellHovered) {
-                onCellHover(app.id, resource.id)
-                viewModel.hoveredActivatorPreview = activatorPreviewText(activator)
+                onCellHover(appId, resource.id)
+                onActivatorPreviewChange(activatorPreviewText(activator))
                 if (guidanceData != null) {
                     guidanceState.showGuidance(coordinate)
                 }
@@ -70,7 +73,7 @@ fun GridNavColumnCells(
         }
 
         val isRowHighlighted = hoveredResourceId == resource.id
-        val isInMultiSelect = coordinate in viewModel.multiSelectSet
+        val isInMultiSelect = coordinate in multiSelectSet
 
         val cellBackground = when {
             isCellHovered && hasActivator -> MaterialTheme.colorScheme.surfaceContainer
@@ -85,7 +88,7 @@ fun GridNavColumnCells(
                 .fillMaxWidth()
                 .height(CommonUiConstants.GridRowHeight)
                 .background(cellBackground)
-                .testTag(TestTags.gridCell(app.id, resource.id))
+                .testTag(TestTags.gridCell(appId, resource.id))
                 .hoverable(cellInteractionSource)
                 .then(
                     if (hasActivator) {
@@ -93,9 +96,9 @@ fun GridNavColumnCells(
                             .focusProperties { canFocus = false }
                             .clickable {
                                 if (isShiftHeld) {
-                                    viewModel.toggleMultiSelect(coordinate)
+                                    onToggleMultiSelect(coordinate)
                                 } else {
-                                    viewModel.activateCell(coordinate)
+                                    onCellActivate(coordinate)
                                 }
                             }
                     } else Modifier
@@ -103,7 +106,7 @@ fun GridNavColumnCells(
             contentAlignment = Alignment.Center
         ) {
             if (hasActivator) {
-                val indicatorTag = TestTags.gridCellActivatorIndicator(app.id, resource.id)
+                val indicatorTag = TestTags.gridCellActivatorIndicator(appId, resource.id)
                 if (isCellHovered) {
                     Box(
                         modifier = Modifier
@@ -129,7 +132,7 @@ fun GridNavColumnCells(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .size(8.dp)
-                        .testTag(TestTags.gridCellGuidanceIndicator(app.id, resource.id))
+                        .testTag(TestTags.gridCellGuidanceIndicator(appId, resource.id))
                 )
             }
 

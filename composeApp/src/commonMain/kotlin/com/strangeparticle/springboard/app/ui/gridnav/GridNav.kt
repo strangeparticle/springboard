@@ -125,7 +125,7 @@ fun GridNav(
                                 }
                             }
                         ) {
-                            GridNavResourceLabelColumn(
+                            GridNavRowHeaderColumn(
                                 environmentName = environmentName,
                                 resources = currentSpringboard.resources,
                                 gridHeaderHeight = gridHeaderHeight,
@@ -136,24 +136,35 @@ fun GridNav(
                             )
 
                             currentSpringboard.apps.forEach { app ->
-                                GridNavAppColumn(
-                                    app = app,
-                                    displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
-                                    environmentId = environmentId,
-                                    resources = currentSpringboard.resources,
-                                    gridHeaderHeight = gridHeaderHeight,
-                                    isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id,
-                                    isHeaderHovered = hoveredHeaderAppId == app.id,
-                                    viewModel = viewModel,
-                                    isShiftHeld = isShiftHeld,
-                                    hoveredAppId = hoveredAppId,
-                                    hoveredResourceId = hoveredResourceId,
-                                    onCellHover = { appId, resourceId ->
-                                        hoveredAppId = appId
-                                        hoveredResourceId = resourceId
-                                    },
-                                    guidanceState = guidanceState,
-                                )
+                                val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
+
+                                Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
+                                    GridNavColumnHeader(
+                                        appId = app.id,
+                                        displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
+                                        gridHeaderHeight = gridHeaderHeight,
+                                        isHeaderHighlighted = isHeaderHighlighted,
+                                        isHeaderHovered = hoveredHeaderAppId == app.id,
+                                    )
+
+                                    // Header/data boundary divider is rendered by
+                                    // GridNavHeaderResizeBoundary below.
+
+                                    GridNavColumnCells(
+                                        app = app,
+                                        environmentId = environmentId,
+                                        resources = currentSpringboard.resources,
+                                        isColumnHighlighted = isHeaderHighlighted,
+                                        viewModel = viewModel,
+                                        isShiftHeld = isShiftHeld,
+                                        hoveredResourceId = hoveredResourceId,
+                                        onCellHover = { appId, resourceId ->
+                                            hoveredAppId = appId
+                                            hoveredResourceId = resourceId
+                                        },
+                                        guidanceState = guidanceState,
+                                    )
+                                }
                             }
                         }
 

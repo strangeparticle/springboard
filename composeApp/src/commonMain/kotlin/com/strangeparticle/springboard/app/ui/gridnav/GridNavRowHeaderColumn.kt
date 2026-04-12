@@ -26,7 +26,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 
 @Composable
-fun GridNavResourceLabelColumn(
+fun GridNavRowHeaderColumn(
     environmentName: String,
     resources: List<Resource>,
     gridHeaderHeight: Dp,

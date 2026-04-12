@@ -12,11 +12,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -59,60 +55,21 @@ fun GridNav(
 
     val environmentName = currentSpringboard.environments.find { it.id == environmentId }?.name ?: environmentId
 
-    val headerNameTextStyle = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold)
-    val headerIdTextStyle = TextStyle(fontSize = GridNavHeaderIdTextSizeSp.sp)
-    val textMeasurer = rememberTextMeasurer()
+    val headerSizing = rememberGridNavHeaderSizing(currentSpringboard.apps)
     val density = LocalDensity.current
 
-    // Stacked text height = name line + 2dp spacer + id line. Constant per font sizing
-    // and used for both initial header sizing and live truncation math.
-    val stackedTextHeightPx = remember(headerNameTextStyle, headerIdTextStyle) {
-        val nameHeight = textMeasurer.measure("Mg", headerNameTextStyle).size.height
-        val idHeight = textMeasurer.measure("MG", headerIdTextStyle).size.height
-        val spacerPx = with(density) { 2.dp.toPx() }
-        nameHeight + spacerPx + idHeight
+    var gridHeaderHeight by remember(headerSizing.initialHeaderHeight) {
+        mutableStateOf(headerSizing.initialHeaderHeight)
     }
 
-    val longestTruncatedName = remember(currentSpringboard.apps) {
-        currentSpringboard.apps
-            .maxByOrNull { it.name.length }
-            ?.name
-            ?.let(::truncateHeaderText)
-            ?: ""
-    }
-    val measuredLongestHeader = remember(longestTruncatedName) {
-        textMeasurer.measure(longestTruncatedName, headerNameTextStyle)
-    }
-    val computedInitialHeaderHeight = with(density) {
-        val rotatedHeightPx = computeRotatedHeaderHeightPx(
-            measuredLongestHeader.size.width.toFloat(), stackedTextHeightPx
-        )
-        rotatedHeightPx.toDp() + HeaderRotationVerticalPadding
-    }
-    val clampedInitialHeaderHeight = computedInitialHeaderHeight.coerceIn(
-        GridNavSizingConstants.MinHeaderHeight,
-        GridNavSizingConstants.MaxHeaderHeight,
-    )
-    var gridHeaderHeight by remember(clampedInitialHeaderHeight) {
-        mutableStateOf(clampedInitialHeaderHeight)
-    }
-
-    // Re-derive each app's visible header text from the current header height. The
-    // available rotated stack size grows linearly with header height; converting via
-    // 1/sin45 yields the maximum text width per app at this height.
     val visibleHeaderNamesByAppId = remember(currentSpringboard.apps, gridHeaderHeight) {
-        val availableRotatedHeightPx = with(density) {
-            (gridHeaderHeight - HeaderRotationVerticalPadding).toPx().coerceAtLeast(0f)
-        }
-        val maxNameWidthPx = (availableRotatedHeightPx / Sin45) - stackedTextHeightPx
-        currentSpringboard.apps.associate { app ->
-            app.id to truncateHeaderTextToFitWidth(
-                text = app.name,
-                maxWidthPx = maxNameWidthPx,
-                textMeasurer = textMeasurer,
-                style = headerNameTextStyle,
-            )
-        }
+        computeVisibleHeaderNames(
+            currentSpringboard.apps,
+            gridHeaderHeight,
+            headerSizing.stackedTextHeightPx,
+            headerSizing.textMeasurer,
+            headerSizing.density,
+        )
     }
 
     val totalGridWidth = CommonUiConstants.ResourceLabelWidth +

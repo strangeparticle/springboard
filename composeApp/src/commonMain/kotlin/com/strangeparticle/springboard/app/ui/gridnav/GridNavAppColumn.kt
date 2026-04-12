@@ -102,15 +102,7 @@ fun GridNavAppColumn(
                 Column {
                     Text(
                         text = displayName,
-                        style = TextStyle(
-                            fontSize = 13.sp,
-                            lineHeight = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeightStyle = LineHeightStyle(
-                                alignment = LineHeightStyle.Alignment.Center,
-                                trim = LineHeightStyle.Trim.Both,
-                            ),
-                        ),
+                        style = HeaderNameTextStyle,
                         maxLines = 1,
                         softWrap = false,
                     )
@@ -122,14 +114,7 @@ fun GridNavAppColumn(
                     Text(
                         text = app.id.uppercase(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = TextStyle(
-                            fontSize = GridNavHeaderIdTextSizeSp.sp,
-                            lineHeight = GridNavHeaderIdTextSizeSp.sp,
-                            lineHeightStyle = LineHeightStyle(
-                                alignment = LineHeightStyle.Alignment.Center,
-                                trim = LineHeightStyle.Trim.Both,
-                            ),
-                        ),
+                        style = HeaderIdTextStyle,
                         maxLines = 1,
                         softWrap = false,
                         modifier = Modifier.offset(x = RotatedHeaderIdTextOffset),

@@ -106,7 +106,8 @@ fun MainScreen(
                         if (viewModel.multiSelectSet.isNotEmpty()) {
                             viewModel.activateMultiSelect()
                         }
-                    }
+                    },
+                    zoomSelection = viewModel.gridZoomSelection,
                 )
             }
 
@@ -115,6 +116,8 @@ fun MainScreen(
             StatusBar(
                 springboard = viewModel.springboard,
                 isReloading = isReloading,
+                zoomSelection = viewModel.gridZoomSelection,
+                onZoomSelectionChange = { viewModel.gridZoomSelection = it },
                 onReload = {
                     val source = lastLoadedPath ?: viewModel.springboard?.source ?: return@StatusBar
                     scope.launch {

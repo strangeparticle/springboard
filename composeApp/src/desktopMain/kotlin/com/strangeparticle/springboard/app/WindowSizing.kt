@@ -6,40 +6,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentWidthDp
+import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentHeightDp
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import java.awt.Toolkit
 
-private const val NavbarHeightDp = 56
-private const val StatusBarHeightDp = 32
-private const val GridCellHeightDp = 46
-private const val GridTopPaddingDp = 16
-private const val GridBottomPaddingDp = 16
-private const val EnvironmentTitleHeightDp = 40
-private const val WindowVerticalBufferDp = 40
+// Window chrome heights (outside the GridNav content area)
+private const val ActivatorPreviewHeightDp = 19  // 11sp text + 2dp vertical padding * 2
+private const val WindowVerticalBufferDp = 30
 
-private const val ResourceLabelWidthDp = 200
-private const val AppColumnWidthDp = 40
-private const val GridHorizontalPaddingDp = 72
-
+// Navbar minimum width estimation
 private const val NavbarDropdownCount = 3
 private const val NavbarDropdownWidthDp = 100
 private const val NavbarDropdownGapDp = 8
 private const val NavbarLogoAndPaddingBufferDp = 250
 private const val NavbarSafetyMarginFactor = 1.1
 
-private const val MaxHeaderCharCount = 20
-private const val HeaderTextAvgCharWidthDp = 7.5f
-private const val HeaderTextHeightDp = 18f
-private const val Sin45 = 0.7071f
+private const val ScreenUsableMarginFactor = 0.9
 
 fun calculateWindowWidth(springboard: Springboard): Int {
-    val longestAppNameLength = springboard.apps.maxOfOrNull { minOf(it.name.length, MaxHeaderCharCount) } ?: 0
-    val estimatedHeaderTextWidthDp = longestAppNameLength * HeaderTextAvgCharWidthDp
-    val headerDiagonalOverhangDp = ((estimatedHeaderTextWidthDp + HeaderTextHeightDp) * Sin45).toInt()
-
-    val gridWidth = ResourceLabelWidthDp +
-        (springboard.apps.size * AppColumnWidthDp) +
-        headerDiagonalOverhangDp +
-        GridHorizontalPaddingDp
+    val gridWidth = estimateGridContentWidthDp(springboard)
     val navbarMinWidth = (
         (NavbarDropdownCount * NavbarDropdownWidthDp +
         (NavbarDropdownCount - 1) * NavbarDropdownGapDp +
@@ -49,17 +37,14 @@ fun calculateWindowWidth(springboard: Springboard): Int {
 }
 
 fun calculateWindowHeight(springboard: Springboard): Int {
-    val longestAppNameLength = springboard.apps.maxOfOrNull { minOf(it.name.length, MaxHeaderCharCount) } ?: 0
-    val estimatedHeaderTextWidthDp = longestAppNameLength * HeaderTextAvgCharWidthDp
-    val estimatedHeaderHeightDp = ((estimatedHeaderTextWidthDp + HeaderTextHeightDp) * Sin45).toInt()
+    val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
+    val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
+    val gridContentHeight = estimateGridContentHeightDp(springboard)
 
-    return NavbarHeightDp +
-        GridTopPaddingDp +
-        EnvironmentTitleHeightDp +
-        estimatedHeaderHeightDp +
-        (springboard.resources.size * GridCellHeightDp) +
-        GridBottomPaddingDp +
-        StatusBarHeightDp +
+    return navbarHeightDp +
+        gridContentHeight +
+        ActivatorPreviewHeightDp +
+        statusBarHeightDp +
         WindowVerticalBufferDp
 }
 
@@ -71,12 +56,22 @@ fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: W
         if (width != null && height != null) {
             windowState.size = DpSize(width.dp, height.dp)
             windowState.position = WindowPosition(Alignment.Center)
+            viewModel.gridZoomSelection = GridZoomSelection.FixedZoom(100)
+            return
         }
-        return
     }
+
+    val contentWidth = calculateWindowWidth(springboard)
+    val contentHeight = calculateWindowHeight(springboard)
+
+    val screenSize = Toolkit.getDefaultToolkit().screenSize
+    val maxScreenWidth = (screenSize.width * ScreenUsableMarginFactor).toInt()
+    val maxScreenHeight = (screenSize.height * ScreenUsableMarginFactor).toInt()
+
     windowState.size = DpSize(
-        width = calculateWindowWidth(springboard).dp,
-        height = calculateWindowHeight(springboard).dp
+        minOf(contentWidth, maxScreenWidth).dp,
+        minOf(contentHeight, maxScreenHeight).dp,
     )
+    viewModel.gridZoomSelection = GridZoomSelection.FixedZoom(100)
     windowState.position = WindowPosition(Alignment.Center)
 }

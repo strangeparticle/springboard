@@ -12,6 +12,7 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel(
@@ -39,6 +40,8 @@ class SpringboardViewModel(
 
     /** Activator preview text shown when hovering a cell or when keyNav fully selects a coordinate. */
     var hoveredActivatorPreview by mutableStateOf<String?>(null)
+
+    var gridZoomSelection by mutableStateOf<GridZoomSelection>(GridZoomSelection.FixedZoom(100))
 
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
     val apps by derivedStateOf { springboard?.apps ?: emptyList() }

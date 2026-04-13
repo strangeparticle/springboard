@@ -33,14 +33,23 @@ fun GridNav(
     zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
 ) {
 
+    // Hover state is tracked at two levels: cell-level (hoveredAppId/hoveredResourceId)
+    // for crosshair-style column+row highlighting as the pointer moves over data cells,
+    // and header-level (hoveredHeaderAppId/hoveredHeaderResourceId) for highlighting
+    // when the pointer is over a column or row header label rather than a data cell.
     var hoveredAppId by remember { mutableStateOf<String?>(null) }
     var hoveredResourceId by remember { mutableStateOf<String?>(null) }
     var hoveredHeaderAppId by remember { mutableStateOf<String?>(null) }
     var hoveredHeaderResourceId by remember { mutableStateOf<String?>(null) }
 
+    // Manages the lifecycle of the single visible guidance tooltip in the grid.
+    // Shared across all cells so that showing guidance on one cell automatically
+    // dismisses any tooltip on a previously hovered cell.
     val guidanceState = rememberGridNavGuidanceState()
 
-    // When keyNav forms a full coordinate, show guidance tooltip and activator preview.
+    // Keyboard navigation can form a full coordinate (environment + app + resource)
+    // without any pointer interaction. When it does, show the same guidance tooltip
+    // and activator preview that pointer hover would show. When keyNav clears, clear both.
     LaunchedEffect(keyNavCoordinate) {
         if (keyNavCoordinate != null) {
             val activator = springboard.indexes.activatorByCoordinate[keyNavCoordinate]
@@ -59,6 +68,9 @@ fun GridNav(
 
     val environmentName = springboard.environments.find { it.id == selectedEnvironmentId }?.name ?: selectedEnvironmentId
 
+    // Header sizing is derived from font metrics and the longest app name. The
+    // initial height is clamped to min/max bounds. gridHeaderHeight is mutable
+    // because the user can drag the header resize boundary to adjust it.
     val headerSizing = rememberGridNavHeaderSizing(springboard.apps)
     val density = LocalDensity.current
 
@@ -66,6 +78,8 @@ fun GridNav(
         mutableStateOf(headerSizing.initialHeaderHeight)
     }
 
+    // Re-derive each app's visible header text whenever the header height changes.
+    // Shorter headers truncate long app names; taller headers reveal more text.
     val visibleHeaderNamesByAppId = remember(springboard.apps, gridHeaderHeight) {
         computeVisibleHeaderNames(
             springboard.apps,
@@ -76,12 +90,18 @@ fun GridNav(
         )
     }
 
+    // The logical grid width used for centering and scroll bounds. Does not
+    // include the rotated header overflow — that extends past the right edge
+    // visually but is not part of the scrollable content width.
     val totalGridWidth = CommonUiConstants.ResourceLabelWidth +
         CommonUiConstants.GridColumnWidth * springboard.apps.size
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
-    // Horizontal scroll and centering
+    // Outermost container: fills the available space, paints the surface
+    // background, disables focus (keyboard nav is handled by NavBar above),
+    // and provides horizontal scrolling. TopCenter alignment centers the
+    // grid horizontally when it's narrower than the viewport.
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,7 +110,22 @@ fun GridNav(
             .horizontalScroll(horizontalScroll),
         contentAlignment = Alignment.TopCenter,
     ) {
-        // Zoom scaling, padding, and fixed-width reporting for stable centering
+        // This Box applies three modifiers that must be layered in this order:
+        //
+        // 1. gridZoomScale — scales children visually and divides incoming
+        //    constraints by the scale factor so content lays out at 1:1 in its
+        //    own coordinate space. Reports scaled dimensions back to the parent
+        //    so horizontal scroll bounds stay correct at any zoom level.
+        //
+        // 2. padding — 16dp gutter around the grid, applied after zoom so the
+        //    padding itself scales with the grid.
+        //
+        // 3. Fixed-width layout — measures children with unbounded width (so
+        //    rotated headers can overflow past the grid's right edge without
+        //    being clipped), then reports totalGridWidth as the measured width.
+        //    This prevents header-height resizing from changing the reported
+        //    width, which would cause the parent's centering to shift
+        //    horizontally while dragging the header resize handle.
         Box(
             modifier = Modifier
                 .gridZoomScale(scale)
@@ -105,8 +140,16 @@ fun GridNav(
                     }
                 }
         ) {
-            // Vertical scroll
+            // Vertical scroll container for the grid content.
             Box(modifier = Modifier.verticalScroll(verticalScroll)) {
+
+                // The Row holds the row-header column followed by each app column.
+                // padding(end) reserves space for rotated headers that extend past
+                // the last column's right edge. The pointerInput clears all hover
+                // state (column highlight, row highlight, activator preview) when
+                // the pointer leaves the grid area entirely — individual cells
+                // handle their own hover-enter but only this top-level handler
+                // can detect that the pointer has left the grid as a whole.
                 Row(modifier = Modifier
                     .padding(end = gridHeaderHeight)
                     .pointerInput(Unit) {
@@ -132,6 +175,10 @@ fun GridNav(
                         onResourceClick = onRowActivate,
                     )
 
+                    // Each app gets a fixed-width column containing its rotated
+                    // header and data cells. A column is highlighted when either a
+                    // data cell in that column is hovered (hoveredAppId) or the
+                    // column header itself is hovered via the overlay (hoveredHeaderAppId).
                     springboard.apps.forEach { app ->
                         val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
 
@@ -188,6 +235,14 @@ fun GridNav(
                 )
             }
 
+            // Transparent overlay that sits on top of the header area and provides
+            // parallelogram-shaped hover detection for the rotated column headers.
+            // Compose hit-testing is always rectangular, so without this overlay
+            // the diagonal header shapes would have incorrect hover regions. This
+            // overlay uses a coordinate transform (effectiveX = pointerX + pointerY
+            // - headerHeight) to map pointer positions into the correct column.
+            // It must be a sibling of the vertical-scroll Box (not inside it) so
+            // it stays fixed at the top while data cells scroll underneath.
             GridNavAppColumnHeadingHoverDetectionOverlay(
                 apps = springboard.apps,
                 gridHeaderHeight = gridHeaderHeight,

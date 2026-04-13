@@ -81,24 +81,21 @@ fun GridNav(
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
+    // Background surface and root for scrollbar overlay
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .focusProperties { canFocus = false },
     ) {
+        // Horizontal scroll and centering
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .horizontalScroll(horizontalScroll),
             contentAlignment = Alignment.TopCenter,
         ) {
-            // Zoom + padding + fixed-width reporting. The gridZoomScale modifier
-            // divides constraints by scale and reports scaled dimensions for correct
-            // scroll bounds. The inner layout modifier reports a stable width
-            // (totalGridWidth) so header-height resizing only changes vertical layout,
-            // not horizontal centering. Children are measured with unbounded width so
-            // rotated-header overflow draws past the reported right edge.
+            // Zoom scaling, padding, and fixed-width reporting for stable centering
             Box(
                 modifier = Modifier
                     .gridZoomScale(scale)
@@ -113,6 +110,7 @@ fun GridNav(
                         }
                     }
             ) {
+                    // Vertical scroll
                     Box(modifier = Modifier.verticalScroll(verticalScroll)) {
                         Row(modifier = Modifier
                             .padding(end = gridHeaderHeight)

@@ -80,6 +80,10 @@ Notes:
 - There is no supported public default config-loading story for WASM yet.
 - Command activators are not supported on WASM.
 - Browser popup restrictions apply to URL activation.
+- **Auto-reload in development mode:** The webpack dev server watches the project directory for file
+  changes. Any file write under the project root — including IDE metadata files like
+  `.idea/workspace.xml` — will trigger a full page reload, restarting the app and losing any loaded
+  springboard state. This is normal webpack live-reload behavior and is not a bug in the application.
 
 ---
 

@@ -81,133 +81,120 @@ fun GridNav(
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
-    // Background surface and root for scrollbar overlay
+    // Horizontal scroll and centering
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
-            .focusProperties { canFocus = false },
+            .focusProperties { canFocus = false }
+            .horizontalScroll(horizontalScroll),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        // Horizontal scroll and centering
+        // Zoom scaling, padding, and fixed-width reporting for stable centering
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .horizontalScroll(horizontalScroll),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            // Zoom scaling, padding, and fixed-width reporting for stable centering
-            Box(
-                modifier = Modifier
-                    .gridZoomScale(scale)
-                    .padding(16.dp)
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(
-                            constraints.copy(maxWidth = Constraints.Infinity)
-                        )
-                        val reportedWidth = totalGridWidth.roundToPx()
-                        layout(reportedWidth, placeable.height) {
-                            placeable.place(0, 0)
-                        }
+                .gridZoomScale(scale)
+                .padding(16.dp)
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(
+                        constraints.copy(maxWidth = Constraints.Infinity)
+                    )
+                    val reportedWidth = totalGridWidth.roundToPx()
+                    layout(reportedWidth, placeable.height) {
+                        placeable.place(0, 0)
                     }
-            ) {
-                    // Vertical scroll
-                    Box(modifier = Modifier.verticalScroll(verticalScroll)) {
-                        Row(modifier = Modifier
-                            .padding(end = gridHeaderHeight)
-                            .pointerInput(Unit) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        val event = awaitPointerEvent()
-                                        if (event.type == PointerEventType.Exit) {
-                                            hoveredAppId = null
-                                            hoveredResourceId = null
-                                            onActivatorPreviewChange(null)
-                                        }
-                                    }
+                }
+        ) {
+            // Vertical scroll
+            Box(modifier = Modifier.verticalScroll(verticalScroll)) {
+                Row(modifier = Modifier
+                    .padding(end = gridHeaderHeight)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if (event.type == PointerEventType.Exit) {
+                                    hoveredAppId = null
+                                    hoveredResourceId = null
+                                    onActivatorPreviewChange(null)
                                 }
                             }
-                        ) {
-                            GridNavRowHeaderColumn(
-                                environmentName = environmentName,
-                                resources = springboard.resources,
+                        }
+                    }
+                ) {
+                    GridNavRowHeaderColumn(
+                        environmentName = environmentName,
+                        resources = springboard.resources,
+                        gridHeaderHeight = gridHeaderHeight,
+                        hoveredHeaderResourceId = hoveredHeaderResourceId,
+                        hoveredResourceId = hoveredResourceId,
+                        onHeaderResourceHover = { hoveredHeaderResourceId = it },
+                        onResourceClick = onRowActivate,
+                    )
+
+                    springboard.apps.forEach { app ->
+                        val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
+
+                        Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
+                            GridNavColumnHeader(
+                                appId = app.id,
+                                displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
                                 gridHeaderHeight = gridHeaderHeight,
-                                hoveredHeaderResourceId = hoveredHeaderResourceId,
-                                hoveredResourceId = hoveredResourceId,
-                                onHeaderResourceHover = { hoveredHeaderResourceId = it },
-                                onResourceClick = onRowActivate,
+                                isHeaderHighlighted = isHeaderHighlighted,
+                                isHeaderHovered = hoveredHeaderAppId == app.id,
                             )
 
-                            springboard.apps.forEach { app ->
-                                val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
+                            // Header/data boundary divider is rendered by
+                            // GridNavHeaderResizeBoundary below.
 
-                                Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
-                                    GridNavColumnHeader(
-                                        appId = app.id,
-                                        displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
-                                        gridHeaderHeight = gridHeaderHeight,
-                                        isHeaderHighlighted = isHeaderHighlighted,
-                                        isHeaderHovered = hoveredHeaderAppId == app.id,
-                                    )
-
-                                    // Header/data boundary divider is rendered by
-                                    // GridNavHeaderResizeBoundary below.
-
-                                    GridNavColumnCells(
-                                        appId = app.id,
-                                        environmentId = selectedEnvironmentId,
-                                        resources = springboard.resources,
-                                        activatorByCoordinate = springboard.indexes.activatorByCoordinate,
-                                        guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
-                                        multiSelectSet = multiSelectSet,
-                                        isColumnHighlighted = isHeaderHighlighted,
-                                        isShiftHeld = isShiftHeld,
-                                        hoveredResourceId = hoveredResourceId,
-                                        onCellActivate = onCellActivate,
-                                        onToggleMultiSelect = onToggleMultiSelect,
-                                        onActivatorPreviewChange = onActivatorPreviewChange,
-                                        onCellHover = { appId, resourceId ->
-                                            hoveredAppId = appId
-                                            hoveredResourceId = resourceId
-                                        },
-                                        guidanceState = guidanceState,
-                                    )
-                                }
-                            }
+                            GridNavColumnCells(
+                                appId = app.id,
+                                environmentId = selectedEnvironmentId,
+                                resources = springboard.resources,
+                                activatorByCoordinate = springboard.indexes.activatorByCoordinate,
+                                guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
+                                multiSelectSet = multiSelectSet,
+                                isColumnHighlighted = isHeaderHighlighted,
+                                isShiftHeld = isShiftHeld,
+                                hoveredResourceId = hoveredResourceId,
+                                onCellActivate = onCellActivate,
+                                onToggleMultiSelect = onToggleMultiSelect,
+                                onActivatorPreviewChange = onActivatorPreviewChange,
+                                onCellHover = { appId, resourceId ->
+                                    hoveredAppId = appId
+                                    hoveredResourceId = resourceId
+                                },
+                                guidanceState = guidanceState,
+                            )
                         }
-
-                        // Boundary divider sits at the header/data junction. It is positioned via
-                        // offset (rather than nested between two stacked rows) so the existing
-                        // column-oriented layout stays intact.
-                        GridNavHeaderResizeBoundary(
-                            totalGridWidth = totalGridWidth,
-                            onDragDelta = { deltaPx ->
-                                val deltaDp = with(density) { deltaPx.toDp() }
-                                gridHeaderHeight = (gridHeaderHeight + deltaDp).coerceIn(
-                                    GridNavSizingConstants.MinHeaderHeight,
-                                    GridNavSizingConstants.MaxHeaderHeight,
-                                )
-                            },
-                            modifier = Modifier.offset(
-                                y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
-                            ),
-                        )
                     }
-
-                    GridNavAppColumnHeadingHoverDetectionOverlay(
-                        apps = springboard.apps,
-                        gridHeaderHeight = gridHeaderHeight,
-                        horizontalOffset = CommonUiConstants.ResourceLabelWidth,
-                        onHoveredAppChange = { hoveredHeaderAppId = it },
-                        onColumnClick = onColumnActivate,
-                    )
                 }
+
+                // Boundary divider sits at the header/data junction. It is positioned via
+                // offset (rather than nested between two stacked rows) so the existing
+                // column-oriented layout stays intact.
+                GridNavHeaderResizeBoundary(
+                    totalGridWidth = totalGridWidth,
+                    onDragDelta = { deltaPx ->
+                        val deltaDp = with(density) { deltaPx.toDp() }
+                        gridHeaderHeight = (gridHeaderHeight + deltaDp).coerceIn(
+                            GridNavSizingConstants.MinHeaderHeight,
+                            GridNavSizingConstants.MaxHeaderHeight,
+                        )
+                    },
+                    modifier = Modifier.offset(
+                        y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
+                    ),
+                )
             }
 
-
-        GridNavScrollbarOverlay(
-            verticalScrollState = verticalScroll,
-            horizontalScrollState = horizontalScroll,
-            modifier = Modifier.matchParentSize(),
-        )
+            GridNavAppColumnHeadingHoverDetectionOverlay(
+                apps = springboard.apps,
+                gridHeaderHeight = gridHeaderHeight,
+                horizontalOffset = CommonUiConstants.ResourceLabelWidth,
+                onHoveredAppChange = { hoveredHeaderAppId = it },
+                onColumnClick = onColumnActivate,
+            )
+        }
     }
 }

@@ -17,7 +17,7 @@ import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
  * for the rotated column headers. Sits on top of the entire header area.
  *
  * Why this is necessary: Compose hit-testing is always rectangular — it's based on layout
- * bounds regardless of what is drawn. The parallelogram highlights in [GridNavAppColumn] are
+ * bounds regardless of what is drawn. The parallelogram highlights in [GridNavColumnHeader] are
  * painted via `drawBehind` with a [Path], which only affects rendering and has zero effect on
  * pointer event delivery. `graphicsLayer { clip = false }` lets the parallelogram draw outside
  * the column Box bounds into neighboring columns, but pointer events still only fire within

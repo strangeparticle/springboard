@@ -7,14 +7,13 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.gridnav.ActivatorPreviewHeightDp
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentWidthDp
 import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentHeightDp
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import java.awt.Toolkit
 
-// Window chrome heights (outside the GridNav content area)
-private const val ActivatorPreviewHeightDp = 19  // 11sp text + 2dp vertical padding * 2
 private const val WindowVerticalBufferDp = 30
 
 // Navbar minimum width estimation

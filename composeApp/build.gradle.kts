@@ -63,11 +63,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.cio)
         }
-        val wasmJsMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.js.wasm.js)
-            }
-        }
+        // wasmJsMain uses browser fetch() directly via JS interop — no Ktor dependency needed.
         val desktopTest by getting {
             dependencies {
                 implementation(compose.desktop.uiTestJUnit4)

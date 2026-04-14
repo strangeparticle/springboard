@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.settings
 
-import com.strangeparticle.springboard.app.settings.persistence.SettingsPersistenceManager
-import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
+import com.strangeparticle.springboard.app.persistence.PersistenceService
+import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 /**
@@ -19,7 +19,7 @@ import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
  */
 class SettingsManager(
     private val runtimeEnvironment: RuntimeEnvironment,
-    private val persistenceManager: SettingsPersistenceManager,
+    private val persistenceService: PersistenceService,
 ) {
 
     /**
@@ -36,7 +36,7 @@ class SettingsManager(
      * Populates all settings layers at startup.
      *
      * 1. Init defaults from the registry's hardcoded values.
-     * 2. Load persisted user settings.
+     * 2. Load persisted settings.
      * 3. Load environment variables.
      * 4. Load command-line parameters.
      */
@@ -45,7 +45,7 @@ class SettingsManager(
         commandLineArgs: List<String> = emptyList(),
     ) {
         initDefaultSettings()
-        loadUserSettings()
+        loadPersistedSettings()
         loadEnvironmentVariables(environmentVariables)
         loadCommandLineArgs(commandLineArgs)
     }
@@ -142,7 +142,7 @@ class SettingsManager(
             }
         }
         layers[SettingsSource.USER_SETTINGS] = layers.getValue(SettingsSource.USER_SETTINGS).withSetting(key, value)
-        persistUserSettings()
+        persistSettingsLayer()
     }
 
     // -- Private Loading --
@@ -160,8 +160,8 @@ class SettingsManager(
         layers[SettingsSource.APP_DEFAULT] = defaults
     }
 
-    private fun loadUserSettings() {
-        val dto = persistenceManager.loadDto()
+    private fun loadPersistedSettings() {
+        val dto = persistenceService.loadSettings()
         if (dto != null) {
             layers[SettingsSource.USER_SETTINGS] = dto.toSettingsValues()
         }
@@ -229,10 +229,10 @@ class SettingsManager(
         layers[SettingsSource.COMMAND_LINE] = cliValues
     }
 
-    private fun persistUserSettings() {
-        val userLayer = layers.getValue(SettingsSource.USER_SETTINGS)
-        val dto = UserSettingsDto.fromSettingsValues(userLayer)
-        persistenceManager.saveDto(dto)
+    private fun persistSettingsLayer() {
+        val settingsLayer = layers.getValue(SettingsSource.USER_SETTINGS)
+        val dto = SettingsDto.fromSettingsValues(settingsLayer)
+        persistenceService.persistSettings(dto)
     }
 
     companion object {

@@ -1,14 +1,14 @@
 package com.strangeparticle.springboard.app.unit.settings
 
 import com.strangeparticle.springboard.app.settings.persistence.SettingsSerializer
-import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
+import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
 import kotlin.test.*
 
 class SettingsSerializerTest {
 
     @Test
     fun `round trip booleans`() {
-        val original = UserSettingsDto(
+        val original = SettingsDto(
             surfaceAppleScriptErrors = true,
             openUrlsInNewWindowSingle = false,
         )
@@ -22,7 +22,7 @@ class SettingsSerializerTest {
 
     @Test
     fun `round trip file path`() {
-        val original = UserSettingsDto(startupSpringboard = "/some/file.json")
+        val original = SettingsDto(startupSpringboard = "/some/file.json")
         val json = SettingsSerializer.toJson(original)
         val restored = SettingsSerializer.fromJson(json)
 
@@ -32,7 +32,7 @@ class SettingsSerializerTest {
 
     @Test
     fun `unset fields are omitted from json`() {
-        val dto = UserSettingsDto(surfaceAppleScriptErrors = true)
+        val dto = SettingsDto(surfaceAppleScriptErrors = true)
         val json = SettingsSerializer.toJson(dto)
 
         // Only the set field should appear in JSON (encodeDefaults = false)
@@ -52,9 +52,10 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun `invalid json returns null`() {
-        val result = SettingsSerializer.fromJson("not valid json")
-        assertNull(result)
+    fun `invalid json throws`() {
+        assertFailsWith<IllegalArgumentException> {
+            SettingsSerializer.fromJson("not valid json")
+        }
     }
 
     @Test
@@ -76,7 +77,7 @@ class SettingsSerializerTest {
 
     @Test
     fun `output is pretty printed`() {
-        val dto = UserSettingsDto(surfaceAppleScriptErrors = true)
+        val dto = SettingsDto(surfaceAppleScriptErrors = true)
         val json = SettingsSerializer.toJson(dto)
         assertTrue(json.contains("\n"), "Output should be pretty-printed")
     }

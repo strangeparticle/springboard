@@ -4,7 +4,7 @@ import kotlinx.serialization.json.Json
 
 /**
  * Shared serialization logic for user settings.
- * Converts between [UserSettingsDto] and JSON text.
+ * Converts between [SettingsDto] and JSON text.
  */
 object SettingsSerializer {
 
@@ -15,21 +15,21 @@ object SettingsSerializer {
     }
 
     /**
-     * Serializes a [UserSettingsDto] to a JSON string.
+     * Serializes a [SettingsDto] to a JSON string.
      */
-    fun toJson(dto: UserSettingsDto): String {
-        return json.encodeToString(UserSettingsDto.serializer(), dto)
+    fun toJson(dto: SettingsDto): String {
+        return json.encodeToString(SettingsDto.serializer(), dto)
     }
 
     /**
-     * Deserializes a JSON string to a [UserSettingsDto].
-     * Returns null if the JSON is invalid.
+     * Deserializes a JSON string to a [SettingsDto].
+     * Throws [IllegalArgumentException] if the JSON is invalid.
      */
-    fun fromJson(jsonString: String): UserSettingsDto? {
+    fun fromJson(jsonString: String): SettingsDto {
         return try {
-            json.decodeFromString(UserSettingsDto.serializer(), jsonString)
-        } catch (_: Exception) {
-            null
+            json.decodeFromString(SettingsDto.serializer(), jsonString)
+        } catch (exception: Exception) {
+            throw IllegalArgumentException("Invalid settings JSON", exception)
         }
     }
 }

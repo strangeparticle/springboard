@@ -9,11 +9,11 @@ import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsSource
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemoryFake
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
@@ -24,7 +24,7 @@ private data class SettingsTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
     val settingsManager: SettingsManager,
-    val persistenceManager: SettingsPersistenceManagerInMemoryFake,
+    val persistenceService: PersistenceServiceInMemoryFake,
     val focusRequester: FocusRequester,
     val showSettings: MutableState<Boolean>,
     val showActiveSettings: MutableState<Boolean>,
@@ -37,12 +37,12 @@ object SettingsTestScenarios {
         runtimeEnvironment: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
         environmentVariables: Map<String, String> = emptyMap(),
         commandLineArgs: List<String> = emptyList(),
-        persistenceManager: SettingsPersistenceManagerInMemoryFake = SettingsPersistenceManagerInMemoryFake(),
+        persistenceService: PersistenceServiceInMemoryFake = PersistenceServiceInMemoryFake(),
         currentFilePath: String? = null,
         showSettings: MutableState<Boolean> = mutableStateOf(false),
         showActiveSettings: MutableState<Boolean> = mutableStateOf(false),
     ): SettingsTestComponents {
-        val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
+        val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
         settingsManager.loadSettingsAtStartup(environmentVariables, commandLineArgs)
         val activationService = PlatformActivationServiceInMemoryFake()
         val viewModel = SpringboardViewModel(settingsManager, activationService)
@@ -52,7 +52,7 @@ object SettingsTestScenarios {
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         val focusRequester = FocusRequester()
         return SettingsTestComponents(
-            viewModel, settingsViewModel, settingsManager, persistenceManager,
+            viewModel, settingsViewModel, settingsManager, persistenceService,
             focusRequester, showSettings, showActiveSettings,
         )
     }
@@ -413,22 +413,22 @@ object SettingsTestScenarios {
     // --- Settings persistence ---
 
     fun startupSpringboardSettingPersistsAcrossRelaunch() = runComposeUiTest {
-        val persistenceManager = SettingsPersistenceManagerInMemoryFake()
+        val persistenceService = PersistenceServiceInMemoryFake()
         val testFilePath = "/test/my-springboard.json"
 
         // First "session" — set startup springboard
         val components = createTestComponents(
-            persistenceManager = persistenceManager,
+            persistenceService = persistenceService,
             currentFilePath = testFilePath,
         )
         components.settingsViewModel.designateCurrentFileAsStartup()
 
         // Verify persisted
-        val dto = persistenceManager.currentDto()
+        val dto = persistenceService.currentSettings()
         assertEquals(testFilePath, dto?.startupSpringboard)
 
         // Second "session" — create new managers with same persistence
-        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceManager)
+        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
         settingsManager2.loadSettingsAtStartup()
 
         val resolved = settingsManager2.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
@@ -437,17 +437,17 @@ object SettingsTestScenarios {
     }
 
     fun surfaceAppleScriptErrorsSettingPersistsAcrossRelaunch() = runComposeUiTest {
-        val persistenceManager = SettingsPersistenceManagerInMemoryFake()
+        val persistenceService = PersistenceServiceInMemoryFake()
 
         // First "session" — toggle setting
-        val components = createTestComponents(persistenceManager = persistenceManager)
+        val components = createTestComponents(persistenceService = persistenceService)
         components.settingsViewModel.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)
 
         // Verify persisted
-        assertEquals(true, persistenceManager.currentDto()?.surfaceAppleScriptErrors)
+        assertEquals(true, persistenceService.currentSettings()?.surfaceAppleScriptErrors)
 
         // Second "session"
-        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceManager)
+        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(true, settingsManager2.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
@@ -455,16 +455,16 @@ object SettingsTestScenarios {
     }
 
     fun resetKeyNavAfterKeyNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {
-        val persistenceManager = SettingsPersistenceManagerInMemoryFake()
+        val persistenceService = PersistenceServiceInMemoryFake()
 
         // First "session" — toggle setting off (default is true)
-        val components = createTestComponents(persistenceManager = persistenceManager)
+        val components = createTestComponents(persistenceService = persistenceService)
         components.settingsViewModel.setUserSetting(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION, false)
 
-        assertEquals(false, persistenceManager.currentDto()?.resetKeyNavAfterKeyNavActivation)
+        assertEquals(false, persistenceService.currentSettings()?.resetKeyNavAfterKeyNavActivation)
 
         // Second "session"
-        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceManager)
+        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(false, settingsManager2.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
@@ -527,16 +527,16 @@ object SettingsTestScenarios {
     }
 
     fun resetKeyNavAfterGridNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {
-        val persistenceManager = SettingsPersistenceManagerInMemoryFake()
+        val persistenceService = PersistenceServiceInMemoryFake()
 
         // First "session" — toggle setting off (default is true)
-        val components = createTestComponents(persistenceManager = persistenceManager)
+        val components = createTestComponents(persistenceService = persistenceService)
         components.settingsViewModel.setUserSetting(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION, false)
 
-        assertEquals(false, persistenceManager.currentDto()?.resetKeyNavAfterGridNavActivation)
+        assertEquals(false, persistenceService.currentSettings()?.resetKeyNavAfterGridNavActivation)
 
         // Second "session"
-        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceManager)
+        val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(false, settingsManager2.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))

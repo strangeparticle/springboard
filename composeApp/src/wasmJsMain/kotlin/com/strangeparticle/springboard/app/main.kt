@@ -4,11 +4,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.ComposeViewport
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
-import com.strangeparticle.springboard.app.settings.persistence.SettingsPersistenceManagerWasm
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
@@ -37,8 +37,8 @@ private external fun getWindowInnerHeight(): Int
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     val runtimeEnvironment = detectRuntimeEnvironment()
-    val persistenceManager = SettingsPersistenceManagerWasm()
-    val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
+    val persistenceService = PersistenceServiceDefaultImpl()
+    val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
     // Read JS globals and forward them to the settings manager as env-var overrides.
     val startupSpringboard = getStartupSpringboard()?.toString()
         ?.takeIf { it != "undefined" && it != "null" && it.isNotBlank() }

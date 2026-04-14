@@ -7,21 +7,21 @@ import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsSource
-import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
-import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemoryFake
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
 import kotlin.test.*
 
 class SettingsManagerTest {
 
     private fun createManager(
         target: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
-        persistedDto: UserSettingsDto? = null,
+        persistedDto: SettingsDto? = null,
         envVars: Map<String, String> = emptyMap(),
         cliArgs: List<String> = emptyList(),
     ): SettingsManager {
-        val persistence = SettingsPersistenceManagerInMemoryFake()
+        val persistence = PersistenceServiceInMemoryFake()
         if (persistedDto != null) {
-            persistence.saveDto(persistedDto)
+            persistence.persistSettings(persistedDto)
         }
         val manager = SettingsManager(target, persistence)
         manager.loadSettingsAtStartup(envVars, cliArgs)
@@ -57,7 +57,7 @@ class SettingsManagerTest {
     @Test
     fun `user settings override defaults`() {
         val manager = createManager(
-            persistedDto = UserSettingsDto(surfaceAppleScriptErrors = true)
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = true)
         )
         assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
         assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
@@ -66,7 +66,7 @@ class SettingsManagerTest {
     @Test
     fun `user settings file path`() {
         val manager = createManager(
-            persistedDto = UserSettingsDto(startupSpringboard = "/path/to/file.json")
+            persistedDto = SettingsDto(startupSpringboard = "/path/to/file.json")
         )
         val filePath = manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
         assertNotNull(filePath)
@@ -79,7 +79,7 @@ class SettingsManagerTest {
     @Test
     fun `env var overrides user settings`() {
         val manager = createManager(
-            persistedDto = UserSettingsDto(surfaceAppleScriptErrors = false),
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
         assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
@@ -162,7 +162,7 @@ class SettingsManagerTest {
     @Test
     fun `is not overridden for user setting`() {
         val manager = createManager(
-            persistedDto = UserSettingsDto(surfaceAppleScriptErrors = true),
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
         )
         assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
@@ -181,13 +181,13 @@ class SettingsManagerTest {
 
     @Test
     fun `set user setting persists`() {
-        val persistence = SettingsPersistenceManagerInMemoryFake()
+        val persistence = PersistenceServiceInMemoryFake()
         val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
         manager.loadSettingsAtStartup()
 
         manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)
 
-        val savedDto = persistence.currentDto()
+        val savedDto = persistence.currentSettings()
         assertNotNull(savedDto)
         assertEquals(true, savedDto.surfaceAppleScriptErrors)
     }

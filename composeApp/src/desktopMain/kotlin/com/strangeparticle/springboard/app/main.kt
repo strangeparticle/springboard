@@ -14,9 +14,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.parseSpringboardSource
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.*
-import com.strangeparticle.springboard.app.settings.persistence.SettingsPersistenceManagerDesktop
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
@@ -36,9 +36,9 @@ fun main(args: Array<String>) {
 
     val runtimeEnvironment = detectRuntimeEnvironment()
 
-    // Initialize the settings system
-    val persistenceManager = SettingsPersistenceManagerDesktop()
-    val settingsManager = SettingsManager(runtimeEnvironment, persistenceManager)
+    // Initialize services
+    val persistenceService = PersistenceServiceDefaultImpl()
+    val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
 
     // Load all settings sources: persisted user settings, env vars, CLI args
     settingsManager.loadSettingsAtStartup(

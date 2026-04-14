@@ -8,18 +8,18 @@ import com.strangeparticle.springboard.app.settings.SettingsValues
 import kotlinx.serialization.Serializable
 
 /**
- * DTO for persisted user settings. This structure exists specifically for
+ * DTO for persisted settings. This structure exists specifically for
  * serialization/deserialization and is separate from the runtime [SettingsValues].
  *
  * Fields use camelCase names matching the JSON key convention.
- * All fields are nullable — absent fields mean the user has not set that value.
+ * All fields are nullable — absent fields mean no explicit value is persisted.
  *
  * This separation keeps the runtime model clean while giving persistence a
  * dedicated place to handle JSON shape, missing fields, explicit nulls,
  * and future migration concerns.
  */
 @Serializable
-data class UserSettingsDto(
+data class SettingsDto(
     val startupSpringboard: String? = null,
     val openUrlsInNewWindowSingle: Boolean? = null,
     val openUrlsInNewWindowMultiple: Boolean? = null,
@@ -59,9 +59,9 @@ data class UserSettingsDto(
     }
 
     companion object {
-        /** Creates a DTO from the user-settings layer of a [SettingsValues] instance. */
-        fun fromSettingsValues(values: SettingsValues): UserSettingsDto {
-            return UserSettingsDto(
+        /** Creates a DTO from the persisted settings layer of a [SettingsValues] instance. */
+        fun fromSettingsValues(values: SettingsValues): SettingsDto {
+            return SettingsDto(
                 startupSpringboard = values.startupSpringboard?.path,
                 openUrlsInNewWindowSingle = values.openUrlsInNewWindowSingle,
                 openUrlsInNewWindowMultiple = values.openUrlsInNewWindowMultiple,

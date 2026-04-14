@@ -6,8 +6,8 @@ import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.settings.StringFromDropDown
-import com.strangeparticle.springboard.app.settings.persistence.UserSettingsDto
-import com.strangeparticle.springboard.app.unit.settings.persistence.SettingsPersistenceManagerInMemoryFake
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -15,13 +15,13 @@ class SettingsManagerActiveBrandTest {
 
     private fun createManager(
         target: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
-        persistedDto: UserSettingsDto? = null,
+        persistedDto: SettingsDto? = null,
         envVars: Map<String, String> = emptyMap(),
         cliArgs: List<String> = emptyList(),
     ): SettingsManager {
-        val persistence = SettingsPersistenceManagerInMemoryFake()
+        val persistence = PersistenceServiceInMemoryFake()
         if (persistedDto != null) {
-            persistence.saveDto(persistedDto)
+            persistence.persistSettings(persistedDto)
         }
         val manager = SettingsManager(target, persistence)
         manager.loadSettingsAtStartup(envVars, cliArgs)
@@ -37,7 +37,7 @@ class SettingsManagerActiveBrandTest {
 
     @Test
     fun `user settings override default active brand`() {
-        val manager = createManager(persistedDto = UserSettingsDto(activeBrand = "strangeparticle-dark"))
+        val manager = createManager(persistedDto = SettingsDto(activeBrand = "strangeparticle-dark"))
         assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
         assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.ACTIVE_BRAND))
     }
@@ -45,7 +45,7 @@ class SettingsManagerActiveBrandTest {
     @Test
     fun `environment variable overrides user settings for active brand`() {
         val manager = createManager(
-            persistedDto = UserSettingsDto(activeBrand = "strangeparticle-light"),
+            persistedDto = SettingsDto(activeBrand = "strangeparticle-light"),
             envVars = mapOf("SPRINGBOARD_ACTIVE_BRAND" to "strangeparticle-dark"),
         )
         assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
@@ -82,7 +82,7 @@ class SettingsManagerActiveBrandTest {
 
     @Test
     fun `set user setting persists active brand through dto`() {
-        val persistence = SettingsPersistenceManagerInMemoryFake()
+        val persistence = PersistenceServiceInMemoryFake()
         val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
         manager.loadSettingsAtStartup()
         manager.setUserSetting(SettingsKey.ACTIVE_BRAND, "strangeparticle-dark")

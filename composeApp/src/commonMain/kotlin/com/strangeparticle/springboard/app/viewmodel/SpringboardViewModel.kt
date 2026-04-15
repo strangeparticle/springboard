@@ -39,6 +39,55 @@ class SpringboardViewModel(
         _tabs[index] = transform(_tabs[index])
     }
 
+    val canCreateNewTab: Boolean
+        get() = _tabs.size < MAX_OPEN_TABS
+
+    fun createTab(): String? {
+        if (!canCreateNewTab) return null
+        val newTab = TabState.createEmpty(generateTabId())
+        _tabs.add(newTab)
+        activeTabId = newTab.tabId
+        onTabsChanged()
+        return newTab.tabId
+    }
+
+    fun selectTab(tabId: String) {
+        if (_tabs.none { it.tabId == tabId }) return
+        if (activeTabId == tabId) return
+        activeTabId = tabId
+        onTabsChanged()
+    }
+
+    fun closeTab(tabId: String) {
+        val index = _tabs.indexOfFirst { it.tabId == tabId }
+        if (index < 0) return
+        val wasActive = activeTabId == tabId
+
+        if (_tabs.size == 1) {
+            val replacement = TabState.createEmpty(generateTabId())
+            _tabs[0] = replacement
+            activeTabId = replacement.tabId
+            onTabsChanged()
+            return
+        }
+
+        _tabs.removeAt(index)
+        if (wasActive) {
+            val nextIndex = if (index < _tabs.size) index else _tabs.size - 1
+            activeTabId = _tabs[nextIndex].tabId
+        }
+        onTabsChanged()
+    }
+
+    fun loadConfigInNewTab(jsonString: String, source: String) {
+        createTab() ?: return
+        loadConfig(jsonString, source)
+    }
+
+    private fun onTabsChanged() {
+        // Wired in Task 16 (tab persistence autosave).
+    }
+
     var springboard: Springboard?
         get() = activeTab?.springboard
         private set(value) { updateActiveTab { it.copy(springboard = value) } }

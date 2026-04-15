@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.viewmodel
 
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -20,28 +21,56 @@ class SpringboardViewModel(
     private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
 ) : ViewModel() {
 
-    var springboard by mutableStateOf<Springboard?>(null)
+    private var tabIdCounter = 0
+    private fun generateTabId(): String = "tab-${++tabIdCounter}"
+
+    private val _tabs = mutableStateListOf(TabState.createEmpty(generateTabId()))
+    val tabs: List<TabState> get() = _tabs
+
+    var activeTabId: String by mutableStateOf(_tabs.first().tabId)
         private set
 
-    var selectedEnvironmentId by mutableStateOf<String?>(null)
-        private set
+    val activeTab: TabState?
+        get() = _tabs.firstOrNull { it.tabId == activeTabId }
 
-    var selectedAppId by mutableStateOf<String?>(null)
-        private set
+    private fun updateActiveTab(transform: (TabState) -> TabState) {
+        val index = _tabs.indexOfFirst { it.tabId == activeTabId }
+        if (index < 0) return
+        _tabs[index] = transform(_tabs[index])
+    }
 
-    var selectedResourceId by mutableStateOf<String?>(null)
-        private set
+    var springboard: Springboard?
+        get() = activeTab?.springboard
+        private set(value) { updateActiveTab { it.copy(springboard = value) } }
 
-    var isLoading by mutableStateOf(false)
-        private set
+    var selectedEnvironmentId: String?
+        get() = activeTab?.selectedEnvironmentId
+        private set(value) { updateActiveTab { it.copy(selectedEnvironmentId = value) } }
 
-    var multiSelectSet by mutableStateOf<Set<Coordinate>>(emptySet())
-        private set
+    var selectedAppId: String?
+        get() = activeTab?.selectedAppId
+        private set(value) { updateActiveTab { it.copy(selectedAppId = value) } }
+
+    var selectedResourceId: String?
+        get() = activeTab?.selectedResourceId
+        private set(value) { updateActiveTab { it.copy(selectedResourceId = value) } }
+
+    var isLoading: Boolean
+        get() = activeTab?.isLoading ?: false
+        private set(value) { updateActiveTab { it.copy(isLoading = value) } }
+
+    var multiSelectSet: Set<Coordinate>
+        get() = activeTab?.multiSelectSet ?: emptySet()
+        private set(value) { updateActiveTab { it.copy(multiSelectSet = value) } }
 
     /** Activator preview text shown when hovering a cell or when keyNav fully selects a coordinate. */
-    var hoveredActivatorPreview by mutableStateOf<String?>(null)
+    var hoveredActivatorPreview: String?
+        get() = activeTab?.hoveredActivatorPreview
+        set(value) { updateActiveTab { it.copy(hoveredActivatorPreview = value) } }
 
-    var gridZoomSelection by mutableStateOf<GridZoomSelection>(GridZoomSelection.FixedZoom(100))
+    var gridZoomSelection: GridZoomSelection
+        get() = activeTab?.gridZoomSelection ?: GridZoomSelection.default()
+        set(value) { updateActiveTab { it.copy(gridZoomSelection = value) } }
 
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
     val apps by derivedStateOf { springboard?.apps ?: emptyList() }
@@ -86,10 +115,9 @@ class SpringboardViewModel(
         try {
             isLoading = true
             val springboardConfig = SpringboardFactory.fromJson(jsonString, source)
-            applySpringboard(springboardConfig)
+            applySpringboard(springboardConfig, source)
         } catch (e: Exception) {
             ToastBroadcaster.error("Failed to load config: ${e.message}")
-        } finally {
             isLoading = false
         }
     }
@@ -99,30 +127,39 @@ class SpringboardViewModel(
             isLoading = true
             val springboardConfig = loader.load(source)
             if (springboardConfig != null) {
-                applySpringboard(springboardConfig)
+                applySpringboard(springboardConfig, source)
                 true
             } else {
                 ToastBroadcaster.error("Failed to load: file not found")
+                isLoading = false
                 false
             }
         } catch (e: Exception) {
             ToastBroadcaster.error("Failed to load config: ${e.message}")
-            false
-        } finally {
             isLoading = false
+            false
         }
     }
 
-    private fun applySpringboard(springboardConfig: Springboard) {
-        springboard = springboardConfig
-
+    private fun applySpringboard(springboardConfig: Springboard, source: String) {
         val defaultEnvironment = springboardConfig.environments.find {
             it.id.equals("all", ignoreCase = true)
         }
-        selectedEnvironmentId = defaultEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
-        selectedAppId = null
-        selectedResourceId = null
-        multiSelectSet = emptySet()
+        val initialEnvironmentId = defaultEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
+
+        updateActiveTab { current ->
+            current.copy(
+                springboard = springboardConfig,
+                source = source,
+                label = deriveTabLabel(source),
+                selectedEnvironmentId = initialEnvironmentId,
+                selectedAppId = null,
+                selectedResourceId = null,
+                multiSelectSet = emptySet(),
+                hoveredActivatorPreview = null,
+                isLoading = false,
+            )
+        }
 
         val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
         if (hasUnsafeActivators) {
@@ -136,23 +173,32 @@ class SpringboardViewModel(
     }
 
     fun selectEnvironment(environmentId: String) {
-        selectedEnvironmentId = environmentId
-        selectedAppId = null
-        selectedResourceId = null
+        updateActiveTab {
+            it.copy(
+                selectedEnvironmentId = environmentId,
+                selectedAppId = null,
+                selectedResourceId = null,
+            )
+        }
     }
 
     fun selectApp(appId: String?) {
-        selectedAppId = appId
-        val currentResourceId = selectedResourceId
-        if (currentResourceId != null && appId != null) {
-            val environmentId = selectedEnvironmentId ?: return
-            val currentSpringboard = springboard ?: return
-            val validResources = currentSpringboard.indexes.activatableResourcesByEnvApp[environmentId to appId] ?: emptySet()
-            if (currentResourceId !in validResources) {
-                selectedResourceId = null
+        val currentTab = activeTab ?: return
+        val currentResourceId = currentTab.selectedResourceId
+        val nextResourceId: String? = if (currentResourceId != null && appId != null) {
+            val environmentId = currentTab.selectedEnvironmentId
+            val currentSpringboard = currentTab.springboard
+            if (environmentId == null || currentSpringboard == null) {
+                currentResourceId
+            } else {
+                val validResources = currentSpringboard.indexes.activatableResourcesByEnvApp[environmentId to appId] ?: emptySet()
+                if (currentResourceId in validResources) currentResourceId else null
             }
         } else {
-            selectedResourceId = null
+            null
+        }
+        updateActiveTab {
+            it.copy(selectedAppId = appId, selectedResourceId = nextResourceId)
         }
     }
 
@@ -225,11 +271,8 @@ class SpringboardViewModel(
     }
 
     fun toggleMultiSelect(coordinate: Coordinate) {
-        multiSelectSet = if (coordinate in multiSelectSet) {
-            multiSelectSet - coordinate
-        } else {
-            multiSelectSet + coordinate
-        }
+        val current = multiSelectSet
+        multiSelectSet = if (coordinate in current) current - coordinate else current + coordinate
     }
 
     /** Activated via grid-nav (shift-release after multi-select). */
@@ -300,8 +343,13 @@ class SpringboardViewModel(
         val defaultEnvironment = currentSpringboard.environments.find {
             it.id.equals("all", ignoreCase = true)
         }
-        selectedEnvironmentId = defaultEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
-        selectedAppId = null
-        selectedResourceId = null
+        val environmentId = defaultEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
+        updateActiveTab {
+            it.copy(
+                selectedEnvironmentId = environmentId,
+                selectedAppId = null,
+                selectedResourceId = null,
+            )
+        }
     }
 }

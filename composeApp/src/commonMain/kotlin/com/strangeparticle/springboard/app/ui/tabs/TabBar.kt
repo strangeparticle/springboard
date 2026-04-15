@@ -113,7 +113,7 @@ fun TabBar(
         ) {
             IconButton(
                 onClick = onOpenSettings,
-                modifier = Modifier.size(24.dp).testTag(TestTags.TAB_BAR_SETTINGS_GEAR),
+                modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON),
             ) {
                 Icon(
                     imageVector = currentUiBrand.vectorImages.settings,

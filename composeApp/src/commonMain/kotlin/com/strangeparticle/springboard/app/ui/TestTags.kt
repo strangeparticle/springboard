@@ -25,7 +25,6 @@ object TestTags {
     const val ZOOM_DROPDOWN = "zoomDropdown"
     const val TAB_BAR = "tabBar"
     const val TAB_NEW_BUTTON = "tabNewButton"
-    const val TAB_BAR_SETTINGS_GEAR = "tabBarSettingsGear"
 
     fun tabIndicator(tabId: String) = "tabIndicator_$tabId"
 

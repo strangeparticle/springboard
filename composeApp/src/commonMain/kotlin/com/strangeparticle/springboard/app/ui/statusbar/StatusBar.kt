@@ -34,7 +34,6 @@ fun StatusBar(
     zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
     onZoomSelectionChange: (GridZoomSelection) -> Unit = {},
     onReload: () -> Unit,
-    onOpenSettings: () -> Unit = {},
     onOpenFromNetwork: (() -> Unit)? = null,
 ) {
     val currentSpringboard = springboard ?: return
@@ -107,24 +106,6 @@ fun StatusBar(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-        TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = { PlainTooltip { Text("Settings") } },
-            state = rememberTooltipState(),
-        ) {
-            IconButton(
-                onClick = onOpenSettings,
-                modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON)
-            ) {
-                Icon(
-                    imageVector = currentUiBrand.vectorImages.settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

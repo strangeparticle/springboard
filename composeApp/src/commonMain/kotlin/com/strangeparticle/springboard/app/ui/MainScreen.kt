@@ -160,7 +160,6 @@ fun MainScreen(
                         isReloading = false
                     }
                 },
-                onOpenSettings = onOpenSettings,
                 onOpenFromNetwork = openFromNetwork,
             )
         }

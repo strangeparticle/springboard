@@ -119,7 +119,7 @@ class TabBarTest {
             )
             }
         }
-        onNodeWithTag(TestTags.TAB_BAR_SETTINGS_GEAR).performClick()
+        onNodeWithTag(TestTags.SETTINGS_GEAR_ICON).performClick()
         assertEquals(1, settingsCount)
     }
 }

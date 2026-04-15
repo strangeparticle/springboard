@@ -47,7 +47,7 @@ class PersistenceServiceDesktopImplTest {
         val service = PersistenceServiceDesktopImpl(homeDirectoryPath = homeDir.absolutePath)
 
         val dto = TabsDto(
-            tabs = listOf(TabDto(tabId = "tab-1", sourceFilename = "https://example.com", gridZoomSelection = "100%")),
+            tabs = listOf(TabDto(tabId = "tab-1", source = "https://example.com", zoomPercent = 100)),
             activeTabId = "tab-1",
         )
         service.persistTabs(dto)

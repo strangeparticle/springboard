@@ -16,12 +16,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+import com.strangeparticle.springboard.app.viewmodel.TabState
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
@@ -29,14 +29,14 @@ import androidx.compose.material.icons.filled.CloudDownload
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusBar(
-    springboard: Springboard?,
+    activeTab: TabState,
     isReloading: Boolean,
-    zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
     onZoomSelectionChange: (GridZoomSelection) -> Unit = {},
     onReload: () -> Unit,
     onOpenFromNetwork: (() -> Unit)? = null,
 ) {
-    val currentSpringboard = springboard ?: return
+    val currentSpringboard = activeTab.springboard ?: return
+    val zoomSelection = activeTab.gridZoomSelection
     val currentUiBrand = LocalUiBrand.current
 
     val infiniteTransition = rememberInfiniteTransition()

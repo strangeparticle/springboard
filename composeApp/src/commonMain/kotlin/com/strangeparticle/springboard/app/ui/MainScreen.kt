@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen
 import com.strangeparticle.springboard.app.ui.activatorpreview.ActivatorPreview
 import com.strangeparticle.springboard.app.ui.statusbar.StatusBar
+import com.strangeparticle.springboard.app.ui.tabs.TabBar
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -69,6 +70,8 @@ fun MainScreen(
         )
     }
 
+    val activeTab = viewModel.activeTab
+
     Column(modifier = Modifier.fillMaxSize()) {
         NavBar(
             viewModel = viewModel,
@@ -83,23 +86,25 @@ fun MainScreen(
             }
         }
 
-        if (!viewModel.isConfigLoaded) {
-            WelcomeScreen(
-                onFileSelected = { path ->
-                    val contents = fileContentService.readFileContents(path)
-                    if (contents != null) {
-                        lastLoadedPath = path
-                        viewModel.loadConfig(contents, path)
-                        println("[Springboard] grid ready")
-                        println("[Springboard] application ready")
-                    }
-                },
-                onOpenFromNetwork = openFromNetwork,
-                showFileOpen = showFileOpen,
-            )
+        if (activeTab == null || activeTab.isEmpty) {
+            Box(modifier = Modifier.weight(1f)) {
+                WelcomeScreen(
+                    onFileSelected = { path ->
+                        val contents = fileContentService.readFileContents(path)
+                        if (contents != null) {
+                            lastLoadedPath = path
+                            viewModel.loadConfig(contents, path)
+                            println("[Springboard] grid ready")
+                            println("[Springboard] application ready")
+                        }
+                    },
+                    onOpenFromNetwork = openFromNetwork,
+                    showFileOpen = showFileOpen,
+                )
+            }
         } else {
-            val currentSpringboard = viewModel.springboard
-            val currentEnvironmentId = viewModel.selectedEnvironmentId
+            val currentSpringboard = activeTab.springboard
+            val currentEnvironmentId = activeTab.selectedEnvironmentId
 
             Box(modifier = Modifier.weight(1f)) {
                 if (currentSpringboard != null && currentEnvironmentId != null) {
@@ -122,9 +127,8 @@ fun MainScreen(
             ActivatorPreview(previewText = viewModel.hoveredActivatorPreview)
 
             StatusBar(
-                springboard = viewModel.springboard,
+                activeTab = activeTab,
                 isReloading = isReloading,
-                zoomSelection = viewModel.gridZoomSelection,
                 onZoomSelectionChange = { viewModel.gridZoomSelection = it },
                 onReload = {
                     val source = lastLoadedPath ?: viewModel.springboard?.source ?: return@StatusBar
@@ -163,5 +167,15 @@ fun MainScreen(
                 onOpenFromNetwork = openFromNetwork,
             )
         }
+
+        TabBar(
+            tabs = viewModel.tabs,
+            activeTabId = viewModel.activeTabId,
+            canCreateNewTab = viewModel.canCreateNewTab,
+            onSelect = { viewModel.selectTab(it) },
+            onClose = { viewModel.closeTab(it) },
+            onCreate = { viewModel.createTab() },
+            onOpenSettings = onOpenSettings,
+        )
     }
 }

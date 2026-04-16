@@ -22,7 +22,9 @@ import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
+import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderDesktopImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import com.strangeparticle.springboard.app.viewmodel.TabRestorer
 import kotlinx.coroutines.launch
 import java.io.File
 private enum class ActiveSettingsOpenedFrom {
@@ -247,10 +249,14 @@ fun main(args: Array<String>) {
                 resizeWindowToFitSpringboard(viewModel, windowState)
             }
 
-            // Runs once when this window composition starts because configPath is captured from main(args).
-            // It handles optional startup loading from the launch argument, then marks startup complete.
-            LaunchedEffect(configPath) {
-                if (configPath != null) {
+            // Restore persisted tabs on startup, or fall back to STARTUP_SPRINGBOARD for first launch.
+            LaunchedEffect(Unit) {
+                val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
+                val tabRestorer = TabRestorer(persistenceService, contentLoader)
+                val hadPersistedTabs = persistenceService.loadTabs() != null
+                if (hadPersistedTabs) {
+                    tabRestorer.restoreInto(viewModel)
+                } else if (configPath != null) {
                     when (val source = parseSpringboardSource(configPath)) {
                         is SpringboardSource.NetworkSource -> {
                             try {

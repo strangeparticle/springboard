@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +49,8 @@ fun StatusBar(
         )
     )
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -108,5 +111,6 @@ fun StatusBar(
                 }
             }
         }
+    }
     }
 }

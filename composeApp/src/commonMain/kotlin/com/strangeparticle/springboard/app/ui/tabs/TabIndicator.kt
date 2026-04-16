@@ -2,6 +2,9 @@ package com.strangeparticle.springboard.app.ui.tabs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,6 +18,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,10 +41,14 @@ fun TabIndicator(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val background = if (isActive) {
-        MaterialTheme.colorScheme.surface
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+
+    val background = when {
+        isActive && isHovered -> MaterialTheme.colorScheme.surfaceContainerLowest
+        isActive -> MaterialTheme.colorScheme.surface
+        isHovered -> MaterialTheme.colorScheme.surfaceContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val foreground = if (isActive) {
         MaterialTheme.colorScheme.onSurface
@@ -50,9 +59,10 @@ fun TabIndicator(
     Row(
         modifier = modifier
             .height(TabIndicatorDefaults.Height)
-            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+            .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
             .background(background)
-            .clickable(onClick = onSelect)
+            .hoverable(interactionSource)
+            .clickable(interactionSource = interactionSource, indication = null, onClick = onSelect)
             .padding(start = 8.dp, end = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

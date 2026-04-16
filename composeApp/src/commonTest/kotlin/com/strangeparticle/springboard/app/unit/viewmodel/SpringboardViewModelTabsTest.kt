@@ -10,6 +10,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 
 class SpringboardViewModelTabsTest {
 
@@ -25,7 +28,7 @@ class SpringboardViewModelTabsTest {
     }
     """.trimIndent()
 
-    private fun createViewModel() = SpringboardViewModel(createSettingsManagerForTest())
+    private fun createViewModel() = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
 
     @Test
     fun initialViewModelHasOneEmptyActiveTab() {
@@ -172,5 +175,20 @@ class SpringboardViewModelTabsTest {
         assertNotEquals(firstId, viewModel.activeTabId)
         assertNotNull(viewModel.springboard)
         assertEquals("Test", viewModel.springboard?.name)
+    }
+
+    @Test
+    fun loadConfigInNewTabPersistsTabsDto() {
+        val persistence = PersistenceServiceInMemoryFake()
+        val settingsManager = SettingsManager(RuntimeEnvironment.Test, persistence).also { it.loadSettingsAtStartup() }
+        val viewModel = SpringboardViewModel(settingsManager, persistence)
+        viewModel.loadConfigInNewTab(validJson, "/tmp/x.json")
+        val persisted = persistence.loadTabs()
+        assertNotNull(persisted)
+        assertEquals(1, persisted.tabs.size)
+        val entry = persisted.tabs.single()
+        assertEquals("/tmp/x.json", entry.source)
+        assertEquals(entry.tabId, persisted.activeTabId)
+        assertEquals(viewModel.activeTabId, persisted.activeTabId)
     }
 }

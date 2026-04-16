@@ -60,7 +60,7 @@ fun main() {
     val startupUrl = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
 
     ComposeViewport(document.body!!) {
-        val viewModel = remember { SpringboardViewModel(settingsManager) }
+        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService) }
         val settingsViewModel = remember {
             SettingsViewModel(
                 settingsManager = settingsManager,

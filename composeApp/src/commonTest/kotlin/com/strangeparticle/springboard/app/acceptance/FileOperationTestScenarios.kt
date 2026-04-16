@@ -11,6 +11,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 private data class FileOperationTestComponents(
     val viewModel: SpringboardViewModel,
@@ -26,7 +27,7 @@ object FileOperationTestScenarios {
         fileContentService: PlatformFileContentService = PlatformFileContentServiceInMemoryFake(),
     ): FileOperationTestComponents {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         val focusRequester = FocusRequester()
         return FileOperationTestComponents(viewModel, settingsViewModel, focusRequester, fileContentService)

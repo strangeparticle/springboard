@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.loading.SpringboardLoader
+import com.strangeparticle.springboard.app.persistence.PersistenceService
+import com.strangeparticle.springboard.app.persistence.buildTabsDto
 import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
@@ -18,8 +20,11 @@ import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel(
     private val settingsManager: SettingsManager,
+    private val persistenceService: PersistenceService,
     private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
 ) : ViewModel() {
+
+    private var suppressAutosave: Boolean = false
 
     private var tabIdCounter = 0
     private fun generateTabId(): String = "tab-${++tabIdCounter}"
@@ -101,7 +106,22 @@ class SpringboardViewModel(
     }
 
     private fun onTabsChanged() {
-        // Wired in Task 16 (tab persistence autosave).
+        if (suppressAutosave) return
+        try {
+            persistenceService.persistTabs(buildTabsDto(_tabs.toList(), activeTabId))
+        } catch (e: Exception) {
+            ToastBroadcaster.error("Failed to save tabs: ${e.message}")
+        }
+    }
+
+    fun runSuppressingAutosave(block: () -> Unit) {
+        suppressAutosave = true
+        try {
+            block()
+        } finally {
+            suppressAutosave = false
+            onTabsChanged()
+        }
     }
 
     var springboard: Springboard?
@@ -235,6 +255,7 @@ class SpringboardViewModel(
 
         ToastBroadcaster.info("Springboard loaded: ${springboardConfig.name}")
         println("[Springboard] config loaded: ${springboardConfig.name}")
+        onTabsChanged()
     }
 
     fun selectEnvironment(environmentId: String) {

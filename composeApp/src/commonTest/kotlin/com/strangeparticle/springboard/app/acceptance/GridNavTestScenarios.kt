@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 private data class GridNavTestComponents(
     val viewModel: SpringboardViewModel,
@@ -33,7 +34,7 @@ object GridNavTestScenarios {
         activationService: PlatformActivationServiceInMemoryFake = PlatformActivationServiceInMemoryFake(),
     ): GridNavTestComponents {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager, activationService)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         val focusRequester = FocusRequester()
         return GridNavTestComponents(viewModel, settingsViewModel, focusRequester, activationService)

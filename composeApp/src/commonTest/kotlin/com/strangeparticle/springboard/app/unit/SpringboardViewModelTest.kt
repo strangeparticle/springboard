@@ -4,6 +4,7 @@ import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.*
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 class SpringboardViewModelTest {
 
@@ -30,7 +31,7 @@ class SpringboardViewModelTest {
     }
     """.trimIndent()
 
-    private fun createViewModel() = SpringboardViewModel(createSettingsManagerForTest())
+    private fun createViewModel() = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
 
     @Test
     fun `initial state has no springboard loaded`() {

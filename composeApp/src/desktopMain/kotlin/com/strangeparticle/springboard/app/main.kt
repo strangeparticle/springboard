@@ -25,7 +25,6 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.launch
 import java.io.File
-
 private enum class ActiveSettingsOpenedFrom {
     SETTINGS_SCREEN,
     MAIN_SCREEN,
@@ -71,7 +70,7 @@ fun main(args: Array<String>) {
             position = WindowPosition(Alignment.Center)
         )
 
-        val viewModel = remember { SpringboardViewModel(settingsManager, activationService) }
+        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService, activationService) }
         val settingsViewModel = remember {
             SettingsViewModel(
                 settingsManager = settingsManager,

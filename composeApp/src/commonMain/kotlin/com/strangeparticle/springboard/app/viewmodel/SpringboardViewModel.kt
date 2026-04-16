@@ -84,6 +84,22 @@ class SpringboardViewModel(
         loadConfig(jsonString, source)
     }
 
+    fun selectPreviousTab() {
+        if (_tabs.size <= 1) return
+        val currentIndex = _tabs.indexOfFirst { it.tabId == activeTabId }
+        if (currentIndex < 0) return
+        val previousIndex = if (currentIndex == 0) _tabs.size - 1 else currentIndex - 1
+        selectTab(_tabs[previousIndex].tabId)
+    }
+
+    fun selectNextTab() {
+        if (_tabs.size <= 1) return
+        val currentIndex = _tabs.indexOfFirst { it.tabId == activeTabId }
+        if (currentIndex < 0) return
+        val nextIndex = if (currentIndex == _tabs.size - 1) 0 else currentIndex + 1
+        selectTab(_tabs[nextIndex].tabId)
+    }
+
     private fun onTabsChanged() {
         // Wired in Task 16 (tab persistence autosave).
     }

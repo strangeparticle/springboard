@@ -162,6 +162,8 @@ fun main(args: Array<String>) {
                 onCloseCurrentTab = {
                     viewModel.closeTab(viewModel.activeTabId)
                 },
+                onPreviousTab = { viewModel.selectPreviousTab() },
+                onNextTab = { viewModel.selectNextTab() },
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
                     if (springboard == null) {

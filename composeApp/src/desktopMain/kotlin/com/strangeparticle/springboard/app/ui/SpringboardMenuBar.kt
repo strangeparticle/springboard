@@ -15,6 +15,8 @@ fun FrameWindowScope.SpringboardMenuBar(
     onOpenFromNetworkInCurrentTab: () -> Unit,
     onOpenFromNetworkInNewTab: () -> Unit,
     onCloseCurrentTab: () -> Unit,
+    onPreviousTab: () -> Unit,
+    onNextTab: () -> Unit,
     onSaveLocalCopyAs: () -> Unit,
     onReload: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -45,6 +47,12 @@ fun FrameWindowScope.SpringboardMenuBar(
             }
             Item("Close Tab", shortcut = KeyShortcut(Key.W, meta = true)) {
                 onCloseCurrentTab()
+            }
+            Item("Previous Tab", shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true)) {
+                onPreviousTab()
+            }
+            Item("Next Tab", shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true)) {
+                onNextTab()
             }
             Item(
                 "Save a Local Copy As…",

@@ -127,6 +127,43 @@ class SpringboardViewModelTabsTest {
     }
 
     @Test
+    fun selectPreviousTabWrapsFromFirstToLast() {
+        val viewModel = createViewModel()
+        val firstId = viewModel.activeTabId
+        val secondId = viewModel.createTab()!!
+        val thirdId = viewModel.createTab()!!
+        viewModel.selectTab(firstId)
+        viewModel.selectPreviousTab()
+        assertEquals(thirdId, viewModel.activeTabId)
+        viewModel.selectTab(secondId)
+        viewModel.selectPreviousTab()
+        assertEquals(firstId, viewModel.activeTabId)
+    }
+
+    @Test
+    fun selectNextTabWrapsFromLastToFirst() {
+        val viewModel = createViewModel()
+        val firstId = viewModel.activeTabId
+        val secondId = viewModel.createTab()!!
+        val thirdId = viewModel.createTab()!!
+        viewModel.selectTab(thirdId)
+        viewModel.selectNextTab()
+        assertEquals(firstId, viewModel.activeTabId)
+        viewModel.selectNextTab()
+        assertEquals(secondId, viewModel.activeTabId)
+    }
+
+    @Test
+    fun cycleHelpersAreNoopWithSingleTab() {
+        val viewModel = createViewModel()
+        val onlyId = viewModel.activeTabId
+        viewModel.selectPreviousTab()
+        assertEquals(onlyId, viewModel.activeTabId)
+        viewModel.selectNextTab()
+        assertEquals(onlyId, viewModel.activeTabId)
+    }
+
+    @Test
     fun loadConfigInNewTabCreatesTabAndLoadsIntoIt() {
         val viewModel = createViewModel()
         val firstId = viewModel.activeTabId

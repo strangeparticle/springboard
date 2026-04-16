@@ -83,6 +83,7 @@ fun main(args: Array<String>) {
         val showActiveSettings = remember { mutableStateOf(false) }
         val showLicenseDialog = remember { mutableStateOf(false) }
         val showNetworkDialog = remember { mutableStateOf(false) }
+        val networkOpenIntoNewTab = remember { mutableStateOf(false) }
         val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
@@ -126,7 +127,8 @@ fun main(args: Array<String>) {
         ) {
             SpringboardMenuBar(
                 hasActiveSpringboard = viewModel.springboard != null,
-                onOpen = {
+                canCreateNewTab = viewModel.canCreateNewTab,
+                onOpenInCurrentTab = {
                     val path = openFileDialog(null)
                     if (path != null) {
                         val contents = readFileContents(path)
@@ -137,8 +139,28 @@ fun main(args: Array<String>) {
                         }
                     }
                 },
-                onOpenFromNetwork = {
+                onOpenInNewTab = {
+                    val path = openFileDialog(null)
+                    if (path != null) {
+                        val contents = readFileContents(path)
+                        if (contents != null) {
+                            viewModel.createTab()
+                            loadSpringboardConfig(path, contents)
+                        } else {
+                            ToastBroadcaster.error("Failed to open: file not found")
+                        }
+                    }
+                },
+                onOpenFromNetworkInCurrentTab = {
+                    networkOpenIntoNewTab.value = false
                     showNetworkDialog.value = true
+                },
+                onOpenFromNetworkInNewTab = {
+                    networkOpenIntoNewTab.value = true
+                    showNetworkDialog.value = true
+                },
+                onCloseCurrentTab = {
+                    viewModel.closeTab(viewModel.activeTabId)
                 },
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
@@ -182,12 +204,16 @@ fun main(args: Array<String>) {
             }
 
             if (showNetworkDialog.value) {
+                val intoNewTab = networkOpenIntoNewTab.value
                 com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog(
                     onConfirm = { url ->
                         showNetworkDialog.value = false
                         kotlinx.coroutines.MainScope().launch {
                             try {
                                 val contents = networkContentService.fetchText(url)
+                                if (intoNewTab) {
+                                    viewModel.createTab()
+                                }
                                 loadSpringboardConfig(url, contents)
                             } catch (e: Exception) {
                                 ToastBroadcaster.error("Failed to fetch: ${e.message}")

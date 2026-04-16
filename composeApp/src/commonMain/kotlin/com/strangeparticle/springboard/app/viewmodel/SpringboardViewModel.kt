@@ -114,7 +114,7 @@ class SpringboardViewModel(
         }
     }
 
-    fun runSuppressingAutosave(block: () -> Unit) {
+    suspend fun runSuppressingAutosave(block: suspend () -> Unit) {
         suppressAutosave = true
         try {
             block()
@@ -122,6 +122,26 @@ class SpringboardViewModel(
             suppressAutosave = false
             onTabsChanged()
         }
+    }
+
+    /**
+     * Loads a persisted springboard into a tab as part of startup restore.
+     *
+     * If the only tab is the initial empty one, it is reused in place. Otherwise a new tab is
+     * appended. Returns the in-memory tabId of the restored tab.
+     */
+    fun restoreTabFromPersistence(source: String, jsonContents: String, zoomPercent: Int): String {
+        val targetIndex = if (_tabs.size == 1 && _tabs.first().isEmpty) {
+            0
+        } else {
+            val newTab = TabState.createEmpty(generateTabId())
+            _tabs.add(newTab)
+            _tabs.size - 1
+        }
+        activeTabId = _tabs[targetIndex].tabId
+        loadConfig(jsonContents, source)
+        updateActiveTab { it.copy(gridZoomSelection = GridZoomSelection.fromPercent(zoomPercent)) }
+        return activeTabId
     }
 
     var springboard: Springboard?

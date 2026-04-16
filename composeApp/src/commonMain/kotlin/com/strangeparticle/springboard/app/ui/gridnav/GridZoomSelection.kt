@@ -12,6 +12,10 @@ sealed interface GridZoomSelection {
             FixedZoom(200),
         )
 
+        fun default(): GridZoomSelection = FixedZoom(100)
+
+        fun fromPercent(percent: Int): GridZoomSelection = FixedZoom(percent)
+
         /**
          * Maps a calculated fit percentage to a conservative preset: finds the
          * nearest preset at or below [fitPercent], then steps down one more level.
@@ -26,6 +30,11 @@ sealed interface GridZoomSelection {
         }
     }
 }
+
+val GridZoomSelection.percent: Int
+    get() = when (this) {
+        is GridZoomSelection.FixedZoom -> percent
+    }
 
 fun GridZoomSelection.displayLabel(): String = when (this) {
     is GridZoomSelection.FixedZoom -> "$percent%"

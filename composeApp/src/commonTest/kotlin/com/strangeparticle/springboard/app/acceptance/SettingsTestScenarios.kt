@@ -43,7 +43,7 @@ object SettingsTestScenarios {
         val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
         settingsManager.loadSettingsAtStartup(environmentVariables, commandLineArgs)
         val activationService = PlatformActivationServiceInMemoryFake()
-        val viewModel = SpringboardViewModel(settingsManager, activationService)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
         if (currentFilePath != null) {
             viewModel.loadConfig(TestFixtureJson.URL_ONLY, currentFilePath)
         }

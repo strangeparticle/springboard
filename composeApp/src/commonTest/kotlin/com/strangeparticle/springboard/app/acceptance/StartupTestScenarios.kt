@@ -8,13 +8,14 @@ import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 @OptIn(ExperimentalTestApi::class)
 object StartupTestScenarios {
 
     private fun createTestComponents(): Pair<SpringboardViewModel, SettingsViewModel> {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         return viewModel to settingsViewModel
     }

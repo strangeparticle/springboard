@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TabDto(
     val tabId: String,
-    val sourceFilename: String? = null,
-    val gridZoomSelection: String? = null,
+    val source: String? = null,
+    val zoomPercent: Int? = null,
 )

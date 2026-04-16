@@ -12,6 +12,7 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 private data class KeyNavTestComponents(
     val viewModel: SpringboardViewModel,
@@ -26,7 +27,7 @@ object KeyNavTestScenarios {
         activationService: PlatformActivationServiceInMemoryFake = PlatformActivationServiceInMemoryFake(),
     ): KeyNavTestComponents {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager, activationService)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         return KeyNavTestComponents(viewModel, settingsViewModel, activationService)
     }
@@ -125,8 +126,15 @@ object KeyNavTestScenarios {
 
     // --- Environment defaults ---
 
-    fun environmentDefaultsToFirstInList() {
-        val viewModel = SpringboardViewModel(createSettingsManagerForTest())
+    fun environmentDefaultsToAllWhenPresent() {
+        val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
+        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+
+        assertEquals("all", viewModel.selectedEnvironmentId)
+    }
+
+    fun environmentDefaultsToFirstWhenAllIsNotPresent() {
+        val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_ALL, "/test/springboard.json")
 
         val expected = viewModel.springboard?.environments?.firstOrNull()?.id
@@ -154,8 +162,8 @@ object KeyNavTestScenarios {
 
     // --- Resource selection after app change ---
 
-    fun selectedResourceIsRetainedAfterAppChangeEvenWhenUnavailable() {
-        val viewModel = SpringboardViewModel(createSettingsManagerForTest())
+    fun selectedResourceResetsWhenUnavailableAfterAppChange() {
+        val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
         viewModel.selectEnvironment("all")
 
@@ -171,7 +179,7 @@ object KeyNavTestScenarios {
     }
 
     fun selectedResourceIsRetainedWhenAvailableAfterAppChange() {
-        val viewModel = SpringboardViewModel(createSettingsManagerForTest())
+        val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
 
         // Select app1 which has res1 in "all" env

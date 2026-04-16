@@ -7,6 +7,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -16,12 +17,12 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+import com.strangeparticle.springboard.app.viewmodel.TabState
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
@@ -29,15 +30,14 @@ import androidx.compose.material.icons.filled.CloudDownload
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusBar(
-    springboard: Springboard?,
+    activeTab: TabState,
     isReloading: Boolean,
-    zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
     onZoomSelectionChange: (GridZoomSelection) -> Unit = {},
     onReload: () -> Unit,
-    onOpenSettings: () -> Unit = {},
     onOpenFromNetwork: (() -> Unit)? = null,
 ) {
-    val currentSpringboard = springboard ?: return
+    val currentSpringboard = activeTab.springboard ?: return
+    val zoomSelection = activeTab.gridZoomSelection
     val currentUiBrand = LocalUiBrand.current
 
     val infiniteTransition = rememberInfiniteTransition()
@@ -49,11 +49,13 @@ fun StatusBar(
         )
     )
 
+    Column(modifier = Modifier.fillMaxWidth()) {
+    HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(CommonUiConstants.StatusBarHeight)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -108,24 +110,7 @@ fun StatusBar(
                     )
                 }
             }
-            Spacer(modifier = Modifier.width(4.dp))
         }
-        TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = { PlainTooltip { Text("Settings") } },
-            state = rememberTooltipState(),
-        ) {
-            IconButton(
-                onClick = onOpenSettings,
-                modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON)
-            ) {
-                Icon(
-                    imageVector = currentUiBrand.vectorImages.settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+    }
     }
 }

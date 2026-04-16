@@ -84,9 +84,13 @@ fun SpringboardApp(
                 )
             }
 
-            ToastOverlay(onToastDismissed = {
-                viewModel.requestFocusAppDropdown()
-            })
+            ToastOverlay(
+                tabToastState = viewModel.activeTabToast,
+                isTabVisible = !showSettings.value,
+                onToastDismissed = {
+                    viewModel.requestFocusAppDropdown()
+                },
+            )
         }
     }
 }

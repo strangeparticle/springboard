@@ -21,10 +21,11 @@ import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
+import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderDesktopImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import com.strangeparticle.springboard.app.viewmodel.TabRestorer
 import kotlinx.coroutines.launch
 import java.io.File
-
 private enum class ActiveSettingsOpenedFrom {
     SETTINGS_SCREEN,
     MAIN_SCREEN,
@@ -70,7 +71,7 @@ fun main(args: Array<String>) {
             position = WindowPosition(Alignment.Center)
         )
 
-        val viewModel = remember { SpringboardViewModel(settingsManager, activationService) }
+        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService, activationService) }
         val settingsViewModel = remember {
             SettingsViewModel(
                 settingsManager = settingsManager,
@@ -81,6 +82,7 @@ fun main(args: Array<String>) {
         val showActiveSettings = remember { mutableStateOf(false) }
         val showLicenseDialog = remember { mutableStateOf(false) }
         val showNetworkDialog = remember { mutableStateOf(false) }
+        val networkOpenIntoNewTab = remember { mutableStateOf(false) }
         val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
@@ -124,20 +126,43 @@ fun main(args: Array<String>) {
         ) {
             SpringboardMenuBar(
                 hasActiveSpringboard = viewModel.springboard != null,
-                onOpen = {
+                canCreateNewTab = viewModel.canCreateNewTab,
+                onOpenInCurrentTab = {
                     val path = openFileDialog(null)
                     if (path != null) {
                         val contents = readFileContents(path)
                         if (contents != null) {
                             loadSpringboardConfig(path, contents)
                         } else {
-                            ToastBroadcaster.error("Failed to open: file not found")
+                            viewModel.activeTabToast.error("Failed to open: file not found")
                         }
                     }
                 },
-                onOpenFromNetwork = {
+                onOpenInNewTab = {
+                    val path = openFileDialog(null)
+                    if (path != null) {
+                        val contents = readFileContents(path)
+                        if (contents != null) {
+                            viewModel.createTab()
+                            loadSpringboardConfig(path, contents)
+                        } else {
+                            viewModel.activeTabToast.error("Failed to open: file not found")
+                        }
+                    }
+                },
+                onOpenFromNetworkInCurrentTab = {
+                    networkOpenIntoNewTab.value = false
                     showNetworkDialog.value = true
                 },
+                onOpenFromNetworkInNewTab = {
+                    networkOpenIntoNewTab.value = true
+                    showNetworkDialog.value = true
+                },
+                onCloseCurrentTab = {
+                    viewModel.closeTab(viewModel.activeTabId)
+                },
+                onPreviousTab = { viewModel.selectPreviousTab() },
+                onNextTab = { viewModel.selectNextTab() },
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
                     if (springboard == null) {
@@ -161,7 +186,7 @@ fun main(args: Array<String>) {
                     if (contents != null) {
                         loadSpringboardConfig(path, contents)
                     } else {
-                        ToastBroadcaster.error("Failed to reload: file not found")
+                        viewModel.activeTabToast.error("Failed to reload: file not found")
                     }
                 },
                 onOpenSettings = openSettingsScreen,
@@ -180,15 +205,19 @@ fun main(args: Array<String>) {
             }
 
             if (showNetworkDialog.value) {
+                val intoNewTab = networkOpenIntoNewTab.value
                 com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog(
                     onConfirm = { url ->
                         showNetworkDialog.value = false
                         kotlinx.coroutines.MainScope().launch {
                             try {
                                 val contents = networkContentService.fetchText(url)
+                                if (intoNewTab) {
+                                    viewModel.createTab()
+                                }
                                 loadSpringboardConfig(url, contents)
                             } catch (e: Exception) {
-                                ToastBroadcaster.error("Failed to fetch: ${e.message}")
+                                viewModel.activeTabToast.error("Failed to fetch: ${e.message}")
                             }
                         }
                     },
@@ -207,15 +236,19 @@ fun main(args: Array<String>) {
                 networkContentService = networkContentService,
             )
 
-            // Runs once initially and again whenever the loaded springboard instance changes.
-            LaunchedEffect(viewModel.springboard) {
-                resizeWindowToFitSpringboard(viewModel, windowState)
+            // Grow the window to fit the largest springboard across all tabs (never shrink).
+            LaunchedEffect(viewModel.tabs.mapNotNull { it.springboard }) {
+                growWindowToFitLargestTab(viewModel, windowState)
             }
 
-            // Runs once when this window composition starts because configPath is captured from main(args).
-            // It handles optional startup loading from the launch argument, then marks startup complete.
-            LaunchedEffect(configPath) {
-                if (configPath != null) {
+            // Restore persisted tabs on startup, or fall back to STARTUP_SPRINGBOARD for first launch.
+            LaunchedEffect(Unit) {
+                val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
+                val tabRestorer = TabRestorer(persistenceService, contentLoader)
+                val hadPersistedTabs = persistenceService.loadTabs() != null
+                if (hadPersistedTabs) {
+                    tabRestorer.restoreInto(viewModel)
+                } else if (configPath != null) {
                     when (val source = parseSpringboardSource(configPath)) {
                         is SpringboardSource.NetworkSource -> {
                             try {

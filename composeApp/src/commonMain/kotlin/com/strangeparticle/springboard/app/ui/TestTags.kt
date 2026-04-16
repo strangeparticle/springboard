@@ -23,6 +23,10 @@ object TestTags {
     const val SETTINGS_CLEAR_BUTTON = "settingsClearButton"
     const val SETTINGS_OVERRIDE_WARNING = "settingsOverrideWarning"
     const val ZOOM_DROPDOWN = "zoomDropdown"
+    const val TAB_BAR = "tabBar"
+    const val TAB_NEW_BUTTON = "tabNewButton"
+
+    fun tabIndicator(tabId: String) = "tabIndicator_$tabId"
 
     fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
     fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"

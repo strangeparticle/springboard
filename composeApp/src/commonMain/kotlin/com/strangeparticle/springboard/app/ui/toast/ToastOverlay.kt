@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.selection.SelectionContainer
+import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.platform.copyToClipboard
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.*
@@ -27,23 +28,36 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun ToastOverlay(onToastDismissed: () -> Unit = {}) {
-    var activeToasts by remember { mutableStateOf(listOf<ToastMessage>()) }
+fun ToastOverlay(
+    tabToastState: TabToastState? = null,
+    isTabVisible: Boolean = true,
+    onToastDismissed: () -> Unit = {},
+) {
+    var globalToasts by remember { mutableStateOf(listOf<ToastMessage>()) }
     val scope = rememberCoroutineScope()
 
-    // Collect incoming toasts and auto-dismiss INFO severity toasts after a timeout
     LaunchedEffect(Unit) {
         ToastBroadcaster.toasts.collect { toast ->
-            activeToasts = activeToasts + toast
+            globalToasts = globalToasts + toast
             if (toast.severity == ToastSeverity.INFO) {
                 scope.launch {
                     delay(CommonUiConstants.ToastAutoDismissMs)
-                    activeToasts = activeToasts.filter { it.id != toast.id }
+                    globalToasts = globalToasts.filter { it.id != toast.id }
                     onToastDismissed()
                 }
             }
         }
     }
+
+    val tabToasts = tabToastState?.activeToasts ?: emptyList()
+
+    TabToastAutoDismiss(
+        tabToastState = tabToastState,
+        isTabVisible = isTabVisible,
+        onToastDismissed = onToastDismissed,
+    )
+
+    val allToasts = tabToasts + globalToasts
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -53,11 +67,16 @@ fun ToastOverlay(onToastDismissed: () -> Unit = {}) {
             modifier = Modifier.padding(16.dp).width(CommonUiConstants.ToastWidth),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            activeToasts.forEach { toast ->
+            allToasts.forEach { toast ->
+                val isTabToast = tabToasts.any { it.id == toast.id }
                 ToastCard(
                     toast = toast,
                     onDismiss = {
-                        activeToasts = activeToasts.filter { it.id != toast.id }
+                        if (isTabToast) {
+                            tabToastState?.dismiss(toast.id)
+                        } else {
+                            globalToasts = globalToasts.filter { it.id != toast.id }
+                        }
                         onToastDismissed()
                     }
                 )
@@ -67,7 +86,45 @@ fun ToastOverlay(onToastDismissed: () -> Unit = {}) {
 }
 
 @Composable
-private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
+private fun TabToastAutoDismiss(
+    tabToastState: TabToastState?,
+    isTabVisible: Boolean,
+    onToastDismissed: () -> Unit,
+) {
+    if (tabToastState == null) return
+
+    val infoToasts = tabToastState.activeToasts.filter { it.severity == ToastSeverity.INFO }
+
+    for (toast in infoToasts) {
+        key(toast.id) {
+            val elapsed = tabToastState.elapsedVisibleMs(toast.id)
+            val remaining = CommonUiConstants.ToastAutoDismissMs - elapsed
+
+            if (remaining <= 0) {
+                LaunchedEffect(Unit) {
+                    tabToastState.dismiss(toast.id)
+                    onToastDismissed()
+                }
+            } else if (isTabVisible) {
+                DisposableEffect(toast.id) {
+                    val startTime = currentTimeMillis()
+                    onDispose {
+                        val newElapsed = elapsed + (currentTimeMillis() - startTime)
+                        tabToastState.recordElapsed(toast.id, newElapsed)
+                    }
+                }
+                LaunchedEffect(toast.id) {
+                    delay(remaining)
+                    tabToastState.dismiss(toast.id)
+                    onToastDismissed()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
     var showCopied by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -172,7 +229,7 @@ private fun ToastCard(toast: ToastMessage, onDismiss: () -> Unit) {
     }
 }
 
-private data class ToastStyle(
+internal data class ToastStyle(
     val background: Color,
     val border: Color,
     val text: Color,

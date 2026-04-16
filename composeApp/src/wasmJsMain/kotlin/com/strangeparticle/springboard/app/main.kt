@@ -12,9 +12,10 @@ import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
 import com.strangeparticle.springboard.app.ui.gridnav.displayLabel
-import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
+import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderWasmImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import com.strangeparticle.springboard.app.viewmodel.TabRestorer
 import kotlinx.browser.document
 
 @JsFun("() => window.startupSpringboard")
@@ -58,7 +59,7 @@ fun main() {
     val startupUrl = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
 
     ComposeViewport(document.body!!) {
-        val viewModel = remember { SpringboardViewModel(settingsManager) }
+        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService) }
         val settingsViewModel = remember {
             SettingsViewModel(
                 settingsManager = settingsManager,
@@ -95,14 +96,19 @@ fun main() {
             }
         }
 
-        // Fetch and load config from the startup springboard URL
-        LaunchedEffect(startupUrl) {
-            if (startupUrl != null) {
+        // Restore persisted tabs on startup, or fall back to startup URL for first launch.
+        LaunchedEffect(Unit) {
+            val contentLoader = SpringboardContentLoaderWasmImpl(networkContentService)
+            val tabRestorer = TabRestorer(persistenceService, contentLoader)
+            val hadPersistedTabs = persistenceService.loadTabs() != null
+            if (hadPersistedTabs) {
+                tabRestorer.restoreInto(viewModel)
+            } else if (startupUrl != null) {
                 try {
                     val jsonText = networkContentService.fetchText(startupUrl)
                     viewModel.loadConfig(jsonText, startupUrl)
                 } catch (e: Throwable) {
-                    ToastBroadcaster.error("Failed to fetch config: ${e.message}")
+                    viewModel.activeTabToast.error("Failed to fetch config: ${e.message}")
                 }
             }
         }

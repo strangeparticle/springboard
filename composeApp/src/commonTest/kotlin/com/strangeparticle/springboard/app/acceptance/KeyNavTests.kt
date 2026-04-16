@@ -16,14 +16,17 @@ class KeyNavTests {
     @Test fun `dropdowns reset to defaults after keynav activation`() =
         KeyNavTestScenarios.dropdownsResetToDefaultsAfterKeyNavActivation()
 
-    @Test fun `environment defaults to first in list`() =
-        KeyNavTestScenarios.environmentDefaultsToFirstInList()
+    @Test fun `environment defaults to all when present`() =
+        KeyNavTestScenarios.environmentDefaultsToAllWhenPresent()
+
+    @Test fun `environment defaults to first when all is not present`() =
+        KeyNavTestScenarios.environmentDefaultsToFirstWhenAllIsNotPresent()
 
     @Test fun `unavailable resources are disabled for selected app`() =
         KeyNavTestScenarios.unavailableResourcesAreDisabledForSelectedApp()
 
-    @Test fun `selected resource is retained after app change even when unavailable`() =
-        KeyNavTestScenarios.selectedResourceIsRetainedAfterAppChangeEvenWhenUnavailable()
+    @Test fun `selected resource resets when unavailable after app change`() =
+        KeyNavTestScenarios.selectedResourceResetsWhenUnavailableAfterAppChange()
 
     @Test fun `selected resource is retained when available after app change`() =
         KeyNavTestScenarios.selectedResourceIsRetainedWhenAvailableAfterAppChange()

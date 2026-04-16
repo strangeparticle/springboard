@@ -9,8 +9,14 @@ import androidx.compose.ui.window.MenuBar
 @Composable
 fun FrameWindowScope.SpringboardMenuBar(
     hasActiveSpringboard: Boolean,
-    onOpen: () -> Unit,
-    onOpenFromNetwork: () -> Unit,
+    canCreateNewTab: Boolean,
+    onOpenInCurrentTab: () -> Unit,
+    onOpenInNewTab: () -> Unit,
+    onOpenFromNetworkInCurrentTab: () -> Unit,
+    onOpenFromNetworkInNewTab: () -> Unit,
+    onCloseCurrentTab: () -> Unit,
+    onPreviousTab: () -> Unit,
+    onNextTab: () -> Unit,
     onSaveLocalCopyAs: () -> Unit,
     onReload: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -19,11 +25,34 @@ fun FrameWindowScope.SpringboardMenuBar(
 ) {
     MenuBar {
         Menu("File") {
-            Item("Open from File…", shortcut = KeyShortcut(Key.O, meta = true)) {
-                onOpen()
+            Item("Open from File in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true)) {
+                onOpenInCurrentTab()
             }
-            Item("Open from Network…", shortcut = KeyShortcut(Key.O, meta = true, shift = true)) {
-                onOpenFromNetwork()
+            Item(
+                "Open from File in New Tab…",
+                enabled = canCreateNewTab,
+                shortcut = KeyShortcut(Key.O, meta = true, alt = true),
+            ) {
+                onOpenInNewTab()
+            }
+            Item("Open from Network in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true, shift = true)) {
+                onOpenFromNetworkInCurrentTab()
+            }
+            Item(
+                "Open from Network in New Tab…",
+                enabled = canCreateNewTab,
+                shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true),
+            ) {
+                onOpenFromNetworkInNewTab()
+            }
+            Item("Close Tab", shortcut = KeyShortcut(Key.W, meta = true)) {
+                onCloseCurrentTab()
+            }
+            Item("Previous Tab", shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true)) {
+                onPreviousTab()
+            }
+            Item("Next Tab", shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true)) {
+                onNextTab()
             }
             Item(
                 "Save a Local Copy As…",

@@ -10,6 +10,7 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 
 private data class ActivatorTestComponents(
     val viewModel: SpringboardViewModel,
@@ -24,7 +25,7 @@ object ActivatorTestScenarios {
         activationService: PlatformActivationServiceInMemoryFake = PlatformActivationServiceInMemoryFake(),
     ): ActivatorTestComponents {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager, activationService)
+        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
         return ActivatorTestComponents(viewModel, settingsViewModel, activationService)
     }

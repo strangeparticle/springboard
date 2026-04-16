@@ -2,7 +2,6 @@ package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
@@ -25,7 +24,6 @@ private data class SettingsTestComponents(
     val settingsViewModel: SettingsViewModel,
     val settingsManager: SettingsManager,
     val persistenceService: PersistenceServiceInMemoryFake,
-    val focusRequester: FocusRequester,
     val showSettings: MutableState<Boolean>,
     val showActiveSettings: MutableState<Boolean>,
 )
@@ -50,10 +48,9 @@ object SettingsTestScenarios {
             viewModel.loadConfig(TestFixtureJson.URL_ONLY, currentFilePath)
         }
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
         return SettingsTestComponents(
             viewModel, settingsViewModel, settingsManager, persistenceService,
-            focusRequester, showSettings, showActiveSettings,
+            showSettings, showActiveSettings,
         )
     }
 
@@ -62,7 +59,6 @@ object SettingsTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
                 showSettings = components.showSettings,
                 showActiveSettings = components.showActiveSettings,
             )
@@ -124,7 +120,6 @@ object SettingsTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
                 showSettings = components.showSettings,
                 showActiveSettings = components.showActiveSettings,
                 activeSettingsOpenedFromSettings = activeSettingsOpenedFromSettings,

@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.platform.DesktopBrowser
 import com.strangeparticle.springboard.app.platform.ScriptRunResult
@@ -16,7 +15,6 @@ import kotlin.test.assertTrue
 private data class ActivatorDesktopTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
-    val focusRequester: FocusRequester,
     val activationService: PlatformActivationServiceDesktopTestFake,
 )
 
@@ -44,8 +42,7 @@ object ActivatorDesktopTestScenarios {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return ActivatorDesktopTestComponents(viewModel, settingsViewModel, focusRequester, activationService)
+        return ActivatorDesktopTestComponents(viewModel, settingsViewModel, activationService)
     }
 
     private fun ComposeUiTest.setSpringboardApp(components: ActivatorDesktopTestComponents) {
@@ -53,7 +50,6 @@ object ActivatorDesktopTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
             )
         }
     }

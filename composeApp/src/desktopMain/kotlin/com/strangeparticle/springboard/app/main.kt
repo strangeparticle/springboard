@@ -4,7 +4,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -78,7 +77,6 @@ fun main(args: Array<String>) {
                 currentFilePath = { viewModel.springboard?.source },
             )
         }
-        val firstDropdownFocusRequester = remember { FocusRequester() }
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
         val showLicenseDialog = remember { mutableStateOf(false) }
@@ -201,17 +199,11 @@ fun main(args: Array<String>) {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = firstDropdownFocusRequester,
                 showSettings = showSettings,
                 showActiveSettings = showActiveSettings,
                 onOpenSettings = openSettingsScreen,
                 onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
                 onCloseActiveSettings = closeActiveSettings,
-                onRequestFocusFirstDropdown = {
-                    try {
-                        firstDropdownFocusRequester.requestFocus()
-                    } catch (_: Exception) {}
-                },
                 networkContentService = networkContentService,
             )
 
@@ -256,11 +248,7 @@ fun main(args: Array<String>) {
             // Runs when the window focus state changes; when focus returns, restore keyboard focus.
             LaunchedEffect(windowInfo.isWindowFocused) {
                 if (windowInfo.isWindowFocused && viewModel.isConfigLoaded) {
-                    // Small delay to ensure composition is ready before requesting focus
-                    kotlinx.coroutines.delay(50)
-                    try {
-                        firstDropdownFocusRequester.requestFocus()
-                    } catch (_: Exception) {}
+                    viewModel.requestFocusAppDropdown()
                 }
             }
         }

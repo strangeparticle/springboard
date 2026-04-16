@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
@@ -14,7 +13,6 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 @Composable
 fun NavBar(
     viewModel: SpringboardViewModel,
-    firstDropdownFocusRequester: FocusRequester
 ) {
     val currentUiBrand = LocalUiBrand.current
     Row(
@@ -30,7 +28,6 @@ fun NavBar(
         if (viewModel.isConfigLoaded) {
             KeyNav(
                 viewModel = viewModel,
-                firstDropdownFocusRequester = firstDropdownFocusRequester,
                 modifier = Modifier.weight(1f),
             )
         } else {

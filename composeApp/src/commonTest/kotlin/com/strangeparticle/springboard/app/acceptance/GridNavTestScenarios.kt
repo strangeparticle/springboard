@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
@@ -20,7 +19,6 @@ import kotlin.test.assertTrue
 private data class GridNavTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
-    val focusRequester: FocusRequester,
     val activationService: PlatformActivationServiceInMemoryFake,
 )
 
@@ -35,8 +33,7 @@ object GridNavTestScenarios {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return GridNavTestComponents(viewModel, settingsViewModel, focusRequester, activationService)
+        return GridNavTestComponents(viewModel, settingsViewModel, activationService)
     }
 
     private fun ComposeUiTest.setSpringboardApp(components: GridNavTestComponents) {
@@ -44,7 +41,6 @@ object GridNavTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
             )
         }
     }
@@ -188,7 +184,7 @@ object GridNavTestScenarios {
         components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
         waitForIdle()
 
-        // Default environment is "all" which has name "All"
+        // Default environment is the first in the list ("all" with name "All" in this fixture)
         onNodeWithTag(TestTags.GRID_ENVIRONMENT_TITLE)
             .assertExists()
             .assertTextEquals("All")
@@ -391,7 +387,7 @@ object GridNavTestScenarios {
         components.viewModel.activateCell(Coordinate("prod", "app1", "res1"))
         waitForIdle()
 
-        // Keynav selections should reset: env back to "all", app/resource cleared
+        // Keynav selections should reset: env back to default (first in list), app/resource cleared.
         assertEquals("all", components.viewModel.selectedEnvironmentId)
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
@@ -406,8 +402,11 @@ object GridNavTestScenarios {
         components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
         waitForIdle()
 
-        // Default env is "dev" (first in list, no "all" declared)
+        // Default env is the first one in the list.
         assertEquals("dev", components.viewModel.selectedEnvironmentId)
+
+        components.viewModel.selectEnvironment("dev")
+        waitForIdle()
 
         // Wildcard (app1, res1) should show in dev
         onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)

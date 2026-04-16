@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -17,7 +16,6 @@ import kotlin.test.assertTrue
 private data class KeyNavTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
-    val focusRequester: FocusRequester,
     val activationService: PlatformActivationServiceInMemoryFake,
 )
 
@@ -30,8 +28,7 @@ object KeyNavTestScenarios {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return KeyNavTestComponents(viewModel, settingsViewModel, focusRequester, activationService)
+        return KeyNavTestComponents(viewModel, settingsViewModel, activationService)
     }
 
     private fun ComposeUiTest.setSpringboardApp(components: KeyNavTestComponents) {
@@ -39,12 +36,6 @@ object KeyNavTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
-                onRequestFocusFirstDropdown = {
-                    try {
-                        components.focusRequester.requestFocus()
-                    } catch (_: Exception) { }
-                },
             )
         }
     }
@@ -56,9 +47,6 @@ object KeyNavTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
         components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
-        waitForIdle()
-
-        components.focusRequester.requestFocus()
         waitForIdle()
 
         onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
@@ -119,6 +107,7 @@ object KeyNavTestScenarios {
         waitForIdle()
 
         // Select a full coordinate: all / app1 / res1
+        components.viewModel.selectEnvironment("all")
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
         waitForIdle()
@@ -127,7 +116,7 @@ object KeyNavTestScenarios {
         components.viewModel.activateCurrentSelection()
         waitForIdle()
 
-        // After activation, selections should reset: env back to "all", app/resource cleared
+        // After activation, selections should reset: env back to "all", app/resource cleared.
         assertEquals("all", components.viewModel.selectedEnvironmentId)
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
@@ -136,18 +125,12 @@ object KeyNavTestScenarios {
 
     // --- Environment defaults ---
 
-    fun environmentDefaultsToAllWhenPresent() {
-        val viewModel = SpringboardViewModel(createSettingsManagerForTest())
-        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
-
-        assertEquals("all", viewModel.selectedEnvironmentId)
-    }
-
-    fun environmentDefaultsToFirstWhenAllIsNotPresent() {
+    fun environmentDefaultsToFirstInList() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_ALL, "/test/springboard.json")
 
-        assertEquals("preprod", viewModel.selectedEnvironmentId)
+        val expected = viewModel.springboard?.environments?.firstOrNull()?.id
+        assertEquals(expected, viewModel.selectedEnvironmentId)
     }
 
     // --- Resource disabled/enabled based on app ---
@@ -171,18 +154,20 @@ object KeyNavTestScenarios {
 
     // --- Resource selection after app change ---
 
-    fun selectedResourceResetsWhenUnavailableAfterAppChange() {
+    fun selectedResourceIsRetainedAfterAppChangeEvenWhenUnavailable() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        viewModel.selectEnvironment("all")
 
         // Select app1 which has res1 and res2 in "all" env
         viewModel.selectApp("app1")
         viewModel.selectResource("res2")
         assertEquals("res2", viewModel.selectedResourceId)
 
-        // Switch to app2 which only has res1 in "all" env — res2 becomes unavailable
+        // Switch to app2 which only has res1 in "all" env. Resource selection is retained;
+        // the resource dropdown shows res2 as disabled instead of silently clearing it.
         viewModel.selectApp("app2")
-        assertNull(viewModel.selectedResourceId)
+        assertEquals("res2", viewModel.selectedResourceId)
     }
 
     fun selectedResourceIsRetainedWhenAvailableAfterAppChange() {
@@ -276,4 +261,235 @@ object KeyNavTestScenarios {
         waitForIdle()
         assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
     }
+
+    fun changingEnvironmentKeepsAppAndResourceWhenStillValid() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        // Select a full coordinate in "all", then switch environment to one that still
+        // supports the same coordinate.
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        components.viewModel.selectEnvironment("preprod")
+        waitForIdle()
+
+        assertEquals("preprod", components.viewModel.selectedEnvironmentId)
+        assertEquals("app1", components.viewModel.selectedAppId)
+        assertEquals("res1", components.viewModel.selectedResourceId)
+    }
+
+    fun environmentOptionsAreFilteredBySelectedAppAndResource() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        // app2 + res1 exists only in "all" for this fixture.
+        components.viewModel.selectApp("app2")
+        components.viewModel.selectResource("res1")
+        waitForIdle()
+
+        assertEquals(true, components.viewModel.environmentEnabledStates["all"])
+        assertEquals(false, components.viewModel.environmentEnabledStates["preprod"])
+        assertEquals(false, components.viewModel.environmentEnabledStates["prod"])
+    }
+
+    fun dropdownsIncludeNoneOptionToClearSelection() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        components.viewModel.selectApp("app1")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).performClick()
+        waitForIdle()
+        onAllNodes(hasText("None") and hasClickAction()).assertCountEquals(1)
+        onAllNodes(hasText("None") and hasClickAction())[0].performClick()
+        waitForIdle()
+
+        assertNull(components.viewModel.selectedAppId)
+    }
+
+    fun environmentDropdownIncludesNoneOption() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+        mainClock.autoAdvance = true
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).performClick()
+        waitForIdle()
+        onAllNodes(hasText("None") and hasClickAction()).assertCountEquals(1)
+    }
+
+    fun environmentDropdownNoneClearsOnlyEnvironmentSelection() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.selectEnvironment("all")
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+        mainClock.autoAdvance = true
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).performClick()
+        waitForIdle()
+        onAllNodes(hasText("None") and hasClickAction()).assertCountEquals(1)
+        onAllNodes(hasText("None") and hasClickAction())[0].performClick()
+        waitForIdle()
+
+        assertNull(components.viewModel.selectedEnvironmentId)
+        assertEquals("app1", components.viewModel.selectedAppId)
+        assertEquals("res1", components.viewModel.selectedResourceId)
+    }
+
+    fun gridIsHiddenWhenEnvironmentSelectionIsNone() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+        mainClock.autoAdvance = true
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).performClick()
+        waitForIdle()
+        onAllNodes(hasText("None") and hasClickAction()).assertCountEquals(1)
+        onAllNodes(hasText("None") and hasClickAction())[0].performClick()
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_ENVIRONMENT_TITLE).assertDoesNotExist()
+    }
+
+    fun typingSelectsEntryWhenDropdownIsOpen() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.selectApp("app1")
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+        mainClock.autoAdvance = true
+        waitForIdle()
+
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).performClick()
+        waitForIdle()
+
+        onAllNodes(isRoot())[0].performKeyInput {
+            pressKey(androidx.compose.ui.input.key.Key.L)
+        }
+        waitForIdle()
+
+        assertEquals("res2", components.viewModel.selectedResourceId)
+    }
+
+    fun shiftTabMovesBackwardAndWrapsAcrossDropdownSeries() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        waitForIdle()
+
+        waitForIdle()
+
+        // shift-tab from first should wrap to environment.
+        onRoot().performKeyInput {
+            keyDown(androidx.compose.ui.input.key.Key.ShiftLeft)
+            pressKey(androidx.compose.ui.input.key.Key.Tab)
+            keyUp(androidx.compose.ui.input.key.Key.ShiftLeft)
+        }
+        waitForIdle()
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).assertIsFocused()
+
+        // regular tab from environment should wrap to first (app dropdown).
+        onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+    }
+
+    fun shiftTabDoesNotActivateFromEnvironmentDropdown() = runComposeUiTest {
+        val activationService = PlatformActivationServiceInMemoryFake()
+        val components = createTestComponents(activationService = activationService)
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        components.viewModel.selectEnvironment("prod")
+        waitForIdle()
+
+        waitForIdle()
+
+        // Move focus app -> environment via wrapping shift-tab.
+        onRoot().performKeyInput {
+            keyDown(androidx.compose.ui.input.key.Key.ShiftLeft)
+            pressKey(androidx.compose.ui.input.key.Key.Tab)
+            keyUp(androidx.compose.ui.input.key.Key.ShiftLeft)
+        }
+        waitForIdle()
+
+        assertTrue(activationService.openedUrls.isEmpty())
+
+        onRoot().performKeyInput {
+            keyDown(androidx.compose.ui.input.key.Key.ShiftLeft)
+            pressKey(androidx.compose.ui.input.key.Key.Tab)
+            keyUp(androidx.compose.ui.input.key.Key.ShiftLeft)
+        }
+        waitForIdle()
+
+        assertTrue(activationService.openedUrls.isEmpty())
+    }
+
+    fun escapeClearsAllSelectionsAndFocusesAppDropdown() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.selectEnvironment("preprod")
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        waitForIdle()
+
+        waitForIdle()
+
+        // Move focus to the environment dropdown (two tabs from app), then press escape.
+        onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Tab) }
+        onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Tab) }
+        waitForIdle()
+
+        onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Escape) }
+        waitForIdle()
+
+        assertEquals("all", components.viewModel.selectedEnvironmentId)
+        assertNull(components.viewModel.selectedAppId)
+        assertNull(components.viewModel.selectedResourceId)
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+    }
+
 }

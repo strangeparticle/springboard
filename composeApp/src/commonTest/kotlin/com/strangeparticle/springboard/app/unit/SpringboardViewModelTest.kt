@@ -43,48 +43,83 @@ class SpringboardViewModelTest {
     }
 
     @Test
-    fun `load config parses springboard and selects first environment`() {
+    fun `load config parses springboard and defaults environment to first`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
         assertNotNull(vm.springboard)
         assertTrue(vm.isConfigLoaded)
-        assertEquals("preprod", vm.selectedEnvironmentId) // defaults to first env (no "all" present)
+        assertEquals("preprod", vm.selectedEnvironmentId)
         assertNull(vm.selectedAppId)
         assertNull(vm.selectedResourceId)
     }
 
     @Test
-    fun `default environment prefers all`() {
-        val jsonWithAll = """
+    fun `default environment is first in list`() {
+        val jsonWithMultipleEnvironments = """
         {
           "name": "Test",
           "environments": [
             { "id": "staging", "name": "Staging" },
-            { "id": "all", "name": "All" },
+            { "id": "preprod", "name": "Preprod" },
             { "id": "prod", "name": "Production" }
           ],
           "apps": [{ "id": "a1", "name": "A1" }],
           "resources": [{ "id": "r1", "name": "R1" }],
           "activators": [
-            { "type": "url", "appId": "a1", "resourceId": "r1", "environmentId": "all", "url": "https://example.com" }
+            { "type": "url", "appId": "a1", "resourceId": "r1", "environmentId": "staging", "url": "https://example.com" }
           ]
         }
         """.trimIndent()
         val vm = createViewModel()
-        vm.loadConfig(jsonWithAll, "/test")
-        assertEquals("all", vm.selectedEnvironmentId)
+        vm.loadConfig(jsonWithMultipleEnvironments, "/test")
+        assertEquals("staging", vm.selectedEnvironmentId)
     }
 
     @Test
-    fun `environment selection clears downstream selections`() {
+    fun `environment selection does not clear other selections`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
+        vm.selectApp("app1")
+        vm.selectResource("res1")
         vm.selectEnvironment("prod")
+
         assertEquals("prod", vm.selectedEnvironmentId)
-        assertNull(vm.selectedAppId) // cleared on env change
-        assertNull(vm.selectedResourceId) // cleared on env change
+        assertEquals("app1", vm.selectedAppId)
+        assertEquals("res1", vm.selectedResourceId)
+    }
+
+    @Test
+    fun `environment selection null clears only environment selection`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        vm.selectEnvironment("preprod")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        vm.selectEnvironment(null)
+
+        assertNull(vm.selectedEnvironmentId)
+        assertEquals("app1", vm.selectedAppId)
+        assertEquals("res1", vm.selectedResourceId)
+    }
+
+    @Test
+    fun `app selection null clears only app selection`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        vm.selectEnvironment("preprod")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        vm.selectApp(null)
+
+        assertEquals("preprod", vm.selectedEnvironmentId)
+        assertNull(vm.selectedAppId)
+        assertEquals("res1", vm.selectedResourceId)
     }
 
     @Test
@@ -111,10 +146,11 @@ class SpringboardViewModelTest {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
-        // In preprod, app1 has activators, app2 does not
+        // With env=null (explicit None), app enabled states are computed across all environments.
+        vm.selectEnvironment(null)
         val states = vm.appEnabledStates
         assertEquals(true, states["app1"])
-        assertEquals(false, states["app2"])
+        assertEquals(true, states["app2"])
     }
 
     @Test
@@ -129,9 +165,45 @@ class SpringboardViewModelTest {
     }
 
     @Test
+    fun `resource enabled states are available before app selection`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        // In preprod, app1 exposes both resources, so both should be selectable even
+        // before app is chosen.
+        val states = vm.resourceEnabledStates
+        assertEquals(true, states["res1"])
+        assertEquals(true, states["res2"])
+    }
+
+    @Test
+    fun `app enabled states are filtered by selected resource`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+        vm.selectResource("res2")
+
+        val states = vm.appEnabledStates
+        assertEquals(true, states["app1"])
+        assertEquals(false, states["app2"])
+    }
+
+    @Test
+    fun `environment enabled states are filtered by selected app and resource`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+        vm.selectApp("app2")
+        vm.selectResource("res1")
+
+        val states = vm.environmentEnabledStates
+        assertEquals(false, states["preprod"])
+        assertEquals(true, states["prod"])
+    }
+
+    @Test
     fun `activate button is disabled without full selection`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
+        vm.selectEnvironment(null)
 
         assertFalse(vm.isActivateEnabled)
 
@@ -139,11 +211,14 @@ class SpringboardViewModelTest {
         assertFalse(vm.isActivateEnabled)
 
         vm.selectResource("res1")
+        assertFalse(vm.isActivateEnabled)
+
+        vm.selectEnvironment("preprod")
         assertTrue(vm.isActivateEnabled)
     }
 
     @Test
-    fun `environment change clears downstream selections`() {
+    fun `environment change retains app and resource even when coordinate becomes invalid`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
@@ -151,21 +226,72 @@ class SpringboardViewModelTest {
         vm.selectResource("res1")
 
         vm.selectEnvironment("prod")
-        assertNull(vm.selectedAppId)
-        assertNull(vm.selectedResourceId)
+        assertEquals("app1", vm.selectedAppId)
+        assertEquals("res1", vm.selectedResourceId)
     }
 
     @Test
-    fun `app change clears invalid resource`() {
+    fun `environment change retains app and resource when coordinate remains valid`() {
+        val jsonWithSharedCoordinate = """
+        {
+          "name": "Shared Coordinate Springboard",
+          "environments": [
+            { "id": "preprod", "name": "Preprod" },
+            { "id": "prod", "name": "Production" }
+          ],
+          "apps": [
+            { "id": "app1", "name": "App One" }
+          ],
+          "resources": [
+            { "id": "res1", "name": "Dashboard" }
+          ],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "preprod", "url": "https://example.com/preprod/dash" },
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://example.com/prod/dash" }
+          ]
+        }
+        """.trimIndent()
+
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithSharedCoordinate, "/test.json")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        vm.selectEnvironment("prod")
+
+        assertEquals("app1", vm.selectedAppId)
+        assertEquals("res1", vm.selectedResourceId)
+    }
+
+    @Test
+    fun `app change does not clear resource even when coordinate becomes invalid`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
+        vm.selectEnvironment("preprod")
 
         vm.selectApp("app1")
         vm.selectResource("res1")
 
-        // Switch to app2 which doesn't have res1 in preprod
+        // Switch to app2 which doesn't have res1 in preprod; resource stays selected so
+        // the user can see it as disabled instead of silently losing it.
         vm.selectApp("app2")
-        assertNull(vm.selectedResourceId) // cleared because res1 not valid for app2 in preprod
+        assertEquals("res1", vm.selectedResourceId)
+    }
+
+    @Test
+    fun `resetKeyNavSelections restores environment default and clears app and resource`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        vm.selectEnvironment("prod")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        vm.resetKeyNavSelections()
+
+        assertEquals("preprod", vm.selectedEnvironmentId)
+        assertNull(vm.selectedAppId)
+        assertNull(vm.selectedResourceId)
     }
 
     @Test

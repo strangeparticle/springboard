@@ -1,24 +1,14 @@
 package com.strangeparticle.springboard.app.ui.keynav
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 private const val MinWeightChars = 12
@@ -27,11 +17,34 @@ private const val MaxWeightChars = 30
 @Composable
 fun KeyNav(
     viewModel: SpringboardViewModel,
-    firstDropdownFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
+    val appDropdownFocusRequester = remember { FocusRequester() }
     val resourceFocusRequester = remember { FocusRequester() }
     val environmentFocusRequester = remember { FocusRequester() }
+
+    // Observe the view-model-owned focus-request flag and route it to the app dropdown's
+    // FocusRequester. Startup load, toast dismissal, escape reset, and window-refocus all
+    // toggle this flag via viewModel.requestFocusAppDropdown()
+    LaunchedEffect(viewModel.focusAppDropdownRequested) {
+        if (viewModel.focusAppDropdownRequested) {
+            try { appDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
+            viewModel.focusAppDropdownRequested = false
+        }
+    }
+
+    fun requestFocusForDropDown(dropDown: KeyNavDropDown) {
+        when (dropDown) {
+            KeyNavDropDown.APP -> appDropdownFocusRequester.requestFocus()
+            KeyNavDropDown.RESOURCE -> resourceFocusRequester.requestFocus()
+            KeyNavDropDown.ENVIRONMENT -> environmentFocusRequester.requestFocus()
+        }
+    }
+
+    fun onEscape() {
+        viewModel.resetKeyNavSelections()
+        viewModel.requestFocusAppDropdown()
+    }
 
     val appItems = viewModel.apps.map { it.id to it.name }
     val resourceItems = viewModel.resources.map { it.id to it.name }
@@ -53,10 +66,22 @@ fun KeyNav(
             selectedId = viewModel.selectedAppId,
             enabledStates = viewModel.appEnabledStates,
             onSelect = { viewModel.selectApp(it) },
-            focusRequester = firstDropdownFocusRequester,
-            onTab = { resourceFocusRequester.requestFocus() },
+            focusRequester = appDropdownFocusRequester,
+            onTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.APP, isShiftPressed = false)
+                )
+            },
+            onShiftTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.APP, isShiftPressed = true)
+                )
+            },
+            onEscape = { onEscape() },
             testTag = TestTags.APP_DROPDOWN,
             modifier = Modifier.weight(longestNameWeight(appItems)),
+            canActivateCoordinate = viewModel.isActivateEnabled,
+            onActivateCoordinate = { viewModel.activateCurrentSelection() },
         )
 
         // Dropdown 2: Resource
@@ -66,149 +91,45 @@ fun KeyNav(
             enabledStates = viewModel.resourceEnabledStates,
             onSelect = { viewModel.selectResource(it) },
             focusRequester = resourceFocusRequester,
-            onTab = { environmentFocusRequester.requestFocus() },
+            onTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.RESOURCE, isShiftPressed = false)
+                )
+            },
+            onShiftTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.RESOURCE, isShiftPressed = true)
+                )
+            },
+            onEscape = { onEscape() },
             testTag = TestTags.RESOURCE_DROPDOWN,
             modifier = Modifier.weight(longestNameWeight(resourceItems)),
+            canActivateCoordinate = viewModel.isActivateEnabled,
+            onActivateCoordinate = { viewModel.activateCurrentSelection() },
         )
 
         // Dropdown 3: Environment
         MinimalDropdown(
             items = environmentItems,
             selectedId = viewModel.selectedEnvironmentId,
-            enabledStates = viewModel.environments.associate { it.id to true },
+            enabledStates = viewModel.environmentEnabledStates,
             onSelect = { viewModel.selectEnvironment(it) },
             focusRequester = environmentFocusRequester,
+            onTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.ENVIRONMENT, isShiftPressed = false)
+                )
+            },
+            onShiftTab = {
+                requestFocusForDropDown(
+                    determineNextFocusDropDownForTabKeypress(KeyNavDropDown.ENVIRONMENT, isShiftPressed = true)
+                )
+            },
+            onEscape = { onEscape() },
             testTag = TestTags.ENVIRONMENT_DROPDOWN,
             modifier = Modifier.weight(longestNameWeight(environmentItems)),
-            onTab = {
-                if (viewModel.isActivateEnabled) {
-                    viewModel.activateCurrentSelection()
-                }
-                firstDropdownFocusRequester.requestFocus()
-            },
-            onEnter = {
-                if (viewModel.isActivateEnabled) {
-                    viewModel.activateCurrentSelection()
-                }
-            }
+            canActivateCoordinate = viewModel.isActivateEnabled,
+            onActivateCoordinate = { viewModel.activateCurrentSelection() },
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MinimalDropdown(
-    items: List<Pair<String, String>>,
-    selectedId: String?,
-    enabledStates: Map<String, Boolean>,
-    onSelect: (String) -> Unit,
-    focusRequester: FocusRequester,
-    onTab: () -> Unit,
-    testTag: String? = null,
-    modifier: Modifier = Modifier,
-    onEnter: (() -> Unit)? = null,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    var isFocused by remember { mutableStateOf(false) }
-    var typeaheadBuffer by remember { mutableStateOf("") }
-    val selectedName = items.find { it.first == selectedId }?.second ?: ""
-
-    // Clear typeahead buffer after a delay
-    LaunchedEffect(typeaheadBuffer) {
-        if (typeaheadBuffer.isNotEmpty()) {
-            kotlinx.coroutines.delay(500)
-            typeaheadBuffer = ""
-        }
-    }
-
-    val currentUiBrand = LocalUiBrand.current
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = modifier
-    ) {
-        Box(
-            modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth()
-                .height(34.dp)
-                .background(MaterialTheme.colorScheme.surface, RectangleShape)
-                .border(
-                    width = if (isFocused) 3.dp else 1.dp,
-                    color = if (isFocused)
-                        currentUiBrand.customColors.keyNavFocusIndicator
-                    else
-                        currentUiBrand.customColors.keyNavFocusIndicatorUnfocused,
-                    shape = RectangleShape
-                )
-                .focusRequester(focusRequester)
-                .onFocusChanged { isFocused = it.isFocused }
-                .focusable()
-                .let { if (testTag != null) it.testTag(testTag) else it }
-                .onKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown) {
-                        when (event.key) {
-                            Key.Tab -> {
-                                expanded = false
-                                onTab()
-                                true
-                            }
-                            Key.Enter -> {
-                                if (!expanded) {
-                                    expanded = false
-                                    onEnter?.invoke()
-                                    true
-                                } else false
-                            }
-                            else -> {
-                                val char = event.utf16CodePoint.toChar()
-                                val hasModifier = event.isMetaPressed || event.isCtrlPressed || event.isAltPressed
-                                if (char.isLetterOrDigit() && !hasModifier) {
-                                    typeaheadBuffer += char.lowercaseChar()
-                                    val match = items.find { (id, _) ->
-                                        id.lowercase().startsWith(typeaheadBuffer)
-                                    } ?: items.find { (_, name) ->
-                                        name.lowercase().startsWith(typeaheadBuffer)
-                                    }
-                                    if (match != null && enabledStates[match.first] != false) {
-                                        onSelect(match.first)
-                                    }
-                                    true
-                                } else false
-                            }
-                        }
-                    } else false
-                },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Text(
-                text = selectedName,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp)
-            )
-        }
-
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            items.forEach { (id, name) ->
-                val isEnabled = enabledStates[id] != false
-                DropdownMenuItem(
-                    text = { Text(name, fontSize = 13.sp) },
-                    onClick = {
-                        if (isEnabled) {
-                            onSelect(id)
-                            expanded = false
-                        }
-                    },
-                    enabled = isEnabled
-                )
-            }
-        }
     }
 }

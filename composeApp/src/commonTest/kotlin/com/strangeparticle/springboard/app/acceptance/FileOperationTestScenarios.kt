@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
@@ -15,7 +14,6 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 private data class FileOperationTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
-    val focusRequester: FocusRequester,
     val fileContentService: PlatformFileContentService,
 )
 
@@ -28,8 +26,7 @@ object FileOperationTestScenarios {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return FileOperationTestComponents(viewModel, settingsViewModel, focusRequester, fileContentService)
+        return FileOperationTestComponents(viewModel, settingsViewModel, fileContentService)
     }
 
     private fun ComposeUiTest.setSpringboardApp(components: FileOperationTestComponents) {
@@ -37,7 +34,6 @@ object FileOperationTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
                 fileContentService = components.fileContentService,
             )
         }

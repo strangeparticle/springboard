@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -15,7 +14,6 @@ import kotlin.test.assertTrue
 private data class ActivatorTestComponents(
     val viewModel: SpringboardViewModel,
     val settingsViewModel: SettingsViewModel,
-    val focusRequester: FocusRequester,
     val activationService: PlatformActivationServiceInMemoryFake,
 )
 
@@ -28,8 +26,7 @@ object ActivatorTestScenarios {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, activationService)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return ActivatorTestComponents(viewModel, settingsViewModel, focusRequester, activationService)
+        return ActivatorTestComponents(viewModel, settingsViewModel, activationService)
     }
 
     private fun ComposeUiTest.setSpringboardApp(components: ActivatorTestComponents) {
@@ -37,7 +34,6 @@ object ActivatorTestScenarios {
             SpringboardApp(
                 viewModel = components.viewModel,
                 settingsViewModel = components.settingsViewModel,
-                firstDropdownFocusRequester = components.focusRequester,
             )
         }
     }

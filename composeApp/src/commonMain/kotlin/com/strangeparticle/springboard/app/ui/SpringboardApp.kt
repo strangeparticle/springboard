@@ -3,7 +3,6 @@ package com.strangeparticle.springboard.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.key.*
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
@@ -19,7 +18,6 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 fun SpringboardApp(
     viewModel: SpringboardViewModel,
     settingsViewModel: SettingsViewModel,
-    firstDropdownFocusRequester: FocusRequester,
     showSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     showActiveSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     activeSettingsOpenedFromSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
@@ -35,7 +33,6 @@ fun SpringboardApp(
         }
         activeSettingsOpenedFromSettings.value = false
     },
-    onRequestFocusFirstDropdown: (() -> Unit)? = null,
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
@@ -79,7 +76,6 @@ fun SpringboardApp(
             } else {
                 MainScreen(
                     viewModel = viewModel,
-                    firstDropdownFocusRequester = firstDropdownFocusRequester,
                     isShiftHeld = isShiftHeld,
                     onOpenSettings = onOpenSettings,
                     fileContentService = fileContentService,
@@ -89,7 +85,7 @@ fun SpringboardApp(
             }
 
             ToastOverlay(onToastDismissed = {
-                onRequestFocusFirstDropdown?.invoke()
+                viewModel.requestFocusAppDropdown()
             })
         }
     }

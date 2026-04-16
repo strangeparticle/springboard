@@ -2,7 +2,6 @@ package com.strangeparticle.springboard.app
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.window.ComposeViewport
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImpl
@@ -17,7 +16,6 @@ import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.browser.document
-import kotlinx.coroutines.delay
 
 @JsFun("() => window.startupSpringboard")
 private external fun getStartupSpringboard(): JsAny?
@@ -67,15 +65,12 @@ fun main() {
                 currentFilePath = { viewModel.springboard?.source },
             )
         }
-        val firstDropdownFocusRequester = remember { FocusRequester() }
-
         // Incremented each time the browser window gains focus
         var windowFocusTick by remember { mutableStateOf(0) }
 
         SpringboardApp(
             viewModel = viewModel,
             settingsViewModel = settingsViewModel,
-            firstDropdownFocusRequester = firstDropdownFocusRequester,
             networkContentService = networkContentService,
             showFileOpen = false,
         )
@@ -96,8 +91,7 @@ fun main() {
         // Re-focus the first dropdown whenever the window regains focus
         LaunchedEffect(windowFocusTick) {
             if (windowFocusTick > 0 && viewModel.isConfigLoaded) {
-                delay(50)
-                try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
+                viewModel.requestFocusAppDropdown()
             }
         }
 
@@ -107,8 +101,6 @@ fun main() {
                 try {
                     val jsonText = networkContentService.fetchText(startupUrl)
                     viewModel.loadConfig(jsonText, startupUrl)
-                    delay(300)
-                    try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
                 } catch (e: Throwable) {
                     ToastBroadcaster.error("Failed to fetch config: ${e.message}")
                 }

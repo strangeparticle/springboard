@@ -3,7 +3,6 @@ package com.strangeparticle.springboard.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.parseSpringboardSource
@@ -25,7 +24,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(
     viewModel: SpringboardViewModel,
-    firstDropdownFocusRequester: FocusRequester,
     isShiftHeld: Boolean,
     onOpenSettings: () -> Unit,
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
@@ -70,18 +68,7 @@ fun MainScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        NavBar(
-            viewModel = viewModel,
-            firstDropdownFocusRequester = firstDropdownFocusRequester
-        )
-
-        LaunchedEffect(viewModel.isConfigLoaded) {
-            if (viewModel.isConfigLoaded) {
-                // Delay lets the dropdown composables enter the tree before focus is requested
-                kotlinx.coroutines.delay(100)
-                try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
-            }
-        }
+        NavBar(viewModel = viewModel)
 
         if (!viewModel.isConfigLoaded) {
             WelcomeScreen(

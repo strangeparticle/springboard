@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.acceptance
 
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.AppVersion
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -13,33 +12,30 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 @OptIn(ExperimentalTestApi::class)
 object StartupTestScenarios {
 
-    private fun createTestComponents(): Triple<SpringboardViewModel, SettingsViewModel, FocusRequester> {
+    private fun createTestComponents(): Pair<SpringboardViewModel, SettingsViewModel> {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager)
         val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
-        val focusRequester = FocusRequester()
-        return Triple(viewModel, settingsViewModel, focusRequester)
+        return viewModel to settingsViewModel
     }
 
     fun springboardIconIsShownInUpperLeft() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         onNodeWithTag(TestTags.SPRINGBOARD_ICON).assertExists().assertIsDisplayed()
     }
 
     fun versionIdentifierDisplaysCorrectVersion() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         onNodeWithTag(TestTags.VERSION_DESIGNATOR)
@@ -48,12 +44,11 @@ object StartupTestScenarios {
     }
 
     fun springboardWithCommandActivatorsShowsSecurityWarning() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         waitForIdle()
@@ -65,12 +60,11 @@ object StartupTestScenarios {
     }
 
     fun springboardWithoutCommandActivatorsSkipsSecurityWarning() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         waitForIdle()
@@ -82,12 +76,11 @@ object StartupTestScenarios {
     }
 
     fun statusLineShowsEmbeddedPathForBuiltInSpringboard() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         waitForIdle()
@@ -101,12 +94,11 @@ object StartupTestScenarios {
     }
 
     fun statusLineShowsFilePathForCustomLoadedSpringboard() = runComposeUiTest {
-        val (viewModel, settingsViewModel, focusRequester) = createTestComponents()
+        val (viewModel, settingsViewModel) = createTestComponents()
         setContent {
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
-                firstDropdownFocusRequester = focusRequester,
             )
         }
         waitForIdle()

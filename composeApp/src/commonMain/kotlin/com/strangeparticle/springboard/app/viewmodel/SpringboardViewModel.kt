@@ -43,6 +43,14 @@ class SpringboardViewModel(
 
     var gridZoomSelection by mutableStateOf<GridZoomSelection>(GridZoomSelection.FixedZoom(100))
 
+    /**
+     * UI flag indicating the app dropdown should take focus. KeyNav observes this and resets it
+     * to false after requesting focus. Set via [requestFocusAppDropdown] from anywhere in the app
+     * (view model, toast overlay, platform window-focus hooks, etc.) without threading a
+     * FocusRequester through the composable tree.
+     */
+    var focusAppDropdownRequested by mutableStateOf(false)
+
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
     val apps by derivedStateOf { springboard?.apps ?: emptyList() }
     val resources by derivedStateOf { springboard?.resources ?: emptyList() }
@@ -51,18 +59,34 @@ class SpringboardViewModel(
 
     val appEnabledStates by derivedStateOf {
         val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
-        val environmentId = selectedEnvironmentId ?: return@derivedStateOf emptyMap<String, Boolean>()
         currentSpringboard.apps.associate { app ->
-            app.id to currentSpringboard.activators.any { it.environmentId == environmentId && it.appId == app.id }
+            app.id to hasMatchingActivator(
+                environmentId = selectedEnvironmentId,
+                appId = app.id,
+                resourceId = selectedResourceId,
+            )
         }
     }
 
     val resourceEnabledStates by derivedStateOf {
         val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
-        val environmentId = selectedEnvironmentId ?: return@derivedStateOf emptyMap<String, Boolean>()
-        val appId = selectedAppId ?: return@derivedStateOf emptyMap<String, Boolean>()
         currentSpringboard.resources.associate { resource ->
-            resource.id to (currentSpringboard.indexes.activatableResourcesByEnvApp[environmentId to appId]?.contains(resource.id) == true)
+            resource.id to hasMatchingActivator(
+                environmentId = selectedEnvironmentId,
+                appId = selectedAppId,
+                resourceId = resource.id,
+            )
+        }
+    }
+
+    val environmentEnabledStates by derivedStateOf {
+        val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
+        currentSpringboard.environments.associate { environment ->
+            environment.id to hasMatchingActivator(
+                environmentId = environment.id,
+                appId = selectedAppId,
+                resourceId = selectedResourceId,
+            )
         }
     }
 
@@ -113,13 +137,18 @@ class SpringboardViewModel(
         }
     }
 
+    private fun defaultEnvironmentId(): String? {
+        return springboard?.environments?.firstOrNull()?.id
+    }
+
+    fun requestFocusAppDropdown() {
+        focusAppDropdownRequested = true
+    }
+
     private fun applySpringboard(springboardConfig: Springboard) {
         springboard = springboardConfig
 
-        val defaultEnvironment = springboardConfig.environments.find {
-            it.id.equals("all", ignoreCase = true)
-        }
-        selectedEnvironmentId = defaultEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
+        selectedEnvironmentId = defaultEnvironmentId()
         selectedAppId = null
         selectedResourceId = null
         multiSelectSet = emptySet()
@@ -133,27 +162,16 @@ class SpringboardViewModel(
 
         ToastBroadcaster.info("Springboard loaded: ${springboardConfig.name}")
         println("[Springboard] config loaded: ${springboardConfig.name}")
+
+        requestFocusAppDropdown()
     }
 
-    fun selectEnvironment(environmentId: String) {
+    fun selectEnvironment(environmentId: String?) {
         selectedEnvironmentId = environmentId
-        selectedAppId = null
-        selectedResourceId = null
     }
 
     fun selectApp(appId: String?) {
         selectedAppId = appId
-        val currentResourceId = selectedResourceId
-        if (currentResourceId != null && appId != null) {
-            val environmentId = selectedEnvironmentId ?: return
-            val currentSpringboard = springboard ?: return
-            val validResources = currentSpringboard.indexes.activatableResourcesByEnvApp[environmentId to appId] ?: emptySet()
-            if (currentResourceId !in validResources) {
-                selectedResourceId = null
-            }
-        } else {
-            selectedResourceId = null
-        }
     }
 
     fun selectResource(resourceId: String?) {
@@ -295,13 +313,23 @@ class SpringboardViewModel(
         }
     }
 
-    private fun resetKeyNavSelections() {
-        val currentSpringboard = springboard ?: return
-        val defaultEnvironment = currentSpringboard.environments.find {
-            it.id.equals("all", ignoreCase = true)
-        }
-        selectedEnvironmentId = defaultEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
+    fun resetKeyNavSelections() {
+        springboard ?: return
+        selectedEnvironmentId = defaultEnvironmentId()
         selectedAppId = null
         selectedResourceId = null
+    }
+
+    private fun hasMatchingActivator(
+        environmentId: String?,
+        appId: String?,
+        resourceId: String?,
+    ): Boolean {
+        val currentSpringboard = springboard ?: return false
+        return currentSpringboard.indexes.activatorByCoordinate.keys.any { coordinate ->
+            (environmentId == null || coordinate.environmentId == environmentId) &&
+                (appId == null || coordinate.appId == appId) &&
+                (resourceId == null || coordinate.resourceId == resourceId)
+        }
     }
 }

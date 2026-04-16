@@ -38,12 +38,14 @@ fun calculateWindowWidth(springboard: Springboard): Int {
 fun calculateWindowHeight(springboard: Springboard): Int {
     val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
     val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
+    val tabBarHeightDp = 32
     val gridContentHeight = estimateGridContentHeightDp(springboard)
 
     return navbarHeightDp +
         gridContentHeight +
         ActivatorPreviewHeightDp +
         statusBarHeightDp +
+        tabBarHeightDp +
         WindowVerticalBufferDp
 }
 
@@ -73,4 +75,42 @@ fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: W
     )
     viewModel.gridZoomSelection = GridZoomSelection.FixedZoom(100)
     windowState.position = WindowPosition(Alignment.Center)
+}
+
+fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: WindowState) {
+    val allSpringboards = viewModel.tabs.mapNotNull { it.springboard }
+    if (allSpringboards.isEmpty()) return
+
+    val screenSize = Toolkit.getDefaultToolkit().screenSize
+    val maxScreenWidth = (screenSize.width * ScreenUsableMarginFactor).toInt()
+    val maxScreenHeight = (screenSize.height * ScreenUsableMarginFactor).toInt()
+
+    var neededWidth = windowState.size.width.value.toInt()
+    var neededHeight = windowState.size.height.value.toInt()
+
+    for (springboard in allSpringboards) {
+        if (springboard.displayHints != null) {
+            val hintWidth = springboard.displayHints.width
+            val hintHeight = springboard.displayHints.height
+            if (hintWidth != null && hintHeight != null) {
+                neededWidth = maxOf(neededWidth, hintWidth)
+                neededHeight = maxOf(neededHeight, hintHeight)
+                continue
+            }
+        }
+        neededWidth = maxOf(neededWidth, calculateWindowWidth(springboard))
+        neededHeight = maxOf(neededHeight, calculateWindowHeight(springboard))
+    }
+
+    val finalWidth = minOf(neededWidth, maxScreenWidth)
+    val finalHeight = minOf(neededHeight, maxScreenHeight)
+    val newSize = DpSize(finalWidth.dp, finalHeight.dp)
+
+    if (newSize.width > windowState.size.width || newSize.height > windowState.size.height) {
+        windowState.size = DpSize(
+            maxOf(newSize.width, windowState.size.width),
+            maxOf(newSize.height, windowState.size.height),
+        )
+        windowState.position = WindowPosition(Alignment.Center)
+    }
 }

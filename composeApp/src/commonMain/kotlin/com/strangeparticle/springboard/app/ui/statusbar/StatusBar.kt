@@ -52,7 +52,7 @@ fun StatusBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(CommonUiConstants.StatusBarHeight)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

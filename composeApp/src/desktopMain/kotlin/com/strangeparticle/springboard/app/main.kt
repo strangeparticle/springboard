@@ -244,9 +244,9 @@ fun main(args: Array<String>) {
                 networkContentService = networkContentService,
             )
 
-            // Runs once initially and again whenever the loaded springboard instance changes.
-            LaunchedEffect(viewModel.springboard) {
-                resizeWindowToFitSpringboard(viewModel, windowState)
+            // Grow the window to fit the largest springboard across all tabs (never shrink).
+            LaunchedEffect(viewModel.tabs.mapNotNull { it.springboard }) {
+                growWindowToFitLargestTab(viewModel, windowState)
             }
 
             // Restore persisted tabs on startup, or fall back to STARTUP_SPRINGBOARD for first launch.

@@ -50,7 +50,7 @@ fun TabIndicator(
     Row(
         modifier = modifier
             .height(TabIndicatorDefaults.Height)
-            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             .background(background)
             .clickable(onClick = onSelect)
             .padding(start = 8.dp, end = 2.dp),

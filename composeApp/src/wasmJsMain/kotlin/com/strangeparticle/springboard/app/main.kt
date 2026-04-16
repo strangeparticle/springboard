@@ -13,7 +13,6 @@ import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
 import com.strangeparticle.springboard.app.ui.gridnav.displayLabel
-import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderWasmImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -117,7 +116,7 @@ fun main() {
                     delay(300)
                     try { firstDropdownFocusRequester.requestFocus() } catch (_: Exception) {}
                 } catch (e: Throwable) {
-                    ToastBroadcaster.error("Failed to fetch config: ${e.message}")
+                    viewModel.activeTabToast.error("Failed to fetch config: ${e.message}")
                 }
             }
         }

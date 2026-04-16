@@ -10,8 +10,8 @@ class PlatformActivationServiceDesktopImpl(
         com.strangeparticle.springboard.app.platform.openUrl(url)
     }
 
-    override fun executeCommand(command: String) {
-        com.strangeparticle.springboard.app.platform.executeCommand(command)
+    override fun executeCommand(command: String, onError: (String) -> Unit) {
+        com.strangeparticle.springboard.app.platform.executeCommand(command, onError)
     }
 
     override fun openNewBrowserWindowIfAppropriate() {

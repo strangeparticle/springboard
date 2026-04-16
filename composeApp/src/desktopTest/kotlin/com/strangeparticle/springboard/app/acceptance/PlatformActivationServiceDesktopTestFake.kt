@@ -17,7 +17,7 @@ class PlatformActivationServiceDesktopTestFake(
         openedUrls.add(url)
     }
 
-    override fun executeCommand(command: String) {
+    override fun executeCommand(command: String, onError: (String) -> Unit) {
         executeCommandException?.let { throw it }
         executedCommands.add(command)
     }

@@ -136,7 +136,7 @@ fun main(args: Array<String>) {
                         if (contents != null) {
                             loadSpringboardConfig(path, contents)
                         } else {
-                            ToastBroadcaster.error("Failed to open: file not found")
+                            viewModel.activeTabToast.error("Failed to open: file not found")
                         }
                     }
                 },
@@ -148,7 +148,7 @@ fun main(args: Array<String>) {
                             viewModel.createTab()
                             loadSpringboardConfig(path, contents)
                         } else {
-                            ToastBroadcaster.error("Failed to open: file not found")
+                            viewModel.activeTabToast.error("Failed to open: file not found")
                         }
                     }
                 },
@@ -188,7 +188,7 @@ fun main(args: Array<String>) {
                     if (contents != null) {
                         loadSpringboardConfig(path, contents)
                     } else {
-                        ToastBroadcaster.error("Failed to reload: file not found")
+                        viewModel.activeTabToast.error("Failed to reload: file not found")
                     }
                 },
                 onOpenSettings = openSettingsScreen,
@@ -219,7 +219,7 @@ fun main(args: Array<String>) {
                                 }
                                 loadSpringboardConfig(url, contents)
                             } catch (e: Exception) {
-                                ToastBroadcaster.error("Failed to fetch: ${e.message}")
+                                viewModel.activeTabToast.error("Failed to fetch: ${e.message}")
                             }
                         }
                     },

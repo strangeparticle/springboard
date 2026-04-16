@@ -1,14 +1,12 @@
 package com.strangeparticle.springboard.app.platform
 
-import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
-
-actual fun executeCommand(command: String) {
+actual fun executeCommand(command: String, onError: (String) -> Unit) {
     val process = try {
         ProcessBuilder("/bin/bash", "-c", command)
             .redirectErrorStream(true)
             .start()
     } catch (e: Exception) {
-        ToastBroadcaster.error("Failed to launch command: ${e.message}")
+        onError("Failed to launch command: ${e.message}")
         return
     }
     Thread {
@@ -16,7 +14,7 @@ actual fun executeCommand(command: String) {
         if (exitCode != 0) {
             val output = process.inputStream.bufferedReader().readText().trim()
             val msg = if (output.isNotEmpty()) output.take(200) else "exit code $exitCode"
-            ToastBroadcaster.error("Command failed: $msg")
+            onError("Command failed: $msg")
         }
     }.also { it.isDaemon = true }.start()
 }

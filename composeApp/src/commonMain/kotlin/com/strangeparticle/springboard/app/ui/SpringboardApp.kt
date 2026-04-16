@@ -88,9 +88,13 @@ fun SpringboardApp(
                 )
             }
 
-            ToastOverlay(onToastDismissed = {
-                onRequestFocusFirstDropdown?.invoke()
-            })
+            ToastOverlay(
+                tabToastState = viewModel.activeTabToast,
+                isTabVisible = !showSettings.value,
+                onToastDismissed = {
+                    onRequestFocusFirstDropdown?.invoke()
+                },
+            )
         }
     }
 }

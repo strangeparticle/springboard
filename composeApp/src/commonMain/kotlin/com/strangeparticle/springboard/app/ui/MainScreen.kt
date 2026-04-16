@@ -18,7 +18,6 @@ import com.strangeparticle.springboard.app.ui.activatorpreview.ActivatorPreview
 import com.strangeparticle.springboard.app.ui.statusbar.StatusBar
 import com.strangeparticle.springboard.app.ui.tabs.TabBar
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
-import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,7 +53,7 @@ fun MainScreen(
                     println("[Springboard] grid ready")
                     println("[Springboard] application ready")
                 } catch (e: Exception) {
-                    ToastBroadcaster.error("Failed to fetch: ${e.message}")
+                    viewModel.activeTabToast.error("Failed to fetch: ${e.message}")
                 }
             }
         }
@@ -142,7 +141,7 @@ fun MainScreen(
                                         val contents = networkContentService.fetchText(parsed.url)
                                         viewModel.loadConfig(contents, source)
                                     } else {
-                                        ToastBroadcaster.error("Network reload not available")
+                                        viewModel.activeTabToast.error("Network reload not available")
                                     }
                                 }
                                 is SpringboardSource.FileSource -> {
@@ -150,12 +149,12 @@ fun MainScreen(
                                     if (contents != null) {
                                         viewModel.loadConfig(contents, source)
                                     } else {
-                                        ToastBroadcaster.error("Failed to reload: file not found")
+                                        viewModel.activeTabToast.error("Failed to reload: file not found")
                                     }
                                 }
                             }
                         } catch (e: Exception) {
-                            ToastBroadcaster.error("Failed to reload: ${e.message}")
+                            viewModel.activeTabToast.error("Failed to reload: ${e.message}")
                         }
                         val elapsed = currentTimeMillis() - startTime
                         if (elapsed < CommonUiConstants.ReloadSpinMinMs) {

@@ -44,7 +44,7 @@ fun formatTimestamp(millis: Long, timeZone: TimeZone): String {
 
 expect fun getPlatformName(): String
 
-expect fun executeCommand(command: String)
+expect fun executeCommand(command: String, onError: (String) -> Unit)
 
 expect fun copyToClipboard(text: String)
 

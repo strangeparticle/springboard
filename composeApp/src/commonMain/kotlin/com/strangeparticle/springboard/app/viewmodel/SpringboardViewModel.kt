@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDef
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+import com.strangeparticle.springboard.app.ui.toast.TabToastState
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 
 class SpringboardViewModel(
@@ -31,6 +32,14 @@ class SpringboardViewModel(
 
     private val _tabs = mutableStateListOf(TabState.createEmpty(generateTabId()))
     val tabs: List<TabState> get() = _tabs
+
+    private val _tabToastStates = mutableMapOf<String, TabToastState>()
+
+    fun tabToastState(tabId: String): TabToastState =
+        _tabToastStates.getOrPut(tabId) { TabToastState() }
+
+    val activeTabToast: TabToastState
+        get() = tabToastState(activeTabId)
 
     var activeTabId: String by mutableStateOf(_tabs.first().tabId)
         private set
@@ -76,6 +85,7 @@ class SpringboardViewModel(
             return
         }
 
+        _tabToastStates.remove(tabId)
         _tabs.removeAt(index)
         if (wasActive) {
             val nextIndex = if (index < _tabs.size) index else _tabs.size - 1
@@ -222,7 +232,7 @@ class SpringboardViewModel(
             val springboardConfig = SpringboardFactory.fromJson(jsonString, source)
             applySpringboard(springboardConfig, source)
         } catch (e: Exception) {
-            ToastBroadcaster.error("Failed to load config: ${e.message}")
+            activeTabToast.error("Failed to load config: ${e.message}")
             isLoading = false
         }
     }
@@ -235,12 +245,12 @@ class SpringboardViewModel(
                 applySpringboard(springboardConfig, source)
                 true
             } else {
-                ToastBroadcaster.error("Failed to load: file not found")
+                activeTabToast.error("Failed to load: file not found")
                 isLoading = false
                 false
             }
         } catch (e: Exception) {
-            ToastBroadcaster.error("Failed to load config: ${e.message}")
+            activeTabToast.error("Failed to load config: ${e.message}")
             isLoading = false
             false
         }
@@ -268,12 +278,12 @@ class SpringboardViewModel(
 
         val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
         if (hasUnsafeActivators) {
-            ToastBroadcaster.warning(
+            activeTabToast.warning(
                 "This Springboard contains activators that execute CLI commands or process template expressions. Be sure you trust it before using."
             )
         }
 
-        ToastBroadcaster.info("Springboard loaded: ${springboardConfig.name}")
+        activeTabToast.info("Springboard loaded: ${springboardConfig.name}")
         println("[Springboard] config loaded: ${springboardConfig.name}")
         onTabsChanged()
     }
@@ -409,14 +419,16 @@ class SpringboardViewModel(
             when (activator) {
                 is UrlActivator -> platformActivationService.openUrl(activator.url)
                 is UrlTemplateActivator -> {
-                    ToastBroadcaster.info("URL Template activators will be supported in Phase 2.")
+                    activeTabToast.info("URL Template activators will be supported in Phase 2.")
                 }
                 is CommandActivator -> {
-                    platformActivationService.executeCommand(activator.commandTemplate)
+                    platformActivationService.executeCommand(activator.commandTemplate) { errorMessage ->
+                        activeTabToast.error(errorMessage)
+                    }
                 }
             }
         } catch (e: Exception) {
-            ToastBroadcaster.error("An error has occurred: ${e.message}")
+            activeTabToast.error("An error has occurred: ${e.message}")
         }
     }
 

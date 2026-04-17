@@ -52,7 +52,7 @@ class SettingsManagerTest {
         assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
-    // -- User Settings Precedence --
+    // -- Precedence: USER > PARAMS > ENV > DEFAULT --
 
     @Test
     fun `user settings override defaults`() {
@@ -74,16 +74,24 @@ class SettingsManagerTest {
         assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
     }
 
-    // -- Environment Variable Precedence --
-
     @Test
-    fun `env var overrides user settings`() {
+    fun `user settings override env var`() {
         val manager = createManager(
             persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+    }
+
+    @Test
+    fun `user settings override params`() {
+        val manager = createManager(
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
+            cliArgs = listOf("--surface-applescript-errors"),
+        )
+        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     @Test
@@ -95,27 +103,25 @@ class SettingsManagerTest {
         assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
-    // -- CLI Precedence --
-
     @Test
-    fun `cli overrides env var`() {
+    fun `params override env var`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "false"),
             cliArgs = listOf("--surface-applescript-errors"),
         )
         assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.COMMAND_LINE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     @Test
-    fun `cli file path arg`() {
+    fun `params file path arg`() {
         val manager = createManager(
             cliArgs = listOf("--startup-springboard", "/cli/path.json"),
         )
         val filePath = manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
         assertNotNull(filePath)
         assertEquals("/cli/path.json", filePath.path)
-        assertEquals(SettingsSource.COMMAND_LINE, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
+        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
     }
 
     @Test
@@ -135,22 +141,22 @@ class SettingsManagerTest {
         assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
-    // -- Override Detection --
+    // -- Override Detection (isOverridden = user has explicitly set value) --
 
     @Test
-    fun `is overridden when env var set`() {
+    fun `is not overridden when only env var set`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
-        assertTrue(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     @Test
-    fun `is overridden when cli set`() {
+    fun `is not overridden when only params set`() {
         val manager = createManager(
             cliArgs = listOf("--surface-applescript-errors"),
         )
-        assertTrue(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     @Test
@@ -160,11 +166,39 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `is not overridden for user setting`() {
+    fun `is overridden when user setting exists`() {
         val manager = createManager(
             persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
         )
-        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertTrue(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+    }
+
+    // -- Source Tracking --
+
+    @Test
+    fun `getEffectiveSource returns highest priority source`() {
+        val manager = createManager(
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
+            envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "false"),
+            cliArgs = listOf("--surface-applescript-errors"),
+        )
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getEffectiveSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+    }
+
+    @Test
+    fun `getValueFromSource returns value for specific source`() {
+        val manager = createManager(
+            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
+            cliArgs = listOf("--surface-applescript-errors"),
+        )
+        assertEquals(false, manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.USER_SETTINGS))
+        assertEquals(true, manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.PARAMS))
+    }
+
+    @Test
+    fun `getValueFromSource returns null when source has no value`() {
+        val manager = createManager()
+        assertNull(manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.PARAMS))
     }
 
     // -- User Settings Mutation --
@@ -193,15 +227,15 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `set user setting does not override higher precedence`() {
+    fun `user setting overrides params`() {
         val manager = createManager(
             cliArgs = listOf("--surface-applescript-errors"),
         )
         assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
 
         manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, false)
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.COMMAND_LINE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     // -- Target Filtering --

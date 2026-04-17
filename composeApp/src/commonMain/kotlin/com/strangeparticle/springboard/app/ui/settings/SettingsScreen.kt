@@ -120,14 +120,12 @@ private fun SettingRow(
     viewModel: SettingsViewModel,
     onShowActiveSettings: () -> Unit,
 ) {
-    val isOverridden = viewModel.isOverridden(item.key)
     val resolvedValue = viewModel.getResolvedValue(item.key)
-    val alpha = if (isOverridden) 0.5f else 1.0f
+    val effectiveSource = viewModel.getEffectiveSource(item.key)
+    val showProvenance = effectiveSource != SettingsSource.APP_DEFAULT && effectiveSource != SettingsSource.USER_SETTINGS
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { this.alpha = alpha },
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
@@ -159,10 +157,10 @@ private fun SettingRow(
                     )
                 }
 
-                if (isOverridden) {
+                if (showProvenance) {
                     Spacer(modifier = Modifier.height(6.dp))
                     OverrideMessage(
-                        sourceName = formatSourceName(viewModel.getSource(item.key)),
+                        sourceName = formatSourceName(effectiveSource),
                         onShowActiveSettings = onShowActiveSettings,
                     )
                 }
@@ -177,11 +175,9 @@ private fun SettingRow(
                         settingKey = item.key,
                         declaration = declaration,
                         selectedId = selectedId,
-                        isEnabled = !isOverridden,
+                        isEnabled = true,
                         onSelect = { newId ->
-                            if (!isOverridden) {
-                                viewModel.setUserSetting(item.key, newId)
-                            }
+                            viewModel.setUserSetting(item.key, newId)
                         },
                     )
                 }
@@ -190,11 +186,9 @@ private fun SettingRow(
                 Switch(
                     checked = resolvedValue as? Boolean ?: false,
                     onCheckedChange = { newValue ->
-                        if (!isOverridden) {
-                            viewModel.setUserSetting(item.key, newValue)
-                        }
+                        viewModel.setUserSetting(item.key, newValue)
                     },
-                    enabled = !isOverridden,
+                    enabled = true,
                     colors = SwitchDefaults.colors(
                         uncheckedThumbColor = MaterialTheme.colorScheme.outline,
                         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -205,7 +199,7 @@ private fun SettingRow(
                         scaleY = 0.82f
                     },
                 )
-            } else if (item.type == FilePath::class && !isOverridden) {
+            } else if (item.type == FilePath::class) {
                 Spacer(modifier = Modifier.width(16.dp))
                 FilePathActions(
                     viewModel = viewModel,
@@ -223,7 +217,7 @@ private fun OverrideMessage(
 ) {
     val currentUiBrand = LocalUiBrand.current
     val activeSettings = "Active Settings"
-    val fullText = "Overridden by $sourceName. See $activeSettings for details."
+    val fullText = "From $sourceName. See $activeSettings for details."
     val linkStart = fullText.indexOf(activeSettings)
 
     val message = buildAnnotatedString {
@@ -397,5 +391,5 @@ private fun formatSourceName(source: SettingsSource): String = when (source) {
     SettingsSource.APP_DEFAULT -> "app default"
     SettingsSource.USER_SETTINGS -> "user settings"
     SettingsSource.ENVIRONMENT_VARIABLE -> "environment variable"
-    SettingsSource.COMMAND_LINE -> "command-line parameter"
+    SettingsSource.PARAMS -> "params"
 }

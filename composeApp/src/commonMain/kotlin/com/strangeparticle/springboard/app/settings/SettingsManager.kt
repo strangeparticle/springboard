@@ -89,8 +89,8 @@ class SettingsManager(
     /**
      * Returns the [SettingsSource] responsible for the current resolved value of the given key.
      */
-    fun getSource(key: SettingsKey): SettingsSource {
-        for (source in PRECEDENCE_CHAIN.reversed()) {
+    fun getEffectiveSource(key: SettingsKey): SettingsSource {
+        for (source in PRECEDENCE_CHAIN) {
             val layer = layers[source] ?: continue
             if (layer.isSet(key)) {
                 return source
@@ -99,21 +99,26 @@ class SettingsManager(
         return SettingsSource.APP_DEFAULT
     }
 
+    fun getSource(key: SettingsKey): SettingsSource = getEffectiveSource(key)
+
+    fun getValueFromSource(key: SettingsKey, source: SettingsSource): Any? {
+        val layer = layers[source] ?: return null
+        return if (layer.isSet(key)) layer.get(key) else null
+    }
+
     /**
-     * Returns true if the setting has been overridden by a source higher
-     * than [SettingsSource.USER_SETTINGS] (i.e., env var or CLI param).
+     * Returns true if the user has explicitly set this setting (effective source is USER_SETTINGS).
      */
     fun isOverridden(key: SettingsKey): Boolean {
-        val source = getSource(key)
-        return source == SettingsSource.ENVIRONMENT_VARIABLE || source == SettingsSource.COMMAND_LINE
+        return getEffectiveSource(key) == SettingsSource.USER_SETTINGS
     }
 
     /**
      * Returns the resolved value for the given key, applying the precedence chain.
-     * The first source (highest precedence) that provides a non-null value wins.
+     * Walks highest-to-lowest priority; the first source that provides a non-null value wins.
      */
     fun resolveValue(key: SettingsKey): Any? {
-        for (source in PRECEDENCE_CHAIN.reversed()) {
+        for (source in PRECEDENCE_CHAIN) {
             val layer = layers[source] ?: continue
             if (layer.isSet(key)) {
                 return layer.get(key)
@@ -226,7 +231,7 @@ class SettingsManager(
             i++
         }
 
-        layers[SettingsSource.COMMAND_LINE] = cliValues
+        layers[SettingsSource.PARAMS] = cliValues
     }
 
     private fun persistSettingsLayer() {

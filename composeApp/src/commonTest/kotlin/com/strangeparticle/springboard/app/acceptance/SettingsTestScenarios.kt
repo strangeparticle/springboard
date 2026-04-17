@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -170,7 +171,7 @@ object SettingsTestScenarios {
 
     // --- Override behavior ---
 
-    fun overriddenSettingsAppearVisuallyDisabled() = runComposeUiTest {
+    fun envVarSettingsAreNotMarkedAsOverridden() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
                 "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
@@ -180,14 +181,11 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        // The overridden setting should exist and show the override warning
-        onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertExists()
-
-        // Verify the setting is overridden at the ViewModel level
-        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+        // With inverted precedence, env var does NOT mean "overridden" — only user-set values are overridden
+        assertFalse(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
     }
 
-    fun overriddenSettingsShowOverrideWarning() = runComposeUiTest {
+    fun envVarSettingsShowProvenanceIndicator() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
                 "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
@@ -197,12 +195,12 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        // Override warning should contain the source name
+        // Provenance indicator should show "environment variable" as source
         onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("environment variable", substring = true))
             .assertExists()
     }
 
-    fun overrideWarningLinkNavigatesToActiveSettings() = runComposeUiTest {
+    fun provenanceLinkNavigatesToActiveSettings() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
                 "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
@@ -212,11 +210,11 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        // Override warning exists and mentions Active Settings
+        // Provenance indicator mentions Active Settings
         onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("Active Settings", substring = true))
             .assertExists()
 
-        // Click the override warning text — the annotated string link should navigate
+        // Click the provenance text — the annotated string link should navigate
         onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).performTouchInput {
             click(percentOffset(0.8f, 0.5f))
         }
@@ -270,7 +268,7 @@ object SettingsTestScenarios {
             .assertExists()
     }
 
-    fun activeSettingsShowsCommandLineSourceLabel() = runComposeUiTest {
+    fun activeSettingsShowsParamsSourceLabel() = runComposeUiTest {
         val components = createTestComponents(
             commandLineArgs = listOf("--surface-applescript-errors"),
             showSettings = mutableStateOf(true),
@@ -279,7 +277,7 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("CLI"))
+        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("Params"))
             .assertExists()
     }
 
@@ -341,7 +339,7 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Startup Springboard")) and hasText("CLI"))
+        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Startup Springboard")) and hasText("Params"))
             .assertExists()
     }
 
@@ -501,7 +499,7 @@ object SettingsTestScenarios {
         assertEquals(SettingsSource.USER_SETTINGS, components.settingsManager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
-    fun activeBrandDropdownShowsOverrideWarningWhenSetByCli() = runComposeUiTest {
+    fun activeBrandDropdownShowsProvenanceWhenSetByParams() = runComposeUiTest {
         val components = createTestComponents(
             commandLineArgs = listOf("--active-brand", "strangeparticle-dark"),
             currentFilePath = "/test/springboard.json",
@@ -511,13 +509,11 @@ object SettingsTestScenarios {
         waitForIdle()
 
         assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
-        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
+        assertFalse(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
 
-        // The dropdown is still rendered — it's just disabled — but the row's override
-        // warning should be present (there may be multiple override warnings on the
-        // screen if other settings are overridden as well, so use assertAny).
+        // Provenance indicator shows "params" as the source
         onAllNodesWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertAny(
-            hasText("command-line", substring = true),
+            hasText("params", substring = true),
         )
     }
 

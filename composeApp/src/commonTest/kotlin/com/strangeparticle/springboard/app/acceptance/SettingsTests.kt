@@ -16,14 +16,14 @@ class SettingsTests {
     @Test fun `active settings back button returns to previous screen when opened directly`() =
         SettingsTestScenarios.activeSettingsBackButtonReturnsToPreviousScreenWhenOpenedDirectly()
 
-    @Test fun `overridden settings disabled with warning - overridden settings appear visually disabled`() =
-        SettingsTestScenarios.overriddenSettingsAppearVisuallyDisabled()
+    @Test fun `env var settings are not marked as overridden`() =
+        SettingsTestScenarios.envVarSettingsAreNotMarkedAsOverridden()
 
-    @Test fun `overridden settings disabled with warning - overridden settings show override warning`() =
-        SettingsTestScenarios.overriddenSettingsShowOverrideWarning()
+    @Test fun `env var settings show provenance indicator`() =
+        SettingsTestScenarios.envVarSettingsShowProvenanceIndicator()
 
-    @Test fun `override warning link navigates to active settings`() =
-        SettingsTestScenarios.overrideWarningLinkNavigatesToActiveSettings()
+    @Test fun `provenance link navigates to active settings`() =
+        SettingsTestScenarios.provenanceLinkNavigatesToActiveSettings()
 
     @Test fun `active settings resolved source labels - active settings shows default source label`() =
         SettingsTestScenarios.activeSettingsShowsDefaultSourceLabel()
@@ -34,8 +34,8 @@ class SettingsTests {
     @Test fun `active settings resolved source labels - active settings shows env-var source label`() =
         SettingsTestScenarios.activeSettingsShowsEnvVarSourceLabel()
 
-    @Test fun `active settings resolved source labels - active settings shows command-line source label`() =
-        SettingsTestScenarios.activeSettingsShowsCommandLineSourceLabel()
+    @Test fun `active settings resolved source labels - active settings shows params source label`() =
+        SettingsTestScenarios.activeSettingsShowsParamsSourceLabel()
 
     @Test fun `active settings startup springboard path display - active settings shows path for startup springboard`() =
         SettingsTestScenarios.activeSettingsShowsPathForStartupSpringboard()
@@ -76,6 +76,6 @@ class SettingsTests {
     @Test fun `selecting dark brand from dropdown updates active brand`() =
         SettingsTestScenarios.selectingDarkBrandFromDropdownUpdatesActiveBrand()
 
-    @Test fun `active brand dropdown shows override warning when set by cli`() =
-        SettingsTestScenarios.activeBrandDropdownShowsOverrideWarningWhenSetByCli()
+    @Test fun `active brand dropdown shows provenance when set by params`() =
+        SettingsTestScenarios.activeBrandDropdownShowsProvenanceWhenSetByParams()
 }

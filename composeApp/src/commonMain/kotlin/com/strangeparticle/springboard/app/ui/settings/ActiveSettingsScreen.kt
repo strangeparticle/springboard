@@ -181,7 +181,7 @@ private fun formatSourceLabel(source: SettingsSource): String = when (source) {
     SettingsSource.APP_DEFAULT -> "Default"
     SettingsSource.USER_SETTINGS -> "User"
     SettingsSource.ENVIRONMENT_VARIABLE -> "Env var"
-    SettingsSource.COMMAND_LINE -> "CLI"
+    SettingsSource.PARAMS -> "Params"
 }
 
 @Composable
@@ -191,6 +191,6 @@ private fun sourceColor(source: SettingsSource): Color {
         SettingsSource.APP_DEFAULT -> currentUiBrand.customColors.settingsSourceAppDefault
         SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
         SettingsSource.ENVIRONMENT_VARIABLE -> currentUiBrand.customColors.settingsSourceEnvironmentVariable
-        SettingsSource.COMMAND_LINE -> currentUiBrand.customColors.settingsSourceCommandLine
+        SettingsSource.PARAMS -> currentUiBrand.customColors.settingsSourceParams
     }
 }

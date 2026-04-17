@@ -79,6 +79,9 @@ class SettingsViewModel(
     fun getSource(key: SettingsKey): SettingsSource =
         settingsManager.getSource(key)
 
+    fun getEffectiveSource(key: SettingsKey): SettingsSource =
+        settingsManager.getEffectiveSource(key)
+
     fun setUserSetting(key: SettingsKey, value: Any?) {
         settingsManager.setUserSetting(key, value)
         settingsVersion++

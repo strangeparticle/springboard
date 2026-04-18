@@ -39,7 +39,7 @@ data class CustomColors(
     // Settings — source indicator colors
     val settingsSourceAppDefault: Color,
     val settingsSourceEnvironmentVariable: Color,
-    val settingsSourceCommandLine: Color,
+    val settingsSourceParams: Color,
 
     // Settings — links
     val settingsLinkBase: Color,

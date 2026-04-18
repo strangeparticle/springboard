@@ -18,7 +18,7 @@ import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
  * additional presence-tracking mechanism.
  */
 class SettingsManager(
-    private val runtimeEnvironment: RuntimeEnvironment,
+    val runtimeEnvironment: RuntimeEnvironment,
     private val persistenceService: PersistenceService,
 ) {
 
@@ -76,6 +76,15 @@ class SettingsManager(
         return resolveValue(key) as FilePath?
     }
 
+    @Suppress("UNCHECKED_CAST") // List<String> has erased generics; the cast to List<String> can't be checked at runtime
+    fun getStringList(key: SettingsKey): List<String> {
+        val entry = SettingsRegistry.require(key)
+        require(entry.type == List::class) {
+            "Setting $key is not a List (type: ${entry.type.simpleName})"
+        }
+        return (resolveValue(key) as? List<String>) ?: emptyList()
+    }
+
     fun getSelectedOptionIdFromDropDown(key: SettingsKey): String {
         val entry = SettingsRegistry.require(key)
         require(entry.type == StringFromDropDown::class) {
@@ -89,8 +98,8 @@ class SettingsManager(
     /**
      * Returns the [SettingsSource] responsible for the current resolved value of the given key.
      */
-    fun getSource(key: SettingsKey): SettingsSource {
-        for (source in PRECEDENCE_CHAIN.reversed()) {
+    fun getEffectiveSource(key: SettingsKey): SettingsSource {
+        for (source in PRECEDENCE_CHAIN) {
             val layer = layers[source] ?: continue
             if (layer.isSet(key)) {
                 return source
@@ -99,21 +108,26 @@ class SettingsManager(
         return SettingsSource.APP_DEFAULT
     }
 
+    fun getSource(key: SettingsKey): SettingsSource = getEffectiveSource(key)
+
+    fun getValueFromSource(key: SettingsKey, source: SettingsSource): Any? {
+        val layer = layers[source] ?: return null
+        return if (layer.isSet(key)) layer.get(key) else null
+    }
+
     /**
-     * Returns true if the setting has been overridden by a source higher
-     * than [SettingsSource.USER_SETTINGS] (i.e., env var or CLI param).
+     * Returns true if the user has explicitly set this setting (effective source is USER_SETTINGS).
      */
     fun isOverridden(key: SettingsKey): Boolean {
-        val source = getSource(key)
-        return source == SettingsSource.ENVIRONMENT_VARIABLE || source == SettingsSource.COMMAND_LINE
+        return getEffectiveSource(key) == SettingsSource.USER_SETTINGS
     }
 
     /**
      * Returns the resolved value for the given key, applying the precedence chain.
-     * The first source (highest precedence) that provides a non-null value wins.
+     * Walks highest-to-lowest priority; the first source that provides a non-null value wins.
      */
     fun resolveValue(key: SettingsKey): Any? {
-        for (source in PRECEDENCE_CHAIN.reversed()) {
+        for (source in PRECEDENCE_CHAIN) {
             val layer = layers[source] ?: continue
             if (layer.isSet(key)) {
                 return layer.get(key)
@@ -198,7 +212,7 @@ class SettingsManager(
                 continue
             }
 
-            val entry = SettingsRegistry.findByCliParamName(arg)
+            val entry = SettingsRegistry.findByUrlParamName(arg.removePrefix("--"))
             if (entry == null || entry.key !in applicableKeys) {
                 i++
                 continue
@@ -208,6 +222,16 @@ class SettingsManager(
                 when (entry.type) {
                     Boolean::class -> {
                         cliValues = cliValues.withSetting(entry.key, true)
+                    }
+                    List::class -> {
+                        val nextArg = args.getOrNull(i + 1)
+                        if (nextArg == null || nextArg.startsWith("--")) {
+                            ToastBroadcaster.warning("CLI parameter '$arg' requires a value")
+                        } else {
+                            val items = nextArg.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                            cliValues = cliValues.withSetting(entry.key, items)
+                            i++
+                        }
                     }
                     String::class, FilePath::class, StringFromDropDown::class -> {
                         val nextArg = args.getOrNull(i + 1)
@@ -226,7 +250,7 @@ class SettingsManager(
             i++
         }
 
-        layers[SettingsSource.COMMAND_LINE] = cliValues
+        layers[SettingsSource.PARAMS] = cliValues
     }
 
     private fun persistSettingsLayer() {
@@ -246,6 +270,7 @@ class SettingsManager(
                     ?: throw IllegalArgumentException("'$rawValue' is not a valid boolean")
                 String::class -> rawValue
                 FilePath::class -> if (rawValue.isBlank()) null else FilePath(rawValue)
+                List::class -> rawValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 StringFromDropDown::class -> {
                     val declaration = entry.defaultValue as StringFromDropDown
                     if (!declaration.isAllowed(rawValue)) {

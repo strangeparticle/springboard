@@ -40,7 +40,7 @@ val StrangeParticleCustomColorsDarkTheme = CustomColors(
     // Settings — source indicator colors
     settingsSourceAppDefault = Color(0xFF9D9D9D),
     settingsSourceEnvironmentVariable = Color(0xFFFFB366),
-    settingsSourceCommandLine = Color(0xFFD8A6FF),
+    settingsSourceParams = Color(0xFFD8A6FF),
 
     // Settings — links
     settingsLinkBase = Color(0xFFE0A84A),

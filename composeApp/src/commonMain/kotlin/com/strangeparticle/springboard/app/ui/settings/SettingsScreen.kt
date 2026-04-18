@@ -39,7 +39,11 @@ fun SettingsScreen(
 ) {
     Column(modifier = Modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN)) {
         // Header bar
-        SettingsHeaderBar(title = "Settings", onBack = onBack)
+        SettingsHeaderBar(
+            title = "Settings",
+            onBack = onBack,
+            onRestoreDefaults = { viewModel.clearAllUserSettings() },
+        )
 
         // Scrollable content
         Column(
@@ -65,6 +69,7 @@ fun SettingsScreen(
 private fun SettingsHeaderBar(
     title: String,
     onBack: () -> Unit,
+    onRestoreDefaults: () -> Unit,
 ) {
     val currentUiBrand = LocalUiBrand.current
     Row(
@@ -91,6 +96,17 @@ private fun SettingsHeaderBar(
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
         )
+        Spacer(modifier = Modifier.weight(1f))
+        TextButton(
+            onClick = onRestoreDefaults,
+            modifier = Modifier.testTag(TestTags.SETTINGS_RESTORE_DEFAULTS_BUTTON),
+        ) {
+            Text(
+                text = "Restore Defaults",
+                color = currentUiBrand.customColors.navbarText,
+                fontSize = 13.sp,
+            )
+        }
     }
 }
 
@@ -120,14 +136,12 @@ private fun SettingRow(
     viewModel: SettingsViewModel,
     onShowActiveSettings: () -> Unit,
 ) {
-    val isOverridden = viewModel.isOverridden(item.key)
     val resolvedValue = viewModel.getResolvedValue(item.key)
-    val alpha = if (isOverridden) 0.5f else 1.0f
+    val effectiveSource = viewModel.getEffectiveSource(item.key)
+    val showProvenance = effectiveSource != SettingsSource.APP_DEFAULT && effectiveSource != SettingsSource.USER_SETTINGS
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer { this.alpha = alpha },
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 0.dp,
@@ -140,29 +154,39 @@ private fun SettingRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = item.displayName,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = item.displayName,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = item.key.name,
+                        fontSize = 8.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.alignByBaseline(),
+                    )
+                }
                 Text(
                     text = item.description,
                     fontSize = 12.sp,
                     color = LocalUiBrand.current.customColors.settingsDescriptionText,
                 )
 
-                if (item.type == FilePath::class) {
+                if (item.type == List::class) {
                     Spacer(modifier = Modifier.height(6.dp))
-                    FilePathControl(
-                        currentValue = resolvedValue as? FilePath,
+                    StartupTabsDisplay(
+                        currentValue = resolvedValue as? List<*>,
                     )
                 }
 
-                if (isOverridden) {
+                if (showProvenance) {
                     Spacer(modifier = Modifier.height(6.dp))
                     OverrideMessage(
-                        sourceName = formatSourceName(viewModel.getSource(item.key)),
+                        sourceName = effectiveSource.displayLabel(viewModel.runtimeEnvironment).lowercase(),
                         onShowActiveSettings = onShowActiveSettings,
                     )
                 }
@@ -177,11 +201,9 @@ private fun SettingRow(
                         settingKey = item.key,
                         declaration = declaration,
                         selectedId = selectedId,
-                        isEnabled = !isOverridden,
+                        isEnabled = true,
                         onSelect = { newId ->
-                            if (!isOverridden) {
-                                viewModel.setUserSetting(item.key, newId)
-                            }
+                            viewModel.setUserSetting(item.key, newId)
                         },
                     )
                 }
@@ -190,11 +212,9 @@ private fun SettingRow(
                 Switch(
                     checked = resolvedValue as? Boolean ?: false,
                     onCheckedChange = { newValue ->
-                        if (!isOverridden) {
-                            viewModel.setUserSetting(item.key, newValue)
-                        }
+                        viewModel.setUserSetting(item.key, newValue)
                     },
-                    enabled = !isOverridden,
+                    enabled = true,
                     colors = SwitchDefaults.colors(
                         uncheckedThumbColor = MaterialTheme.colorScheme.outline,
                         uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -204,12 +224,6 @@ private fun SettingRow(
                         scaleX = 0.82f
                         scaleY = 0.82f
                     },
-                )
-            } else if (item.type == FilePath::class && !isOverridden) {
-                Spacer(modifier = Modifier.width(16.dp))
-                FilePathActions(
-                    viewModel = viewModel,
-                    currentValue = resolvedValue as? FilePath,
                 )
             }
         }
@@ -223,7 +237,7 @@ private fun OverrideMessage(
 ) {
     val currentUiBrand = LocalUiBrand.current
     val activeSettings = "Active Settings"
-    val fullText = "Overridden by $sourceName. See $activeSettings for details."
+    val fullText = "From $sourceName. See $activeSettings for details."
     val linkStart = fullText.indexOf(activeSettings)
 
     val message = buildAnnotatedString {
@@ -271,60 +285,29 @@ private fun OverrideMessage(
 }
 
 @Composable
-private fun FilePathControl(
-    currentValue: FilePath?,
+private fun StartupTabsDisplay(
+    currentValue: List<*>?,
 ) {
     val currentUiBrand = LocalUiBrand.current
+    val items = currentValue?.filterIsInstance<String>() ?: emptyList()
     Column {
-        if (currentValue != null) {
-            Text(
-                text = currentValue.path,
-                fontSize = 12.sp,
-                color = currentUiBrand.customColors.settingsValueText,
-            )
+        if (items.isNotEmpty()) {
+            for (item in items) {
+                Text(
+                    text = item,
+                    fontSize = 12.sp,
+                    color = currentUiBrand.customColors.settingsValueText,
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
         } else {
             Text(
-                text = "No startup springboard configured",
+                text = "No startup tabs configured",
                 fontSize = 12.sp,
                 fontStyle = FontStyle.Italic,
                 color = currentUiBrand.customColors.settingsNoValueText,
             )
             Spacer(modifier = Modifier.height(4.dp))
-        }
-
-    }
-}
-
-@Composable
-private fun FilePathActions(
-    viewModel: SettingsViewModel,
-    currentValue: FilePath?,
-) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Button(
-            onClick = {
-                viewModel.designateCurrentFileAsStartup()
-            },
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-            modifier = Modifier.height(32.dp).testTag(TestTags.SETTINGS_USE_CURRENT_FILE_BUTTON),
-        ) {
-            Text("Use Current File", fontSize = 12.sp, color = MaterialTheme.colorScheme.onPrimary)
-        }
-
-        if (currentValue != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = { viewModel.clearStartupSpringboard() },
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.height(32.dp).testTag(TestTags.SETTINGS_CLEAR_BUTTON),
-            ) {
-                Text("Clear", fontSize = 12.sp)
-            }
         }
     }
 }
@@ -347,7 +330,7 @@ private fun SettingsDropdown(
         onExpandedChange = { if (isEnabled) expanded = it },
         modifier = Modifier
             .width(220.dp)
-            .testTag(TestTags.settingsDropdown(settingKey.jsonKey)),
+            .testTag(TestTags.settingsDropdown(SettingsKeyNaming.jsonKey(settingKey))),
     ) {
         Row(
             modifier = Modifier
@@ -385,7 +368,7 @@ private fun SettingsDropdown(
                         expanded = false
                     },
                     modifier = Modifier.testTag(
-                        TestTags.settingsDropdownOption(settingKey.jsonKey, option.id),
+                        TestTags.settingsDropdownOption(SettingsKeyNaming.jsonKey(settingKey), option.id),
                     ),
                 )
             }
@@ -393,9 +376,3 @@ private fun SettingsDropdown(
     }
 }
 
-private fun formatSourceName(source: SettingsSource): String = when (source) {
-    SettingsSource.APP_DEFAULT -> "app default"
-    SettingsSource.USER_SETTINGS -> "user settings"
-    SettingsSource.ENVIRONMENT_VARIABLE -> "environment variable"
-    SettingsSource.COMMAND_LINE -> "command-line parameter"
-}

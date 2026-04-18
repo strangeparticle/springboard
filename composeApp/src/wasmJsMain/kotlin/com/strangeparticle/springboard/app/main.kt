@@ -8,6 +8,8 @@ import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImp
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.parseUrlParamsAsCommandLineArgs
+import com.strangeparticle.springboard.app.settings.readJsGlobalsAsEnvironmentVariables
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
@@ -17,12 +19,6 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderWas
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import com.strangeparticle.springboard.app.viewmodel.TabRestorer
 import kotlinx.browser.document
-
-@JsFun("() => window.startupSpringboard")
-private external fun getStartupSpringboard(): JsAny?
-
-@JsFun("() => window.activeBrand")
-private external fun getActiveBrand(): JsAny?
 
 @JsFun("(callback) => window.addEventListener('focus', callback)")
 private external fun addWindowFocusListener(callback: () -> Unit)
@@ -38,33 +34,20 @@ fun main() {
     val runtimeEnvironment = detectRuntimeEnvironment()
     val persistenceService = PersistenceServiceDefaultImpl()
     val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
-    // Read JS globals and forward them to the settings manager as env-var overrides.
-    val startupSpringboard = getStartupSpringboard()?.toString()
-        ?.takeIf { it != "undefined" && it != "null" && it.isNotBlank() }
-    val activeBrand = getActiveBrand()?.toString()
-        ?.takeIf { it != "undefined" && it != "null" && it.isNotBlank() }
-
-    val environmentVariables = buildMap {
-        if (startupSpringboard != null) {
-            put("SPRINGBOARD_STARTUP_SPRINGBOARD", startupSpringboard)
-        }
-        if (activeBrand != null) {
-            put("SPRINGBOARD_ACTIVE_BRAND", activeBrand)
-        }
-    }
-
-    settingsManager.loadSettingsAtStartup(environmentVariables = environmentVariables)
+    val environmentVariables = readJsGlobalsAsEnvironmentVariables()
+    val urlParamArgs = parseUrlParamsAsCommandLineArgs()
+    settingsManager.loadSettingsAtStartup(
+        environmentVariables = environmentVariables,
+        commandLineArgs = urlParamArgs,
+    )
 
     val networkContentService = NetworkContentServiceWasmImpl()
-    val startupUrl = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
+    val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
 
     ComposeViewport(document.body!!) {
         val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService) }
         val settingsViewModel = remember {
-            SettingsViewModel(
-                settingsManager = settingsManager,
-                currentFilePath = { viewModel.springboard?.source },
-            )
+            SettingsViewModel(settingsManager = settingsManager)
         }
         // Incremented each time the browser window gains focus
         var windowFocusTick by remember { mutableStateOf(0) }
@@ -96,19 +79,21 @@ fun main() {
             }
         }
 
-        // Restore persisted tabs on startup, or fall back to startup URL for first launch.
         LaunchedEffect(Unit) {
             val contentLoader = SpringboardContentLoaderWasmImpl(networkContentService)
             val tabRestorer = TabRestorer(persistenceService, contentLoader)
             val hadPersistedTabs = persistenceService.loadTabs() != null
             if (hadPersistedTabs) {
                 tabRestorer.restoreInto(viewModel)
-            } else if (startupUrl != null) {
-                try {
-                    val jsonText = networkContentService.fetchText(startupUrl)
-                    viewModel.loadConfig(jsonText, startupUrl)
-                } catch (e: Throwable) {
-                    viewModel.activeTabToast.error("Failed to fetch config: ${e.message}")
+            } else if (startupTabs.isNotEmpty()) {
+                for ((index, tabSource) in startupTabs.withIndex()) {
+                    if (index > 0) viewModel.createTab()
+                    try {
+                        val jsonText = networkContentService.fetchText(tabSource)
+                        viewModel.loadConfig(jsonText, tabSource)
+                    } catch (e: Throwable) {
+                        viewModel.activeTabToast.error("Failed to fetch config: ${e.message}")
+                    }
                 }
             }
         }

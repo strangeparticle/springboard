@@ -14,8 +14,9 @@ import com.strangeparticle.springboard.app.settings.*
  */
 class SettingsViewModel(
     private val settingsManager: SettingsManager,
-    private val currentFilePath: () -> String?,
 ) : ViewModel() {
+
+    val runtimeEnvironment: RuntimeEnvironment = settingsManager.runtimeEnvironment
 
     /**
      * A counter that increments on every user setting change,
@@ -49,11 +50,13 @@ class SettingsViewModel(
         settingsVersion // read to establish dependency
         SettingsRegistry.allSettings().map { item ->
             val valueDisplay = formatValue(item, settingsManager.resolveValue(item.key))
+            val layerDetails = buildLayerDetails(item)
             ActiveSettingsEntry(
                 displayName = item.displayName,
                 resolvedValue = valueDisplay.displayText,
                 tooltipText = valueDisplay.tooltipText,
                 source = settingsManager.getSource(item.key),
+                layerDetails = layerDetails,
             )
         }
     }
@@ -79,27 +82,34 @@ class SettingsViewModel(
     fun getSource(key: SettingsKey): SettingsSource =
         settingsManager.getSource(key)
 
+    fun getEffectiveSource(key: SettingsKey): SettingsSource =
+        settingsManager.getEffectiveSource(key)
+
     fun setUserSetting(key: SettingsKey, value: Any?) {
         settingsManager.setUserSetting(key, value)
         settingsVersion++
     }
 
-    /**
-     * Designates the currently open springboard file as the startup springboard.
-     * Returns true if successful, false if no file is currently open.
-     */
-    fun designateCurrentFileAsStartup(): Boolean {
-        val path = currentFilePath() ?: return false
-        setUserSetting(SettingsKey.STARTUP_SPRINGBOARD, FilePath(path))
-        return true
+    fun clearAllUserSettings() {
+        for (item in settingsManager.applicableSettings()) {
+            settingsManager.setUserSetting(item.key, null)
+        }
+        settingsVersion++
     }
 
-    /**
-     * Clears the startup springboard designation.
-     */
-    fun clearStartupSpringboard() {
-        setUserSetting(SettingsKey.STARTUP_SPRINGBOARD, null)
+    private fun buildLayerDetails(item: SettingItem): String {
+        val lines = mutableListOf<String>()
+        for (source in PRECEDENCE_CHAIN) {
+            val layerValue = settingsManager.getValueFromSource(item.key, source)
+            val label = formatSourceLabelForLayer(source)
+            val valueText = if (layerValue != null) formatValue(item, layerValue).displayText else "—"
+            lines.add("$label: $valueText")
+        }
+        return lines.joinToString("\n")
     }
+
+    private fun formatSourceLabelForLayer(source: SettingsSource): String =
+        source.displayLabel(settingsManager.runtimeEnvironment)
 
     private fun formatValue(item: SettingItem, value: Any?): ActiveSettingsValueDisplay {
         if (item.type == StringFromDropDown::class) {
@@ -111,6 +121,11 @@ class SettingsViewModel(
         return when (value) {
             null -> ActiveSettingsValueDisplay(displayText = "null")
             is FilePath -> ActiveSettingsValueDisplay(displayText = "path", tooltipText = value.path)
+            is List<*> -> {
+                val items = value.filterIsInstance<String>()
+                if (items.isEmpty()) ActiveSettingsValueDisplay(displayText = "(empty)")
+                else ActiveSettingsValueDisplay(displayText = items.joinToString(", "))
+            }
             else -> ActiveSettingsValueDisplay(displayText = value.toString())
         }
     }
@@ -131,4 +146,5 @@ data class ActiveSettingsEntry(
     val resolvedValue: String,
     val tooltipText: String? = null,
     val source: SettingsSource,
+    val layerDetails: String = "",
 )

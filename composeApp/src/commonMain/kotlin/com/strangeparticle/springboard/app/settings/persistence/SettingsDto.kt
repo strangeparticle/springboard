@@ -1,26 +1,14 @@
 package com.strangeparticle.springboard.app.settings.persistence
 
-import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.StringFromDropDown
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsValues
 import kotlinx.serialization.Serializable
 
-/**
- * DTO for persisted settings. This structure exists specifically for
- * serialization/deserialization and is separate from the runtime [SettingsValues].
- *
- * Fields use camelCase names matching the JSON key convention.
- * All fields are nullable — absent fields mean no explicit value is persisted.
- *
- * This separation keeps the runtime model clean while giving persistence a
- * dedicated place to handle JSON shape, missing fields, explicit nulls,
- * and future migration concerns.
- */
 @Serializable
 data class SettingsDto(
-    val startupSpringboard: String? = null,
+    val startupTabs: List<String>? = null,
     val openUrlsInNewWindowSingle: Boolean? = null,
     val openUrlsInNewWindowMultiple: Boolean? = null,
     val surfaceAppleScriptErrors: Boolean? = null,
@@ -28,11 +16,10 @@ data class SettingsDto(
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
     val activeBrand: String? = null,
 ) {
-    /** Converts this DTO to a [SettingsValues] instance. */
     fun toSettingsValues(): SettingsValues {
         var values = SettingsValues()
-        if (startupSpringboard != null) {
-            values = values.withSetting(SettingsKey.STARTUP_SPRINGBOARD, FilePath(startupSpringboard))
+        if (startupTabs != null) {
+            values = values.withSetting(SettingsKey.STARTUP_TABS, startupTabs)
         }
         if (openUrlsInNewWindowSingle != null) {
             values = values.withSetting(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE, openUrlsInNewWindowSingle)
@@ -59,10 +46,9 @@ data class SettingsDto(
     }
 
     companion object {
-        /** Creates a DTO from the persisted settings layer of a [SettingsValues] instance. */
         fun fromSettingsValues(values: SettingsValues): SettingsDto {
             return SettingsDto(
-                startupSpringboard = values.startupSpringboard?.path,
+                startupTabs = values.startupTabs,
                 openUrlsInNewWindowSingle = values.openUrlsInNewWindowSingle,
                 openUrlsInNewWindowMultiple = values.openUrlsInNewWindowMultiple,
                 surfaceAppleScriptErrors = values.surfaceApplescriptErrors,

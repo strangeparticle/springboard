@@ -4,11 +4,11 @@ package com.strangeparticle.springboard.app.settings
  * The authoritative list of all settings the application knows about.
  * Getters and registry lookups take enum values as keys, not strings.
  *
- * The [jsonKey] property derives the camelCase JSON key from the enum name.
- * For example, `SURFACE_APPLESCRIPT_ERRORS` becomes `surfaceApplescriptErrors`.
+ * All external names (env var, CLI flag, URL param, JSON key) are derived
+ * from the enum name by [SettingsKeyNaming].
  */
 enum class SettingsKey {
-    STARTUP_SPRINGBOARD,
+    STARTUP_TABS,
     OPEN_URLS_IN_NEW_WINDOW_SINGLE,
     OPEN_URLS_IN_NEW_WINDOW_MULTIPLE,
     SURFACE_APPLESCRIPT_ERRORS,
@@ -16,11 +16,4 @@ enum class SettingsKey {
     RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION,
     ACTIVE_BRAND,
     ;
-
-    /** The camelCase JSON key derived from this enum name. */
-    val jsonKey: String by lazy {
-        name.lowercase().split("_").mapIndexed { index, word ->
-            if (index == 0) word else word.replaceFirstChar { it.uppercase() }
-        }.joinToString("")
-    }
 }

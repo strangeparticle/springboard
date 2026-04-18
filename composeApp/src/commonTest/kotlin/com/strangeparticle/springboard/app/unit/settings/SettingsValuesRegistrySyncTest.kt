@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsKeyNaming
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsValues
 import com.strangeparticle.springboard.app.settings.StringFromDropDown
@@ -22,15 +22,15 @@ class SettingsValuesRegistrySyncTest {
         val registryKeys = SettingsRegistry.allSettings().map { it.key }.toSet()
         for (key in registryKeys) {
             assertTrue(
-                key.jsonKey in SettingsValues.settingsPropertyNames,
-                "Registry setting $key (jsonKey=${key.jsonKey}) has no matching property in SettingsValues"
+                SettingsKeyNaming.jsonKey(key) in SettingsValues.settingsPropertyNames,
+                "Registry setting $key (jsonKey=${SettingsKeyNaming.jsonKey(key)}) has no matching property in SettingsValues"
             )
         }
     }
 
     @Test
     fun `every settings values property has a registry setting`() {
-        val registryJsonKeys = SettingsKey.entries.map { it.jsonKey }.toSet()
+        val registryJsonKeys = SettingsKey.entries.map { SettingsKeyNaming.jsonKey(it) }.toSet()
         for (propertyName in SettingsValues.settingsPropertyNames) {
             assertTrue(
                 propertyName in registryJsonKeys,
@@ -84,16 +84,20 @@ class SettingsValuesRegistrySyncTest {
         for (item in SettingsRegistry.allSettings()) {
             val defaultValue = item.defaultValue
             if (defaultValue != null) {
-                assertEquals(
-                    item.type, defaultValue::class,
-                    "Default value for ${item.key} has type ${defaultValue::class.simpleName} " +
-                        "but registry declares type ${item.type.simpleName}"
-                )
+                if (item.type == List::class) {
+                    assertTrue(
+                        defaultValue is List<*>,
+                        "Default value for ${item.key} should be a List but was ${defaultValue::class.simpleName}"
+                    )
+                } else {
+                    assertEquals(
+                        item.type, defaultValue::class,
+                        "Default value for ${item.key} has type ${defaultValue::class.simpleName} " +
+                            "but registry declares type ${item.type.simpleName}"
+                    )
+                }
             } else {
-                assertEquals(
-                    FilePath::class, item.type,
-                    "Null default only allowed for FilePath type, but ${item.key} is ${item.type.simpleName}"
-                )
+                fail("Null default is not allowed — ${item.key} (${item.type.simpleName}) has a null default value")
             }
         }
     }

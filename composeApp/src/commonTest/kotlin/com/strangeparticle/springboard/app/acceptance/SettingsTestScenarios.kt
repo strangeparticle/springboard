@@ -3,9 +3,9 @@ package com.strangeparticle.springboard.app.acceptance
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.*
-import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsKeyNaming
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -47,7 +48,7 @@ object SettingsTestScenarios {
         if (currentFilePath != null) {
             viewModel.loadConfig(TestFixtureJson.URL_ONLY, currentFilePath)
         }
-        val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
+        val settingsViewModel = SettingsViewModel(settingsManager)
         return SettingsTestComponents(
             viewModel, settingsViewModel, settingsManager, persistenceService,
             showSettings, showActiveSettings,
@@ -111,7 +112,7 @@ object SettingsTestScenarios {
         val components = createTestComponents(
             currentFilePath = "/test/springboard.json",
             environmentVariables = mapOf(
-                "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
+                "SPRINGBOARD_RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION" to "false",
             ),
             showSettings = mutableStateOf(true),
             showActiveSettings = showActiveSettings,
@@ -170,55 +171,52 @@ object SettingsTestScenarios {
 
     // --- Override behavior ---
 
-    fun overriddenSettingsAppearVisuallyDisabled() = runComposeUiTest {
+    fun envVarSettingsAreNotMarkedAsOverridden() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
-                "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
+                "SPRINGBOARD_RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION" to "false",
             ),
             showSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        // The overridden setting should exist and show the override warning
-        onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertExists()
-
-        // Verify the setting is overridden at the ViewModel level
-        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+        // With inverted precedence, env var does NOT mean "overridden" — only user-set values are overridden
+        assertFalse(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
     }
 
-    fun overriddenSettingsShowOverrideWarning() = runComposeUiTest {
+    fun envVarSettingsShowProvenanceIndicator() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
-                "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
+                "SPRINGBOARD_RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION" to "false",
             ),
             showSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        // Override warning should contain the source name
-        onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("environment variable", substring = true))
+        // Provenance indicator should show "env var" as source
+        onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("env var", substring = true))
             .assertExists()
     }
 
-    fun overrideWarningLinkNavigatesToActiveSettings() = runComposeUiTest {
+    fun provenanceLinkNavigatesToActiveSettings() = runComposeUiTest {
         val components = createTestComponents(
             environmentVariables = mapOf(
-                "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION" to "false",
+                "SPRINGBOARD_RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION" to "false",
             ),
             showSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        // Override warning exists and mentions Active Settings
+        // Provenance indicator mentions Active Settings
         onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("Active Settings", substring = true))
             .assertExists()
 
-        // Click the override warning text — the annotated string link should navigate
+        // Click the provenance text — the annotated string link should navigate
         onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).performTouchInput {
-            click(percentOffset(0.8f, 0.5f))
+            click(percentOffset(0.6f, 0.5f))
         }
         waitForIdle()
 
@@ -237,8 +235,10 @@ object SettingsTestScenarios {
         waitForIdle()
 
         // Settings with no user/env/CLI override show "Default" source
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("Default"))
-            .assertExists()
+        onNode(
+            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("Default"),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 
     fun activeSettingsShowsUserSourceLabel() = runComposeUiTest {
@@ -251,8 +251,10 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("User"))
-            .assertExists()
+        onNode(
+            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("User"),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 
     fun activeSettingsShowsEnvVarSourceLabel() = runComposeUiTest {
@@ -266,11 +268,13 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("Env var"))
-            .assertExists()
+        onNode(
+            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("Env var"),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 
-    fun activeSettingsShowsCommandLineSourceLabel() = runComposeUiTest {
+    fun activeSettingsShowsParamsSourceLabel() = runComposeUiTest {
         val components = createTestComponents(
             commandLineArgs = listOf("--surface-applescript-errors"),
             showSettings = mutableStateOf(true),
@@ -279,156 +283,109 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("CLI"))
-            .assertExists()
-    }
-
-    // --- Startup springboard path display ---
-
-    fun activeSettingsShowsPathForStartupSpringboard() = runComposeUiTest {
-        val components = createTestComponents(
-            commandLineArgs = listOf("--startup-springboard", "/home/user/my-springboard.json"),
-            showSettings = mutableStateOf(true),
-            showActiveSettings = mutableStateOf(true),
-        )
-        setSpringboardApp(components)
-        waitForIdle()
-
-        // The value should display "path" (the formatted display text for FilePath)
-        // TooltipBox wraps the text node, so we need useUnmergedTree
         onNode(
-            hasTestTag(TestTags.activeSettingsValue("Startup Springboard")) and hasText("path"),
+            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("CLI flag"),
             useUnmergedTree = true,
         ).assertExists()
     }
 
-    fun hoverTooltipRevealsFullStartupSpringboardPath() = runComposeUiTest {
-        val testPath = "/home/user/my-springboard.json"
+    // --- Startup tabs display ---
+
+    fun activeSettingsShowsStartupTabs() = runComposeUiTest {
         val components = createTestComponents(
-            commandLineArgs = listOf("--startup-springboard", testPath),
+            commandLineArgs = listOf("--startup-tabs", "/a.json,/b.json"),
             showSettings = mutableStateOf(true),
             showActiveSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        // The tooltip text contains the full path — verify via the ViewModel
+        onNode(
+            hasTestTag(TestTags.activeSettingsValue("Startup Tabs")) and hasText("/a.json", substring = true),
+            useUnmergedTree = true,
+        ).assertExists()
+    }
+
+    fun activeSettingsShowsStartupTabsCommaSeparated() = runComposeUiTest {
+        val components = createTestComponents(
+            commandLineArgs = listOf("--startup-tabs", "/a.json,/b.json"),
+            showSettings = mutableStateOf(true),
+            showActiveSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
         val entry = components.settingsViewModel.activeSettingsEntries
-            .first { it.displayName == "Startup Springboard" }
-        assertEquals(testPath, entry.tooltipText)
+            .first { it.displayName == "Startup Tabs" }
+        assertTrue(entry.resolvedValue.contains("/a.json"))
+        assertTrue(entry.resolvedValue.contains("/b.json"))
     }
 
-    // --- Startup springboard from command line ---
+    // --- Startup tabs from command line ---
 
-    fun startupSpringboardFlagSetsStartupSpringboard() = runComposeUiTest {
-        val testPath = "/cli/startup.json"
+    fun startupTabsFlagSetsStartupTabs() = runComposeUiTest {
         val components = createTestComponents(
-            commandLineArgs = listOf("--startup-springboard", testPath),
+            commandLineArgs = listOf("--startup-tabs", "/a.json,/b.json"),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        val resolved = components.settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertEquals(testPath, resolved?.path)
+        val resolved = components.settingsManager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/a.json", "/b.json"), resolved)
     }
 
-    fun activeSettingsShowsCliAsSourceForStartupSpringboard() = runComposeUiTest {
+    fun activeSettingsShowsParamsAsSourceForStartupTabs() = runComposeUiTest {
         val components = createTestComponents(
-            commandLineArgs = listOf("--startup-springboard", "/cli/startup.json"),
+            commandLineArgs = listOf("--startup-tabs", "/cli/startup.json"),
             showSettings = mutableStateOf(true),
             showActiveSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        onNode(hasTestTag(TestTags.activeSettingsSourceLabel("Startup Springboard")) and hasText("CLI"))
-            .assertExists()
+        onNode(
+            hasTestTag(TestTags.activeSettingsSourceLabel("Startup Tabs")) and hasText("CLI flag"),
+            useUnmergedTree = true,
+        ).assertExists()
     }
 
     // --- Positional path ---
 
-    fun positionalCliPathDoesNotCountAsStartupSpringboardOverride() = runComposeUiTest {
-        // A positional path (no --startup-springboard flag) should NOT set startup springboard
+    fun positionalCliPathDoesNotCountAsStartupTabsOverride() = runComposeUiTest {
         val components = createTestComponents(
             commandLineArgs = listOf("/some/positional/path.json"),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        val resolved = components.settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertNull(resolved)
-        assertEquals(SettingsSource.APP_DEFAULT, components.settingsManager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
-    }
-
-    // --- Use current file and clear ---
-
-    fun useCurrentFileStoresCurrentFileAsStartupSpringboard() = runComposeUiTest {
-        val testFilePath = "/test/my-springboard.json"
-        val components = createTestComponents(
-            currentFilePath = testFilePath,
-            showSettings = mutableStateOf(true),
-        )
-        setSpringboardApp(components)
-        waitForIdle()
-
-        // Click "Use Current File" button
-        onNodeWithTag(TestTags.SETTINGS_USE_CURRENT_FILE_BUTTON).performClick()
-        waitForIdle()
-
-        // The startup springboard should now be set to the current file path
-        val resolved = components.settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertEquals(testFilePath, resolved?.path)
-        assertEquals(SettingsSource.USER_SETTINGS, components.settingsManager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
-    }
-
-    fun clearRemovesUserConfiguredStartupSpringboard() = runComposeUiTest {
-        val testFilePath = "/test/my-springboard.json"
-        val components = createTestComponents(
-            currentFilePath = testFilePath,
-            showSettings = mutableStateOf(true),
-        )
-        setSpringboardApp(components)
-        waitForIdle()
-
-        // First set a startup springboard
-        onNodeWithTag(TestTags.SETTINGS_USE_CURRENT_FILE_BUTTON).performClick()
-        waitForIdle()
-
-        // Verify it was set
-        assertEquals(testFilePath, components.settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path)
-
-        // Now click "Clear"
-        onNodeWithTag(TestTags.SETTINGS_CLEAR_BUTTON).performClick()
-        waitForIdle()
-
-        // Startup springboard should be cleared
-        assertNull(components.settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD))
+        val resolved = components.settingsManager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(emptyList<String>(), resolved)
+        assertEquals(SettingsSource.APP_DEFAULT, components.settingsManager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     // --- Settings persistence ---
 
-    fun startupSpringboardSettingPersistsAcrossRelaunch() = runComposeUiTest {
+    fun startupTabsSettingPersistsAcrossRelaunch() = runComposeUiTest {
         val persistenceService = PersistenceServiceInMemoryFake()
-        val testFilePath = "/test/my-springboard.json"
+        val testTabs = listOf("/test/a.json", "/test/b.json")
 
-        // First "session" — set startup springboard
+        // First "session" — set startup tabs
         val components = createTestComponents(
             persistenceService = persistenceService,
-            currentFilePath = testFilePath,
         )
-        components.settingsViewModel.designateCurrentFileAsStartup()
+        components.settingsManager.setUserSetting(SettingsKey.STARTUP_TABS, testTabs)
 
         // Verify persisted
         val dto = persistenceService.currentSettings()
-        assertEquals(testFilePath, dto?.startupSpringboard)
+        assertEquals(testTabs, dto?.startupTabs)
 
         // Second "session" — create new managers with same persistence
         val settingsManager2 = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
         settingsManager2.loadSettingsAtStartup()
 
-        val resolved = settingsManager2.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertEquals(testFilePath, resolved?.path)
-        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.STARTUP_SPRINGBOARD))
+        val resolved = settingsManager2.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(testTabs, resolved)
+        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.STARTUP_TABS))
     }
 
     fun surfaceAppleScriptErrorsSettingPersistsAcrossRelaunch() = runComposeUiTest {
@@ -476,7 +433,7 @@ object SettingsTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        onNodeWithTag(TestTags.settingsDropdown(SettingsKey.ACTIVE_BRAND.jsonKey)).assertExists()
+        onNodeWithTag(TestTags.settingsDropdown(SettingsKeyNaming.jsonKey(SettingsKey.ACTIVE_BRAND))).assertExists()
     }
 
     fun selectingDarkBrandFromDropdownUpdatesActiveBrand() = runComposeUiTest {
@@ -489,11 +446,11 @@ object SettingsTestScenarios {
 
         assertEquals("strangeparticle-light", components.settingsViewModel.activeBrandId)
 
-        onNodeWithTag(TestTags.settingsDropdown(SettingsKey.ACTIVE_BRAND.jsonKey)).performClick()
+        onNodeWithTag(TestTags.settingsDropdown(SettingsKeyNaming.jsonKey(SettingsKey.ACTIVE_BRAND))).performClick()
         waitForIdle()
 
         onNodeWithTag(
-            TestTags.settingsDropdownOption(SettingsKey.ACTIVE_BRAND.jsonKey, "strangeparticle-dark"),
+            TestTags.settingsDropdownOption(SettingsKeyNaming.jsonKey(SettingsKey.ACTIVE_BRAND), "strangeparticle-dark"),
         ).performClick()
         waitForIdle()
 
@@ -501,7 +458,7 @@ object SettingsTestScenarios {
         assertEquals(SettingsSource.USER_SETTINGS, components.settingsManager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
-    fun activeBrandDropdownShowsOverrideWarningWhenSetByCli() = runComposeUiTest {
+    fun activeBrandDropdownShowsProvenanceWhenSetByParams() = runComposeUiTest {
         val components = createTestComponents(
             commandLineArgs = listOf("--active-brand", "strangeparticle-dark"),
             currentFilePath = "/test/springboard.json",
@@ -511,14 +468,39 @@ object SettingsTestScenarios {
         waitForIdle()
 
         assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
-        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
+        assertFalse(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
 
-        // The dropdown is still rendered — it's just disabled — but the row's override
-        // warning should be present (there may be multiple override warnings on the
-        // screen if other settings are overridden as well, so use assertAny).
+        // Provenance indicator shows "params" as the source
         onAllNodesWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertAny(
-            hasText("command-line", substring = true),
+            hasText("cli flag", substring = true),
         )
+    }
+
+    // --- Restore Defaults ---
+
+    fun restoreDefaultsClearsAllUserSettings() = runComposeUiTest {
+        val components = createTestComponents(
+            commandLineArgs = listOf("--surface-applescript-errors"),
+            showSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
+        // Set a user setting
+        components.settingsViewModel.setUserSetting(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION, false)
+        assertTrue(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+
+        // Click Restore Defaults
+        onNodeWithTag(TestTags.SETTINGS_RESTORE_DEFAULTS_BUTTON).performClick()
+        waitForIdle()
+
+        // User setting should be cleared, falling through to default
+        assertFalse(components.settingsViewModel.isOverridden(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+        assertTrue(components.settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+
+        // Params-sourced value should still be active (not cleared by restore)
+        assertTrue(components.settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.PARAMS, components.settingsManager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     fun resetKeyNavAfterGridNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {

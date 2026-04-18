@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsSource
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
@@ -79,7 +80,7 @@ fun ActiveSettingsScreen(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(80.dp),
+                modifier = Modifier.weight(1f),
             )
             Text(
                 text = "Source",
@@ -99,7 +100,7 @@ fun ActiveSettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             for (entry in viewModel.activeSettingsEntries) {
-                ActiveSettingsRow(entry)
+                ActiveSettingsRow(entry, viewModel.runtimeEnvironment)
                 HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.surfaceContainerLow)
             }
         }
@@ -108,7 +109,7 @@ fun ActiveSettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
+private fun ActiveSettingsRow(entry: ActiveSettingsEntry, runtimeEnvironment: RuntimeEnvironment) {
     val currentUiBrand = LocalUiBrand.current
     Row(
         modifier = Modifier
@@ -124,7 +125,7 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
         )
         if (entry.tooltipText != null) {
             val tooltipUnderlineColor = currentUiBrand.customColors.settingsTooltipUnderline
-            Box(modifier = Modifier.width(80.dp)) {
+            Box(modifier = Modifier.weight(1f)) {
                 TooltipBox(
                     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
                     tooltip = {
@@ -165,23 +166,37 @@ private fun ActiveSettingsRow(entry: ActiveSettingsEntry) {
                 text = entry.resolvedValue,
                 fontSize = 13.sp,
                 color = currentUiBrand.customColors.settingsValueText,
-                modifier = Modifier.width(80.dp).testTag(TestTags.activeSettingsValue(entry.displayName)),
+                modifier = Modifier.weight(1f).testTag(TestTags.activeSettingsValue(entry.displayName)),
             )
         }
-        Text(
-            text = formatSourceLabel(entry.source),
-            fontSize = 13.sp,
-            color = sourceColor(entry.source),
-            modifier = Modifier.width(72.dp).testTag(TestTags.activeSettingsSourceLabel(entry.displayName)),
-        )
+        Box(modifier = Modifier.width(72.dp)) {
+            if (entry.layerDetails.isNotEmpty()) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = {
+                        PlainTooltip {
+                            Text(entry.layerDetails)
+                        }
+                    },
+                    state = rememberTooltipState(),
+                ) {
+                    Text(
+                        text = entry.source.displayLabel(runtimeEnvironment),
+                        fontSize = 13.sp,
+                        color = sourceColor(entry.source),
+                        modifier = Modifier.testTag(TestTags.activeSettingsSourceLabel(entry.displayName)),
+                    )
+                }
+            } else {
+                Text(
+                    text = entry.source.displayLabel(runtimeEnvironment),
+                    fontSize = 13.sp,
+                    color = sourceColor(entry.source),
+                    modifier = Modifier.testTag(TestTags.activeSettingsSourceLabel(entry.displayName)),
+                )
+            }
+        }
     }
-}
-
-private fun formatSourceLabel(source: SettingsSource): String = when (source) {
-    SettingsSource.APP_DEFAULT -> "Default"
-    SettingsSource.USER_SETTINGS -> "User"
-    SettingsSource.ENVIRONMENT_VARIABLE -> "Env var"
-    SettingsSource.COMMAND_LINE -> "CLI"
 }
 
 @Composable
@@ -191,6 +206,6 @@ private fun sourceColor(source: SettingsSource): Color {
         SettingsSource.APP_DEFAULT -> currentUiBrand.customColors.settingsSourceAppDefault
         SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
         SettingsSource.ENVIRONMENT_VARIABLE -> currentUiBrand.customColors.settingsSourceEnvironmentVariable
-        SettingsSource.COMMAND_LINE -> currentUiBrand.customColors.settingsSourceCommandLine
+        SettingsSource.PARAMS -> currentUiBrand.customColors.settingsSourceParams
     }
 }

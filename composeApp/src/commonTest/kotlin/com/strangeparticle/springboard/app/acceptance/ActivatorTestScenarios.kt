@@ -26,7 +26,7 @@ object ActivatorTestScenarios {
     ): ActivatorTestComponents {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
-        val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
+        val settingsViewModel = SettingsViewModel(settingsManager)
         return ActivatorTestComponents(viewModel, settingsViewModel, activationService)
     }
 

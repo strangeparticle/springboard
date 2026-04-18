@@ -36,13 +36,15 @@ breakpoints and hot-swap for small code changes.
 
 ### Run with a pre-designated springboard
 
-Pass the startup springboard setting as a named CLI parameter to skip the Open prompt and boot straight into the grid:
+Pass startup tabs as a named CLI parameter to skip the Open prompt and boot straight into the grid:
 
 ```shell
-./gradlew :composeApp:run --args="--startup-springboard springboard-example.json"
+./gradlew :composeApp:run --args="--startup-tabs springboard-example.json"
 ```
 
-Positional CLI paths are ignored by startup loading. Use the named `--startup-springboard` parameter.
+Multiple tabs can be opened with comma-delimited values: `--startup-tabs /a.json,/b.json`
+
+Positional CLI paths are ignored by startup loading. Use the named `--startup-tabs` parameter.
 
 The sample config at `springboard-example.json` is intended as the public desktop example. The test
 fixture at `composeApp/src/commonTest/resources/springboard-test-fixture.json` is also suitable for

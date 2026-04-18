@@ -8,9 +8,11 @@ import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemor
  * Creates a [SettingsManager] suitable for unit tests with all defaults loaded.
  */
 fun createSettingsManagerForTest(
-    target: RuntimeEnvironment = RuntimeEnvironment.Test
+    target: RuntimeEnvironment = RuntimeEnvironment.Test,
+    envVars: Map<String, String> = emptyMap(),
+    cliArgs: List<String> = emptyList(),
 ): SettingsManager {
     val manager = SettingsManager(target, PersistenceServiceInMemoryFake())
-    manager.loadSettingsAtStartup()
+    manager.loadSettingsAtStartup(envVars, cliArgs)
     return manager
 }

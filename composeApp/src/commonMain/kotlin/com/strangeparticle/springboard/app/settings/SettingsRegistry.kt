@@ -6,7 +6,10 @@ import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
  * The central settings registry — the single source of truth for all settings metadata.
  *
  * Defines each setting's key, type, default value, display metadata,
- * external source names, and environment applicability.
+ * and environment applicability.
+ *
+ * External names (env var, CLI flag, URL param, JSON key) are derived
+ * from the [SettingsKey] enum name by [SettingsKeyNaming].
  *
  * WARNING: This registry must remain in sync with [SettingsValues].
  *
@@ -26,8 +29,6 @@ object SettingsRegistry {
                 defaultValue = true,
                 displayName = "Reset keyNav drop-downs after activation via keyNav",
                 description = "When enabled, keyNav drop-downs are reset after activating a selection through keyNav.",
-                envVarName = "SPRINGBOARD_RESET_KEYNAV_AFTER_KEYNAV_ACTIVATION",
-                cliParamName = "--reset-keynav-after-keynav-activation",
             )
         )
         register(
@@ -37,19 +38,15 @@ object SettingsRegistry {
                 defaultValue = true,
                 displayName = "Reset keyNav drop-downs after activation via grid-nav",
                 description = "When enabled, keyNav drop-downs are reset after activating a selection through the grid.",
-                envVarName = "SPRINGBOARD_RESET_KEYNAV_AFTER_GRIDNAV_ACTIVATION",
-                cliParamName = "--reset-keynav-after-gridnav-activation",
             )
         )
         register(
             SettingItem.General(
-                key = SettingsKey.STARTUP_SPRINGBOARD,
-                type = FilePath::class,
-                defaultValue = null,
-                displayName = "Startup Springboard",
-                description = "The springboard file or URL to open automatically on launch.",
-                envVarName = "SPRINGBOARD_STARTUP_SPRINGBOARD",
-                cliParamName = "--startup-springboard",
+                key = SettingsKey.STARTUP_TABS,
+                type = List::class,
+                defaultValue = emptyList<String>(),
+                displayName = "Startup Tabs",
+                description = "Springboard files or URLs to open as tabs on launch.",
             )
         )
         register(
@@ -62,8 +59,6 @@ object SettingsRegistry {
                 ),
                 displayName = "Active Brand",
                 description = "Choose the visual brand theme for the app.",
-                envVarName = "SPRINGBOARD_ACTIVE_BRAND",
-                cliParamName = "--active-brand",
             )
         )
         register(
@@ -73,8 +68,6 @@ object SettingsRegistry {
                 defaultValue = true,
                 displayName = "Open URLs in new browser window for single selections",
                 description = "When enabled, single-cell activations open URLs in a new browser window.",
-                envVarName = "SPRINGBOARD_OPEN_URLS_NEW_WINDOW_SINGLE",
-                cliParamName = "--open-urls-new-window-single",
                 runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
             )
         )
@@ -85,8 +78,6 @@ object SettingsRegistry {
                 defaultValue = true,
                 displayName = "Open URLs in new browser window for multiple selections",
                 description = "When enabled, multi-cell activations open URLs in a new browser window.",
-                envVarName = "SPRINGBOARD_OPEN_URLS_NEW_WINDOW_MULTIPLE",
-                cliParamName = "--open-urls-new-window-multiple",
                 runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
             )
         )
@@ -97,8 +88,6 @@ object SettingsRegistry {
                 defaultValue = false,
                 displayName = "Surface AppleScript errors",
                 description = "When enabled, AppleScript failures are shown as error toasts instead of being silently swallowed.",
-                envVarName = "SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS",
-                cliParamName = "--surface-applescript-errors",
                 runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
             )
         )
@@ -134,13 +123,13 @@ object SettingsRegistry {
 
     /** Finds a registry entry by its environment variable name. */
     fun findByEnvVarName(envVarName: String): SettingItem? =
-        entries.values.find { it.envVarName == envVarName }
+        entries.values.find { SettingsKeyNaming.envVarName(it.key) == envVarName }
 
-    /** Finds a registry entry by its CLI parameter name. */
-    fun findByCliParamName(cliParamName: String): SettingItem? =
-        entries.values.find { it.cliParamName == cliParamName }
+    /** Finds a registry entry by its URL param name. */
+    fun findByUrlParamName(urlParamName: String): SettingItem? =
+        entries.values.find { SettingsKeyNaming.urlParamName(it.key) == urlParamName }
 
     /** Finds a registry entry by its JSON key. */
     fun findByJsonKey(jsonKey: String): SettingItem? =
-        entries.values.find { it.key.jsonKey == jsonKey }
+        entries.values.find { SettingsKeyNaming.jsonKey(it.key) == jsonKey }
 }

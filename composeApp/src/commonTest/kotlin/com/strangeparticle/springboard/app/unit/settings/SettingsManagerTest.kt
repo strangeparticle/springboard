@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.springboard.app.settings.FilePath
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingItem
 import com.strangeparticle.springboard.app.settings.SettingsKey
@@ -41,9 +40,9 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `default file path is null`() {
+    fun `default startup tabs is empty`() {
         val manager = createManager()
-        assertNull(manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD))
+        assertEquals(emptyList<String>(), manager.getStringList(SettingsKey.STARTUP_TABS))
     }
 
     @Test
@@ -64,14 +63,13 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `user settings file path`() {
+    fun `user settings startup tabs`() {
         val manager = createManager(
-            persistedDto = SettingsDto(startupSpringboard = "/path/to/file.json")
+            persistedDto = SettingsDto(startupTabs = listOf("/path/to/file.json"))
         )
-        val filePath = manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertNotNull(filePath)
-        assertEquals("/path/to/file.json", filePath.path)
-        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
+        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/path/to/file.json"), tabs)
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     @Test
@@ -114,23 +112,22 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `params file path arg`() {
+    fun `params startup tabs from cli`() {
         val manager = createManager(
-            cliArgs = listOf("--startup-springboard", "/cli/path.json"),
+            cliArgs = listOf("--startup-tabs", "/a.json,/b.json"),
         )
-        val filePath = manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)
-        assertNotNull(filePath)
-        assertEquals("/cli/path.json", filePath.path)
-        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
+        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/a.json", "/b.json"), tabs)
+        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     @Test
-    fun `positional cli path does not set startup springboard`() {
+    fun `positional cli path does not set startup tabs`() {
         val manager = createManager(
             cliArgs = listOf("/cli/path.json"),
         )
-        assertNull(manager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD))
-        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.STARTUP_SPRINGBOARD))
+        assertEquals(emptyList<String>(), manager.getStringList(SettingsKey.STARTUP_TABS))
+        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     @Test
@@ -262,18 +259,18 @@ class SettingsManagerTest {
     // -- Type Safety --
 
     @Test
-    fun `get boolean on file path throws`() {
+    fun `get boolean on list type throws`() {
         val manager = createManager()
         assertFailsWith<IllegalArgumentException> {
-            manager.getBoolean(SettingsKey.STARTUP_SPRINGBOARD)
+            manager.getBoolean(SettingsKey.STARTUP_TABS)
         }
     }
 
     @Test
-    fun `get file path on boolean throws`() {
+    fun `get string list on boolean throws`() {
         val manager = createManager()
         assertFailsWith<IllegalArgumentException> {
-            manager.getFilePath(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
+            manager.getStringList(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
         }
     }
 
@@ -295,17 +292,58 @@ class SettingsManagerTest {
     }
 
     @Test
-    fun `coerce string to file path`() {
-        val entry = SettingsRegistry.require(SettingsKey.STARTUP_SPRINGBOARD)
-        val result = SettingsManager.coerceStringValue(entry, "/some/path.json")
-        assertEquals(FilePath("/some/path.json"), result)
+    fun `coerce comma-delimited string to list`() {
+        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
+        val result = SettingsManager.coerceStringValue(entry, "/a.json,/b.json")
+        assertEquals(listOf("/a.json", "/b.json"), result)
     }
 
     @Test
-    fun `coerce blank string to file path returns null`() {
-        val entry = SettingsRegistry.require(SettingsKey.STARTUP_SPRINGBOARD)
+    fun `coerce blank string to list returns empty`() {
+        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
         val result = SettingsManager.coerceStringValue(entry, "  ")
-        assertNull(result)
+        assertEquals(emptyList<String>(), result)
+    }
+
+    @Test
+    fun `coerce single value string to list`() {
+        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
+        val result = SettingsManager.coerceStringValue(entry, "/single.json")
+        assertEquals(listOf("/single.json"), result)
+    }
+
+    // -- List Coercion from Env Var --
+
+    @Test
+    fun `env var sets startup tabs via comma-delimited string`() {
+        val manager = createManager(
+            envVars = mapOf("SPRINGBOARD_STARTUP_TABS" to "/env/a.json,/env/b.json"),
+        )
+        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/env/a.json", "/env/b.json"), tabs)
+        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.STARTUP_TABS))
+    }
+
+    @Test
+    fun `cli startup tabs override env var startup tabs`() {
+        val manager = createManager(
+            envVars = mapOf("SPRINGBOARD_STARTUP_TABS" to "/env/a.json"),
+            cliArgs = listOf("--startup-tabs", "/cli/a.json,/cli/b.json"),
+        )
+        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/cli/a.json", "/cli/b.json"), tabs)
+        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.STARTUP_TABS))
+    }
+
+    @Test
+    fun `user startup tabs override cli startup tabs`() {
+        val manager = createManager(
+            persistedDto = SettingsDto(startupTabs = listOf("/user/a.json")),
+            cliArgs = listOf("--startup-tabs", "/cli/a.json,/cli/b.json"),
+        )
+        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(listOf("/user/a.json"), tabs)
+        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     // -- Invalid External Values --

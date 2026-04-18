@@ -9,38 +9,49 @@ class SettingsViewModelTest {
 
     private fun createViewModel(
         target: RuntimeEnvironment = RuntimeEnvironment.DesktopOsx,
-        currentFilePath: () -> String? = { null },
     ): SettingsViewModel {
         val settingsManager = createSettingsManagerForTest(target)
-        return SettingsViewModel(settingsManager, currentFilePath)
+        return SettingsViewModel(settingsManager)
     }
 
-    // -- designateCurrentFileAsStartup --
+    // -- clearAllUserSettings --
 
     @Test
-    fun `designate current file as startup succeeds`() {
-        val vm = createViewModel(currentFilePath = { "/path/to/board.json" })
-        val result = vm.designateCurrentFileAsStartup()
-        assertTrue(result)
-        assertEquals(FilePath("/path/to/board.json"), vm.getResolvedValue(SettingsKey.STARTUP_SPRINGBOARD))
-    }
+    fun `clear all user settings restores defaults`() {
+        val vm = createViewModel()
+        vm.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)
+        assertTrue(vm.getResolvedValue(SettingsKey.SURFACE_APPLESCRIPT_ERRORS) as Boolean)
 
-    @Test
-    fun `designate current file as startup fails when no file open`() {
-        val vm = createViewModel(currentFilePath = { null })
-        val result = vm.designateCurrentFileAsStartup()
-        assertFalse(result)
-        assertNull(vm.getResolvedValue(SettingsKey.STARTUP_SPRINGBOARD))
+        vm.clearAllUserSettings()
+        assertFalse(vm.getResolvedValue(SettingsKey.SURFACE_APPLESCRIPT_ERRORS) as Boolean)
     }
 
     @Test
-    fun `clear startup springboard`() {
-        val vm = createViewModel(currentFilePath = { "/path/to/board.json" })
-        vm.designateCurrentFileAsStartup()
-        assertNotNull(vm.getResolvedValue(SettingsKey.STARTUP_SPRINGBOARD))
+    fun `clear all user settings reveals params values`() {
+        val settingsManager = createSettingsManagerForTest(
+            target = RuntimeEnvironment.DesktopOsx,
+            cliArgs = listOf("--surface-applescript-errors"),
+        )
+        val vm = SettingsViewModel(settingsManager)
 
-        vm.clearStartupSpringboard()
-        assertNull(vm.getResolvedValue(SettingsKey.STARTUP_SPRINGBOARD))
+        vm.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, false)
+        assertFalse(vm.getResolvedValue(SettingsKey.SURFACE_APPLESCRIPT_ERRORS) as Boolean)
+
+        vm.clearAllUserSettings()
+        assertTrue(vm.getResolvedValue(SettingsKey.SURFACE_APPLESCRIPT_ERRORS) as Boolean)
+    }
+
+    @Test
+    fun `active settings entries contain layer details`() {
+        val settingsManager = createSettingsManagerForTest(
+            target = RuntimeEnvironment.DesktopOsx,
+            envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
+        )
+        val vm = SettingsViewModel(settingsManager)
+
+        val entry = vm.activeSettingsEntries.first { it.displayName == "Surface AppleScript errors" }
+        assertTrue(entry.layerDetails.contains("Env var: true"))
+        assertTrue(entry.layerDetails.contains("Default:"))
     }
 
     // -- groupedSettings --

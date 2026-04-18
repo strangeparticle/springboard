@@ -18,7 +18,7 @@ import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
  * additional presence-tracking mechanism.
  */
 class SettingsManager(
-    private val runtimeEnvironment: RuntimeEnvironment,
+    val runtimeEnvironment: RuntimeEnvironment,
     private val persistenceService: PersistenceService,
 ) {
 
@@ -74,6 +74,15 @@ class SettingsManager(
             "Setting $key is not a FilePath (type: ${entry.type.simpleName})"
         }
         return resolveValue(key) as FilePath?
+    }
+
+    @Suppress("UNCHECKED_CAST") // List<String> has erased generics; the cast to List<String> can't be checked at runtime
+    fun getStringList(key: SettingsKey): List<String> {
+        val entry = SettingsRegistry.require(key)
+        require(entry.type == List::class) {
+            "Setting $key is not a List (type: ${entry.type.simpleName})"
+        }
+        return (resolveValue(key) as? List<String>) ?: emptyList()
     }
 
     fun getSelectedOptionIdFromDropDown(key: SettingsKey): String {
@@ -203,7 +212,7 @@ class SettingsManager(
                 continue
             }
 
-            val entry = SettingsRegistry.findByCliParamName(arg)
+            val entry = SettingsRegistry.findByUrlParamName(arg.removePrefix("--"))
             if (entry == null || entry.key !in applicableKeys) {
                 i++
                 continue
@@ -213,6 +222,16 @@ class SettingsManager(
                 when (entry.type) {
                     Boolean::class -> {
                         cliValues = cliValues.withSetting(entry.key, true)
+                    }
+                    List::class -> {
+                        val nextArg = args.getOrNull(i + 1)
+                        if (nextArg == null || nextArg.startsWith("--")) {
+                            ToastBroadcaster.warning("CLI parameter '$arg' requires a value")
+                        } else {
+                            val items = nextArg.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                            cliValues = cliValues.withSetting(entry.key, items)
+                            i++
+                        }
                     }
                     String::class, FilePath::class, StringFromDropDown::class -> {
                         val nextArg = args.getOrNull(i + 1)
@@ -251,6 +270,7 @@ class SettingsManager(
                     ?: throw IllegalArgumentException("'$rawValue' is not a valid boolean")
                 String::class -> rawValue
                 FilePath::class -> if (rawValue.isBlank()) null else FilePath(rawValue)
+                List::class -> rawValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 StringFromDropDown::class -> {
                     val declaration = entry.defaultValue as StringFromDropDown
                     if (!declaration.isAllowed(rawValue)) {

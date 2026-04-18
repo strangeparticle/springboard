@@ -26,7 +26,7 @@ object FileOperationTestScenarios {
     ): FileOperationTestComponents {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
-        val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
+        val settingsViewModel = SettingsViewModel(settingsManager)
         return FileOperationTestComponents(viewModel, settingsViewModel, fileContentService)
     }
 

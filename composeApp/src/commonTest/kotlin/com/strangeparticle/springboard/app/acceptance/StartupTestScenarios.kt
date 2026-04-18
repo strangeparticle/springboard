@@ -16,7 +16,7 @@ object StartupTestScenarios {
     private fun createTestComponents(): Pair<SpringboardViewModel, SettingsViewModel> {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
-        val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
+        val settingsViewModel = SettingsViewModel(settingsManager)
         return viewModel to settingsViewModel
     }
 

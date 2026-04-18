@@ -56,11 +56,9 @@ fun main(args: Array<String>) {
 
     val networkContentService = NetworkContentServiceDesktopImpl()
 
-    // Determine the startup config path from the explicit startup-springboard setting.
-    val startupSpringboardPath = settingsManager.getFilePath(SettingsKey.STARTUP_SPRINGBOARD)?.path
-    val configPath = startupSpringboardPath
+    val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
 
-    println("[Springboard] launch config path: ${configPath ?: "none"}")
+    println("[Springboard] startup tabs: ${if (startupTabs.isEmpty()) "none" else startupTabs.joinToString(", ")}")
     if (settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)) {
         println("[Springboard] AppleScript error surfacing enabled")
     }
@@ -73,10 +71,7 @@ fun main(args: Array<String>) {
 
         val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService, activationService) }
         val settingsViewModel = remember {
-            SettingsViewModel(
-                settingsManager = settingsManager,
-                currentFilePath = { viewModel.springboard?.source },
-            )
+            SettingsViewModel(settingsManager = settingsManager)
         }
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
@@ -241,34 +236,36 @@ fun main(args: Array<String>) {
                 growWindowToFitLargestTab(viewModel, windowState)
             }
 
-            // Restore persisted tabs on startup, or fall back to STARTUP_SPRINGBOARD for first launch.
             LaunchedEffect(Unit) {
                 val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
                 val tabRestorer = TabRestorer(persistenceService, contentLoader)
                 val hadPersistedTabs = persistenceService.loadTabs() != null
                 if (hadPersistedTabs) {
                     tabRestorer.restoreInto(viewModel)
-                } else if (configPath != null) {
-                    when (val source = parseSpringboardSource(configPath)) {
-                        is SpringboardSource.NetworkSource -> {
-                            try {
-                                val contents = networkContentService.fetchText(source.url)
-                                loadSpringboardConfig(source.url, contents)
-                            } catch (e: Exception) {
-                                ToastBroadcaster.error("Failed to fetch config: ${e.message}")
-                                println("[Springboard] failed to fetch config: ${e.message}")
+                } else if (startupTabs.isNotEmpty()) {
+                    for ((index, tabSource) in startupTabs.withIndex()) {
+                        if (index > 0) viewModel.createTab()
+                        when (val source = parseSpringboardSource(tabSource)) {
+                            is SpringboardSource.NetworkSource -> {
+                                try {
+                                    val contents = networkContentService.fetchText(source.url)
+                                    loadSpringboardConfig(source.url, contents)
+                                } catch (e: Exception) {
+                                    ToastBroadcaster.error("Failed to fetch config: ${e.message}")
+                                    println("[Springboard] failed to fetch startup tab: ${e.message}")
+                                }
                             }
-                        }
-                        is SpringboardSource.FileSource -> {
-                            val homeDirectoryPath = getHomeDirectoryPath()
-                            val expandedConfigPath = expandTildePath(source.path, homeDirectoryPath)
-                            val file = File(expandedConfigPath)
-                            if (file.exists()) {
-                                val contents = file.readText()
-                                loadSpringboardConfig(expandedConfigPath, contents)
-                            } else {
-                                ToastBroadcaster.error("Config file not found: $expandedConfigPath")
-                                println("[Springboard] config file not found: $expandedConfigPath")
+                            is SpringboardSource.FileSource -> {
+                                val homeDirectoryPath = getHomeDirectoryPath()
+                                val expandedPath = expandTildePath(source.path, homeDirectoryPath)
+                                val file = File(expandedPath)
+                                if (file.exists()) {
+                                    val contents = file.readText()
+                                    loadSpringboardConfig(expandedPath, contents)
+                                } else {
+                                    ToastBroadcaster.error("Config file not found: $expandedPath")
+                                    println("[Springboard] config file not found: $expandedPath")
+                                }
                             }
                         }
                     }

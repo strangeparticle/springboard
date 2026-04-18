@@ -42,7 +42,7 @@ object ActivatorDesktopTestScenarios {
         )
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
-        val settingsViewModel = SettingsViewModel(settingsManager) { viewModel.springboard?.source }
+        val settingsViewModel = SettingsViewModel(settingsManager)
         return ActivatorDesktopTestComponents(viewModel, settingsViewModel, activationService)
     }
 

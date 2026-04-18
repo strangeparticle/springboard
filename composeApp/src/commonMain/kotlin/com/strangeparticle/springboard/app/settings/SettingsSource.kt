@@ -8,6 +8,17 @@ enum class SettingsSource {
     USER_SETTINGS,
     ENVIRONMENT_VARIABLE,
     PARAMS,
+    ;
+
+    fun displayLabel(runtimeEnvironment: RuntimeEnvironment): String = when (this) {
+        APP_DEFAULT -> "Default"
+        USER_SETTINGS -> "User"
+        ENVIRONMENT_VARIABLE -> "Env var"
+        PARAMS -> when (runtimeEnvironment) {
+            RuntimeEnvironment.WASM -> "URL param"
+            else -> "CLI flag"
+        }
+    }
 }
 
 /**

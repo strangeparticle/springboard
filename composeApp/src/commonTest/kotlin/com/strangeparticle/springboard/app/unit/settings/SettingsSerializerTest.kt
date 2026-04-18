@@ -21,13 +21,13 @@ class SettingsSerializerTest {
     }
 
     @Test
-    fun `round trip file path`() {
-        val original = SettingsDto(startupSpringboard = "/some/file.json")
+    fun `round trip startup tabs`() {
+        val original = SettingsDto(startupTabs = listOf("/a.json", "/b.json"))
         val json = SettingsSerializer.toJson(original)
         val restored = SettingsSerializer.fromJson(json)
 
         assertNotNull(restored)
-        assertEquals("/some/file.json", restored.startupSpringboard)
+        assertEquals(listOf("/a.json", "/b.json"), restored.startupTabs)
     }
 
     @Test
@@ -36,7 +36,7 @@ class SettingsSerializerTest {
         val json = SettingsSerializer.toJson(dto)
 
         // Only the set field should appear in JSON (encodeDefaults = false)
-        assertFalse(json.contains("startupSpringboard"), "Unset fields should not appear in JSON")
+        assertFalse(json.contains("startupTabs"), "Unset fields should not appear in JSON")
         assertTrue(json.contains("surfaceAppleScriptErrors"))
     }
 
@@ -47,7 +47,7 @@ class SettingsSerializerTest {
 
         assertNotNull(restored)
         assertEquals(true, restored.surfaceAppleScriptErrors)
-        assertNull(restored.startupSpringboard)
+        assertNull(restored.startupTabs)
         assertNull(restored.openUrlsInNewWindowSingle)
     }
 
@@ -62,7 +62,7 @@ class SettingsSerializerTest {
     fun `empty json object returns all nulls`() {
         val result = SettingsSerializer.fromJson("{}")
         assertNotNull(result)
-        assertNull(result.startupSpringboard)
+        assertNull(result.startupTabs)
         assertNull(result.surfaceAppleScriptErrors)
     }
 

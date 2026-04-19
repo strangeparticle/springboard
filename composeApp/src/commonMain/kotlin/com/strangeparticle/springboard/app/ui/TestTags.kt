@@ -21,6 +21,7 @@ object TestTags {
     const val ACTIVE_SETTINGS_BACK_BUTTON = "activeSettingsBackButton"
     const val SETTINGS_OVERRIDE_WARNING = "settingsOverrideWarning"
     const val SETTINGS_RESTORE_DEFAULTS_BUTTON = "settingsRestoreDefaultsButton"
+    const val SETTINGS_USE_CURRENT_TABS_BUTTON = "settingsUseCurrentTabsButton"
     const val ZOOM_DROPDOWN = "zoomDropdown"
     const val TAB_BAR = "tabBar"
     const val TAB_NEW_BUTTON = "tabNewButton"

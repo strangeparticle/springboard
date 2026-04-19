@@ -54,7 +54,24 @@ internal fun MinimalDropdown(
     var expanded by remember { mutableStateOf(false) }
     var isFocused by remember { mutableStateOf(false) }
     var typeaheadBuffer by remember { mutableStateOf("") }
+    var highlightedIndex by remember { mutableStateOf(-1) }
     val selectedName = items.find { it.first == selectedId }?.second ?: KeyNavNoneOptionLabel
+
+    val allDropdownItems = remember(items) {
+        listOf(KeyNavNoneOptionId to KeyNavNoneOptionLabel) + items
+    }
+
+    fun selectHighlightedItem() {
+        if (highlightedIndex < 0 || highlightedIndex >= allDropdownItems.size) return
+        val (id, _) = allDropdownItems[highlightedIndex]
+        if (id == KeyNavNoneOptionId) {
+            onSelect(null)
+        } else {
+            val isEnabled = enabledStates[id] != false
+            if (isEnabled) onSelect(id)
+        }
+        expanded = false
+    }
 
     fun handleTypeahead(event: KeyEvent): Boolean {
         if (event.type != KeyEventType.KeyDown) return false
@@ -71,10 +88,38 @@ internal fun MinimalDropdown(
             } else {
                 onSelect(matchId)
             }
-            expanded = false
+            if (expanded) {
+                highlightedIndex = allDropdownItems.indexOfFirst { it.first == matchId }
+            } else {
+                expanded = false
+            }
         }
 
         return true
+    }
+
+    fun handleArrowKey(event: KeyEvent): Boolean {
+        if (event.type != KeyEventType.KeyDown) return false
+        val totalItems = allDropdownItems.size
+        when (event.key) {
+            Key.DirectionDown -> {
+                if (!expanded) {
+                    expanded = true
+                } else {
+                    highlightedIndex = if (highlightedIndex < totalItems - 1) highlightedIndex + 1 else 0
+                }
+                return true
+            }
+            Key.DirectionUp -> {
+                if (!expanded) {
+                    expanded = true
+                } else {
+                    highlightedIndex = if (highlightedIndex > 0) highlightedIndex - 1 else totalItems - 1
+                }
+                return true
+            }
+        }
+        return false
     }
 
     LaunchedEffect(typeaheadBuffer) {
@@ -86,10 +131,17 @@ internal fun MinimalDropdown(
 
     LaunchedEffect(expanded) {
         if (expanded) {
+            highlightedIndex = if (selectedId != null) {
+                allDropdownItems.indexOfFirst { it.first == selectedId }.coerceAtLeast(0)
+            } else {
+                0
+            }
             try {
                 focusRequester.requestFocus()
             } catch (_: Exception) {
             }
+        } else {
+            highlightedIndex = -1
         }
     }
 
@@ -121,7 +173,7 @@ internal fun MinimalDropdown(
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         when (event.key) {
-                            Key.Tab -> {
+                            Key.Tab, Key.DirectionRight -> {
                                 expanded = false
                                 if (event.isShiftPressed) {
                                     onShiftTab()
@@ -131,9 +183,18 @@ internal fun MinimalDropdown(
                                 true
                             }
 
+                            Key.DirectionLeft -> {
+                                expanded = false
+                                onShiftTab()
+                                true
+                            }
+
                             Key.Enter -> {
-                                if (canActivateCoordinate) {
-                                    expanded = false
+                                if (expanded) {
+                                    if (highlightedIndex >= 0) selectHighlightedItem()
+                                    else expanded = false
+                                    true
+                                } else if (canActivateCoordinate) {
                                     onActivateCoordinate()
                                     true
                                 } else {
@@ -142,10 +203,16 @@ internal fun MinimalDropdown(
                             }
 
                             Key.Escape -> {
-                                expanded = false
-                                onEscape()
-                                true
+                                if (expanded) {
+                                    expanded = false
+                                    true
+                                } else {
+                                    onEscape()
+                                    true
+                                }
                             }
+
+                            Key.DirectionDown, Key.DirectionUp -> handleArrowKey(event)
 
                             else -> handleTypeahead(event)
                         }
@@ -169,10 +236,18 @@ internal fun MinimalDropdown(
             properties = PopupProperties(focusable = false),
             modifier = Modifier
                 .focusable()
-                .onPreviewKeyEvent { handleTypeahead(it) },
+                .onPreviewKeyEvent { event ->
+                    handleArrowKey(event) || handleTypeahead(event)
+                },
         ) {
+            val highlightColor = MaterialTheme.colorScheme.primaryContainer
+
             DropdownMenuItem(
-                modifier = Modifier.onPreviewKeyEvent { handleTypeahead(it) },
+                modifier = Modifier
+                    .let { if (highlightedIndex == 0) it.background(highlightColor) else it }
+                    .onPreviewKeyEvent { event ->
+                        handleArrowKey(event) || handleTypeahead(event)
+                    },
                 text = { Text(KeyNavNoneOptionLabel, fontSize = 13.sp) },
                 onClick = {
                     onSelect(null)
@@ -183,10 +258,15 @@ internal fun MinimalDropdown(
 
             HorizontalDivider()
 
-            items.forEach { (id, name) ->
+            items.forEachIndexed { index, (id, name) ->
+                val dropdownIndex = index + 1
                 val isEnabled = enabledStates[id] != false
                 DropdownMenuItem(
-                    modifier = Modifier.onPreviewKeyEvent { handleTypeahead(it) },
+                    modifier = Modifier
+                        .let { if (highlightedIndex == dropdownIndex) it.background(highlightColor) else it }
+                        .onPreviewKeyEvent { event ->
+                            handleArrowKey(event) || handleTypeahead(event)
+                        },
                     text = { Text(name, fontSize = 13.sp) },
                     onClick = {
                         if (isEnabled) {

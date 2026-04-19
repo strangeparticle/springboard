@@ -39,7 +39,7 @@ class SettingsManagerActiveBrandTest {
     fun `user settings override default active brand`() {
         val manager = createManager(persistedDto = SettingsDto(activeBrand = "strangeparticle-dark"))
         assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
-        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
     @Test
@@ -49,7 +49,7 @@ class SettingsManagerActiveBrandTest {
             envVars = mapOf("SPRINGBOARD_ACTIVE_BRAND" to "strangeparticle-dark"),
         )
         assertEquals("strangeparticle-light", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
-        assertEquals(SettingsSource.USER_SETTINGS, manager.getSource(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
     @Test
@@ -59,7 +59,7 @@ class SettingsManagerActiveBrandTest {
             cliArgs = listOf("--active-brand", "strangeparticle-dark"),
         )
         assertEquals("strangeparticle-dark", manager.getSelectedOptionIdFromDropDown(SettingsKey.ACTIVE_BRAND))
-        assertEquals(SettingsSource.PARAMS, manager.getSource(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
     @Test

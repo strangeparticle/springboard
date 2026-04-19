@@ -90,11 +90,45 @@ class SettingsViewModel(
         settingsVersion++
     }
 
+    fun clearUserSetting(key: SettingsKey) {
+        settingsManager.setUserSetting(key, null)
+        settingsVersion++
+    }
+
+    fun saveCurrentTabsAsStartupTabs(tabSources: List<String>) {
+        if (tabSources.isEmpty()) {
+            settingsManager.setUserSetting(SettingsKey.STARTUP_TABS, null)
+        } else {
+            settingsManager.setUserSetting(SettingsKey.STARTUP_TABS, tabSources)
+        }
+        settingsVersion++
+    }
+
     fun clearAllUserSettings() {
         for (item in settingsManager.applicableSettings()) {
             settingsManager.setUserSetting(item.key, null)
         }
         settingsVersion++
+    }
+
+    fun fallbackSourceLabel(key: SettingsKey): String {
+        val effectiveSource = getEffectiveSource(key)
+        if (effectiveSource != SettingsSource.USER_SETTINGS_FROM_SESSION &&
+            effectiveSource != SettingsSource.USER_SETTINGS_FROM_PERSISTENCE) return ""
+        var pastEffective = false
+        for (source in PRECEDENCE_CHAIN) {
+            if (source == effectiveSource) {
+                pastEffective = true
+                continue
+            }
+            if (!pastEffective) continue
+            if (source == SettingsSource.USER_SETTINGS_FROM_SESSION || source == SettingsSource.USER_SETTINGS_FROM_PERSISTENCE) continue
+            val layerValue = settingsManager.getValueFromSource(key, source)
+            if (layerValue != null) {
+                return source.displayLabel(runtimeEnvironment).lowercase()
+            }
+        }
+        return "default"
     }
 
     private fun buildLayerDetails(item: SettingItem): String {

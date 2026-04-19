@@ -11,7 +11,8 @@ class SpringboardContentLoaderDesktopImpl(
         if (source.startsWith("http://") || source.startsWith("https://")) {
             return networkContentService.fetchText(source)
         }
-        val path = if (source.startsWith("file://")) source.removePrefix("file://") else source
+        val raw = if (source.startsWith("file://")) source.removePrefix("file://") else source
+        val path = if (raw.startsWith("~/")) System.getProperty("user.home") + raw.removePrefix("~") else raw
         val file = File(path)
         if (!file.exists()) {
             throw IllegalStateException("File not found: $path")

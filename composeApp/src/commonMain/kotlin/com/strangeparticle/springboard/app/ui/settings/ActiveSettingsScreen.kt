@@ -59,6 +59,14 @@ fun ActiveSettingsScreen(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
             )
+            Spacer(modifier = Modifier.weight(1f))
+            TextButton(onClick = { viewModel.clearAllUserSettings() }) {
+                Text(
+                    text = "Restore Defaults",
+                    color = currentUiBrand.customColors.navbarText,
+                    fontSize = 13.sp,
+                )
+            }
         }
 
         // Column headers
@@ -204,8 +212,10 @@ private fun sourceColor(source: SettingsSource): Color {
     val currentUiBrand = LocalUiBrand.current
     return when (source) {
         SettingsSource.APP_DEFAULT -> currentUiBrand.customColors.settingsSourceAppDefault
-        SettingsSource.USER_SETTINGS -> MaterialTheme.colorScheme.primary
+        SettingsSource.USER_SETTINGS_FROM_SESSION -> MaterialTheme.colorScheme.primary
+        SettingsSource.USER_SETTINGS_FROM_PERSISTENCE -> MaterialTheme.colorScheme.primary
         SettingsSource.ENVIRONMENT_VARIABLE -> currentUiBrand.customColors.settingsSourceEnvironmentVariable
-        SettingsSource.PARAMS -> currentUiBrand.customColors.settingsSourceParams
+        SettingsSource.CLI_FLAG -> currentUiBrand.customColors.settingsSourceParams
+        SettingsSource.URL_PARAM -> currentUiBrand.customColors.settingsSourceParams
     }
 }

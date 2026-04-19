@@ -1,11 +1,13 @@
 package com.strangeparticle.springboard.app.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -15,14 +17,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +34,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onShowActiveSettings: () -> Unit,
+    currentTabSources: List<String> = emptyList(),
 ) {
     Column(modifier = Modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN)) {
         // Header bar
@@ -43,6 +42,7 @@ fun SettingsScreen(
             title = "Settings",
             onBack = onBack,
             onRestoreDefaults = { viewModel.clearAllUserSettings() },
+            onShowActiveSettings = onShowActiveSettings,
         )
 
         // Scrollable content
@@ -57,7 +57,7 @@ fun SettingsScreen(
                 SettingsGroupSection(
                     group = group,
                     viewModel = viewModel,
-                    onShowActiveSettings = onShowActiveSettings,
+                    currentTabSources = currentTabSources,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
             }
@@ -70,6 +70,7 @@ private fun SettingsHeaderBar(
     title: String,
     onBack: () -> Unit,
     onRestoreDefaults: () -> Unit,
+    onShowActiveSettings: () -> Unit,
 ) {
     val currentUiBrand = LocalUiBrand.current
     Row(
@@ -97,6 +98,13 @@ private fun SettingsHeaderBar(
             fontWeight = FontWeight.Medium,
         )
         Spacer(modifier = Modifier.weight(1f))
+        TextButton(onClick = onShowActiveSettings) {
+            Text(
+                text = "Active Settings",
+                color = currentUiBrand.customColors.navbarText,
+                fontSize = 13.sp,
+            )
+        }
         TextButton(
             onClick = onRestoreDefaults,
             modifier = Modifier.testTag(TestTags.SETTINGS_RESTORE_DEFAULTS_BUTTON),
@@ -114,7 +122,7 @@ private fun SettingsHeaderBar(
 private fun SettingsGroupSection(
     group: com.strangeparticle.springboard.app.viewmodel.SettingsGroup,
     viewModel: SettingsViewModel,
-    onShowActiveSettings: () -> Unit,
+    currentTabSources: List<String>,
 ) {
     Text(
         text = group.name,
@@ -125,20 +133,21 @@ private fun SettingsGroupSection(
     Spacer(modifier = Modifier.height(10.dp))
 
     for (item in group.settings) {
-        SettingRow(item = item, viewModel = viewModel, onShowActiveSettings = onShowActiveSettings)
+        SettingRow(item = item, viewModel = viewModel, currentTabSources = currentTabSources)
         Spacer(modifier = Modifier.height(10.dp))
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingRow(
     item: SettingItem,
     viewModel: SettingsViewModel,
-    onShowActiveSettings: () -> Unit,
+    currentTabSources: List<String>,
 ) {
     val resolvedValue = viewModel.getResolvedValue(item.key)
     val effectiveSource = viewModel.getEffectiveSource(item.key)
-    val showProvenance = effectiveSource != SettingsSource.APP_DEFAULT && effectiveSource != SettingsSource.USER_SETTINGS
+    val hasUserChoice = effectiveSource == SettingsSource.USER_SETTINGS_FROM_SESSION || effectiveSource == SettingsSource.USER_SETTINGS_FROM_PERSISTENCE
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -176,20 +185,30 @@ private fun SettingRow(
                     color = LocalUiBrand.current.customColors.settingsDescriptionText,
                 )
 
-                if (item.type == List::class) {
+                if (item.key == SettingsKey.STARTUP_TABS) {
                     Spacer(modifier = Modifier.height(6.dp))
                     StartupTabsDisplay(
                         currentValue = resolvedValue as? List<*>,
                     )
+                    if (currentTabSources.isNotEmpty()) {
+                        TextButton(
+                            onClick = { viewModel.saveCurrentTabsAsStartupTabs(currentTabSources) },
+                            modifier = Modifier.testTag(TestTags.SETTINGS_USE_CURRENT_TABS_BUTTON),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) {
+                            Text(
+                                text = "Use current tabs",
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
                 }
 
-                if (showProvenance) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    OverrideMessage(
-                        sourceName = effectiveSource.displayLabel(viewModel.runtimeEnvironment).lowercase(),
-                        onShowActiveSettings = onShowActiveSettings,
-                    )
-                }
+                Spacer(modifier = Modifier.height(6.dp))
+                ProvenanceLabel(
+                    effectiveSource = effectiveSource,
+                    runtimeEnvironment = viewModel.runtimeEnvironment,
+                )
             }
 
             if (item.type == StringFromDropDown::class) {
@@ -214,75 +233,68 @@ private fun SettingRow(
                     onCheckedChange = { newValue ->
                         viewModel.setUserSetting(item.key, newValue)
                     },
-                    enabled = true,
-                    colors = SwitchDefaults.colors(
-                        uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                        uncheckedTrackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                    ),
                     modifier = Modifier.graphicsLayer {
                         scaleX = 0.82f
                         scaleY = 0.82f
                     },
                 )
             }
+
+            Spacer(modifier = Modifier.width(4.dp))
+            ClearSettingButton(
+                enabled = hasUserChoice,
+                fallbackSourceLabel = viewModel.fallbackSourceLabel(item.key),
+                onClear = { viewModel.clearUserSetting(item.key) },
+            )
         }
     }
 }
 
 @Composable
-private fun OverrideMessage(
-    sourceName: String,
-    onShowActiveSettings: () -> Unit,
+private fun ClearSettingButton(
+    enabled: Boolean,
+    fallbackSourceLabel: String,
+    onClear: () -> Unit,
 ) {
-    val currentUiBrand = LocalUiBrand.current
-    val activeSettings = "Active Settings"
-    val fullText = "From $sourceName. See $activeSettings for details."
-    val linkStart = fullText.indexOf(activeSettings)
-
-    val message = buildAnnotatedString {
-        append(fullText)
-        addLink(
-            LinkAnnotation.Clickable(
-                tag = "active_settings",
-                styles = TextLinkStyles(
-                    style = SpanStyle(
-                        color = currentUiBrand.customColors.settingsLinkBase,
-                        textDecoration = TextDecoration.Underline,
-                    ),
-                    hoveredStyle = SpanStyle(
-                        color = currentUiBrand.customColors.settingsLinkHover,
-                        textDecoration = TextDecoration.Underline,
-                        background = currentUiBrand.customColors.settingsLinkBackgroundHover,
-                    ),
-                    pressedStyle = SpanStyle(
-                        color = currentUiBrand.customColors.settingsLinkPressed,
-                        textDecoration = TextDecoration.Underline,
-                        background = currentUiBrand.customColors.settingsLinkBackgroundPressed,
-                    ),
-                    focusedStyle = SpanStyle(
-                        color = currentUiBrand.customColors.settingsLinkBase,
-                        textDecoration = TextDecoration.Underline,
-                        background = currentUiBrand.customColors.settingsLinkBackgroundDefault,
-                    ),
-                ),
-                linkInteractionListener = { onShowActiveSettings() },
+    val contentDescription = if (enabled) {
+        "Clear your choice \u2014 will use $fallbackSourceLabel value"
+    } else {
+        "No user choice to clear"
+    }
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .then(
+                if (enabled) Modifier.clickable(role = Role.Button) { onClear() }
+                else Modifier
             ),
-            start = linkStart,
-            end = linkStart + activeSettings.length,
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Close,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(14.dp),
+            tint = if (enabled) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            },
         )
     }
+}
 
+@Composable
+private fun ProvenanceLabel(
+    effectiveSource: SettingsSource,
+    runtimeEnvironment: RuntimeEnvironment,
+) {
     Text(
-        text = message,
-        style = LocalTextStyle.current.copy(
-            fontSize = 11.sp,
-            fontStyle = FontStyle.Italic,
-            color = currentUiBrand.customColors.settingsLinkBase,
-        ),
-        modifier = Modifier.testTag(TestTags.SETTINGS_OVERRIDE_WARNING),
+        text = "Source: ${effectiveSource.displayLabel(runtimeEnvironment).lowercase()}",
+        fontSize = 11.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
     )
 }
+
 
 @Composable
 private fun StartupTabsDisplay(
@@ -294,7 +306,7 @@ private fun StartupTabsDisplay(
         if (items.isNotEmpty()) {
             for (item in items) {
                 Text(
-                    text = item,
+                    text = "\u2022 $item",
                     fontSize = 12.sp,
                     color = currentUiBrand.customColors.settingsValueText,
                 )

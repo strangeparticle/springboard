@@ -75,4 +75,7 @@ class SettingsTests {
 
     @Test fun `active brand dropdown shows provenance when set by params`() =
         SettingsTestScenarios.activeBrandDropdownShowsProvenanceWhenSetByParams()
+
+    @Test fun `use current tabs button saves tab sources`() =
+        SettingsTestScenarios.useCurrentTabsButtonSavesTabSources()
 }

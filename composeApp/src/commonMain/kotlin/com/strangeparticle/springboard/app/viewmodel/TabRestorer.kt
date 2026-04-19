@@ -9,16 +9,22 @@ class TabRestorer(
     private val reportError: (String) -> Unit = { ToastBroadcaster.error(it) },
 ) {
 
-    suspend fun restoreInto(viewModel: SpringboardViewModel) {
-        val persisted = persistenceService.loadTabs() ?: return
-        val entriesWithSource = persisted.tabs.filter { it.source != null }
-        if (entriesWithSource.isEmpty()) return
+    /**
+     * Restores tabs from the resolved [tabSources] list (already resolved by the
+     * settings precedence chain). Zoom levels are read from the separate tab
+     * persistence layer when the source matches.
+     */
+    suspend fun restoreInto(viewModel: SpringboardViewModel, tabSources: List<String>) {
+        if (tabSources.isEmpty()) return
 
-        val persistedToInMemoryId = mutableMapOf<String, String>()
+        val persistedTabs = persistenceService.loadTabs()
+        val zoomBySource = persistedTabs?.tabs
+            ?.filter { it.source != null }
+            ?.associate { it.source!! to (it.zoomPercent ?: 100) }
+            ?: emptyMap()
 
         viewModel.runSuppressingAutosave {
-            for (entry in entriesWithSource) {
-                val source = entry.source ?: continue
+            for (source in tabSources) {
                 if (!viewModel.canCreateNewTab && !isReusableFirstEmptyTab(viewModel)) {
                     reportError("Skipped restoring tab for '$source': maximum of $MAX_OPEN_TABS tabs reached")
                     continue
@@ -29,19 +35,12 @@ class TabRestorer(
                     reportError("Failed to restore tab for '$source': ${e.message}")
                     continue
                 }
-                val newTabId = viewModel.restoreTabFromPersistence(
+                val zoomPercent = zoomBySource[source] ?: 100
+                viewModel.restoreTabFromPersistence(
                     source = source,
                     jsonContents = jsonContents,
-                    zoomPercent = entry.zoomPercent ?: 100,
+                    zoomPercent = zoomPercent,
                 )
-                persistedToInMemoryId[entry.tabId] = newTabId
-            }
-
-            val desiredPersistedActive = persisted.activeTabId
-            val desiredInMemoryActive = desiredPersistedActive?.let { persistedToInMemoryId[it] }
-                ?: persistedToInMemoryId.values.firstOrNull()
-            if (desiredInMemoryActive != null) {
-                viewModel.selectTab(desiredInMemoryActive)
             }
         }
     }

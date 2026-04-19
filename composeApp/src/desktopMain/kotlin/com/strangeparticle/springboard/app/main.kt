@@ -11,8 +11,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.strangeparticle.springboard.app.domain.SpringboardSource
-import com.strangeparticle.springboard.app.domain.parseSpringboardSource
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.*
@@ -239,37 +237,7 @@ fun main(args: Array<String>) {
             LaunchedEffect(Unit) {
                 val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
                 val tabRestorer = TabRestorer(persistenceService, contentLoader)
-                val hadPersistedTabs = persistenceService.loadTabs() != null
-                if (hadPersistedTabs) {
-                    tabRestorer.restoreInto(viewModel)
-                } else if (startupTabs.isNotEmpty()) {
-                    for ((index, tabSource) in startupTabs.withIndex()) {
-                        if (index > 0) viewModel.createTab()
-                        when (val source = parseSpringboardSource(tabSource)) {
-                            is SpringboardSource.NetworkSource -> {
-                                try {
-                                    val contents = networkContentService.fetchText(source.url)
-                                    loadSpringboardConfig(source.url, contents)
-                                } catch (e: Exception) {
-                                    ToastBroadcaster.error("Failed to fetch config: ${e.message}")
-                                    println("[Springboard] failed to fetch startup tab: ${e.message}")
-                                }
-                            }
-                            is SpringboardSource.FileSource -> {
-                                val homeDirectoryPath = getHomeDirectoryPath()
-                                val expandedPath = expandTildePath(source.path, homeDirectoryPath)
-                                val file = File(expandedPath)
-                                if (file.exists()) {
-                                    val contents = file.readText()
-                                    loadSpringboardConfig(expandedPath, contents)
-                                } else {
-                                    ToastBroadcaster.error("Config file not found: $expandedPath")
-                                    println("[Springboard] config file not found: $expandedPath")
-                                }
-                            }
-                        }
-                    }
-                }
+                tabRestorer.restoreInto(viewModel, startupTabs)
 
                 println("[Springboard] application ready")
             }

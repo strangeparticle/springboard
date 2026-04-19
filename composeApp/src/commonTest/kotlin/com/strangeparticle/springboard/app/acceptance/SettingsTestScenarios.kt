@@ -128,9 +128,6 @@ object SettingsTestScenarios {
         }
         waitForIdle()
 
-        // On settings screen — override warning should exist
-        onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertExists()
-
         // Navigate to active settings from settings (simulates the link click)
         activeSettingsOpenedFromSettings.value = true
         showActiveSettings.value = true
@@ -196,28 +193,19 @@ object SettingsTestScenarios {
         waitForIdle()
 
         // Provenance indicator should show "env var" as source
-        onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("env var", substring = true))
-            .assertExists()
+        onAllNodes(hasText("Source: env var", substring = true))
+            .fetchSemanticsNodes().also { assertTrue(it.isNotEmpty()) }
     }
 
     fun provenanceLinkNavigatesToActiveSettings() = runComposeUiTest {
         val components = createTestComponents(
-            environmentVariables = mapOf(
-                "SPRINGBOARD_RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION" to "false",
-            ),
             showSettings = mutableStateOf(true),
         )
         setSpringboardApp(components)
         waitForIdle()
 
-        // Provenance indicator mentions Active Settings
-        onNode(hasTestTag(TestTags.SETTINGS_OVERRIDE_WARNING) and hasText("Active Settings", substring = true))
-            .assertExists()
-
-        // Click the provenance text — the annotated string link should navigate
-        onNodeWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).performTouchInput {
-            click(percentOffset(0.6f, 0.5f))
-        }
+        // Click the "Active Settings" header button to navigate
+        onNode(hasText("Active Settings")).performClick()
         waitForIdle()
 
         // Should now be on Active Settings screen
@@ -252,7 +240,7 @@ object SettingsTestScenarios {
         waitForIdle()
 
         onNode(
-            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("User"),
+            hasTestTag(TestTags.activeSettingsSourceLabel("Surface AppleScript errors")) and hasText("User (session)"),
             useUnmergedTree = true,
         ).assertExists()
     }
@@ -385,7 +373,7 @@ object SettingsTestScenarios {
 
         val resolved = settingsManager2.getStringList(SettingsKey.STARTUP_TABS)
         assertEquals(testTabs, resolved)
-        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.STARTUP_TABS))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, settingsManager2.getSource(SettingsKey.STARTUP_TABS))
     }
 
     fun surfaceAppleScriptErrorsSettingPersistsAcrossRelaunch() = runComposeUiTest {
@@ -403,7 +391,7 @@ object SettingsTestScenarios {
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(true, settingsManager2.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, settingsManager2.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
     }
 
     fun resetKeyNavAfterKeyNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {
@@ -420,7 +408,7 @@ object SettingsTestScenarios {
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(false, settingsManager2.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
-        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, settingsManager2.getSource(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
     }
 
     // --- Active brand dropdown ---
@@ -455,7 +443,7 @@ object SettingsTestScenarios {
         waitForIdle()
 
         assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
-        assertEquals(SettingsSource.USER_SETTINGS, components.settingsManager.getSource(SettingsKey.ACTIVE_BRAND))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, components.settingsManager.getSource(SettingsKey.ACTIVE_BRAND))
     }
 
     fun activeBrandDropdownShowsProvenanceWhenSetByParams() = runComposeUiTest {
@@ -470,10 +458,9 @@ object SettingsTestScenarios {
         assertEquals("strangeparticle-dark", components.settingsViewModel.activeBrandId)
         assertFalse(components.settingsViewModel.isOverridden(SettingsKey.ACTIVE_BRAND))
 
-        // Provenance indicator shows "params" as the source
-        onAllNodesWithTag(TestTags.SETTINGS_OVERRIDE_WARNING).assertAny(
-            hasText("cli flag", substring = true),
-        )
+        // Provenance indicator shows "cli flag" as the source
+        onAllNodes(hasText("Source: cli flag", substring = true))
+            .fetchSemanticsNodes().also { assertTrue(it.isNotEmpty()) }
     }
 
     // --- Restore Defaults ---
@@ -500,7 +487,26 @@ object SettingsTestScenarios {
 
         // Params-sourced value should still be active (not cleared by restore)
         assertTrue(components.settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.PARAMS, components.settingsManager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertEquals(SettingsSource.CLI_FLAG, components.settingsManager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+    }
+
+    fun useCurrentTabsButtonSavesTabSources() = runComposeUiTest {
+        val components = createTestComponents(
+            currentFilePath = "/test/springboard.json",
+            showSettings = mutableStateOf(true),
+        )
+        setSpringboardApp(components)
+        waitForIdle()
+
+        val tabSources = components.viewModel.currentTabSources
+        assertTrue(tabSources.isNotEmpty())
+
+        onNodeWithTag(TestTags.SETTINGS_USE_CURRENT_TABS_BUTTON).performClick()
+        waitForIdle()
+
+        val savedTabs = components.settingsManager.getStringList(SettingsKey.STARTUP_TABS)
+        assertEquals(tabSources, savedTabs)
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, components.settingsManager.getSource(SettingsKey.STARTUP_TABS))
     }
 
     fun resetKeyNavAfterGridNavActivationSettingPersistsAcrossRelaunch() = runComposeUiTest {
@@ -517,6 +523,6 @@ object SettingsTestScenarios {
         settingsManager2.loadSettingsAtStartup()
 
         assertEquals(false, settingsManager2.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))
-        assertEquals(SettingsSource.USER_SETTINGS, settingsManager2.getSource(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, settingsManager2.getSource(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))
     }
 }

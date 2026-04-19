@@ -43,7 +43,7 @@ class TabRestorerTest {
     }
 
     @Test
-    fun allTabsRestoredInOrderWithActiveMatchingDto() = runTest {
+    fun allTabsRestoredInOrderFromTabSources() = runTest {
         val persistence = PersistenceServiceInMemoryFake()
         persistence.persistTabs(
             TabsDto(
@@ -61,27 +61,38 @@ class TabRestorerTest {
         val restorer = TabRestorer(persistence, loader) { errors += it }
         val viewModel = createViewModel(persistence)
 
-        restorer.restoreInto(viewModel)
+        restorer.restoreInto(viewModel, listOf("/a.json", "/b.json"))
 
         assertEquals(2, viewModel.tabs.size)
         assertEquals(listOf("A", "B"), viewModel.tabs.map { it.springboard?.name })
-        assertEquals("B", viewModel.tabs.first { it.tabId == viewModel.activeTabId }.springboard?.name)
         assertTrue(errors.isEmpty())
+    }
+
+    @Test
+    fun zoomLevelsRestoredFromPersistence() = runTest {
+        val persistence = PersistenceServiceInMemoryFake()
+        persistence.persistTabs(
+            TabsDto(
+                tabs = listOf(
+                    TabDto(tabId = "p-1", source = "/a.json", zoomPercent = 150),
+                ),
+                activeTabId = "p-1",
+            )
+        )
+        val loader = RecordingLoader(mapOf("/a.json" to jsonWithName("A")))
+        val restorer = TabRestorer(persistence, loader)
+        val viewModel = createViewModel(persistence)
+
+        restorer.restoreInto(viewModel, listOf("/a.json"))
+
+        assertEquals(150, viewModel.tabs.first().gridZoomSelection.let {
+            (it as com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection.FixedZoom).percent
+        })
     }
 
     @Test
     fun missingEntryIsSkippedAndErrorReported() = runTest {
         val persistence = PersistenceServiceInMemoryFake()
-        persistence.persistTabs(
-            TabsDto(
-                tabs = listOf(
-                    TabDto(tabId = "p-1", source = "/a.json"),
-                    TabDto(tabId = "p-2", source = "/missing.json"),
-                    TabDto(tabId = "p-3", source = "/c.json"),
-                ),
-                activeTabId = "p-3",
-            )
-        )
         val loader = RecordingLoader(
             mapOf("/a.json" to jsonWithName("A"), "/c.json" to jsonWithName("C"))
         )
@@ -89,7 +100,7 @@ class TabRestorerTest {
         val restorer = TabRestorer(persistence, loader) { errors += it }
         val viewModel = createViewModel(persistence)
 
-        restorer.restoreInto(viewModel)
+        restorer.restoreInto(viewModel, listOf("/a.json", "/missing.json", "/c.json"))
 
         assertEquals(listOf("A", "C"), viewModel.tabs.map { it.springboard?.name })
         assertEquals(1, errors.size)
@@ -97,34 +108,18 @@ class TabRestorerTest {
     }
 
     @Test
-    fun noPersistedDtoLeavesInitialEmptyTab() = runTest {
+    fun emptyTabSourcesLeavesInitialEmptyTab() = runTest {
         val persistence = PersistenceServiceInMemoryFake()
         val loader = RecordingLoader(emptyMap())
         val errors = mutableListOf<String>()
         val restorer = TabRestorer(persistence, loader) { errors += it }
         val viewModel = createViewModel(persistence)
 
-        restorer.restoreInto(viewModel)
+        restorer.restoreInto(viewModel, emptyList())
 
         assertEquals(1, viewModel.tabs.size)
         assertTrue(viewModel.tabs.first().isEmpty)
         assertTrue(errors.isEmpty())
         assertTrue(loader.calls.isEmpty())
-    }
-
-    @Test
-    fun dtoWithEmptyListLeavesInitialEmptyTab() = runTest {
-        val persistence = PersistenceServiceInMemoryFake()
-        persistence.persistTabs(TabsDto(tabs = emptyList(), activeTabId = null))
-        val loader = RecordingLoader(emptyMap())
-        val errors = mutableListOf<String>()
-        val restorer = TabRestorer(persistence, loader) { errors += it }
-        val viewModel = createViewModel(persistence)
-
-        restorer.restoreInto(viewModel)
-
-        assertEquals(1, viewModel.tabs.size)
-        assertTrue(viewModel.tabs.first().isEmpty)
-        assertTrue(errors.isEmpty())
     }
 }

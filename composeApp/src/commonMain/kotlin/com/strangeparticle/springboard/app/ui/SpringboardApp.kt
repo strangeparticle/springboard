@@ -57,6 +57,12 @@ fun SpringboardApp(
                             }
                         }
                         true
+                    } else if (event.type == KeyEventType.KeyDown && event.isCtrlPressed && event.isShiftPressed) {
+                        when (event.key) {
+                            Key.LeftBracket -> { viewModel.selectPreviousTab(); true }
+                            Key.RightBracket -> { viewModel.selectNextTab(); true }
+                            else -> false
+                        }
                     } else false
                 }
         ) {
@@ -71,6 +77,7 @@ fun SpringboardApp(
                         viewModel = settingsViewModel,
                         onBack = { showSettings.value = false },
                         onShowActiveSettings = onOpenActiveSettingsFromSettings,
+                        currentTabSources = viewModel.currentTabSources,
                     )
                 }
             } else {

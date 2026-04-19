@@ -9,12 +9,13 @@ import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.gridnav.ActivatorPreviewHeightDp
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
+import com.strangeparticle.springboard.app.ui.gridnav.percent
 import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentWidthDp
 import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentHeightDp
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import java.awt.Toolkit
 
-private const val WindowVerticalBufferDp = 30
+private const val WindowVerticalBufferDp = 16
 
 // Navbar minimum width estimation
 private const val NavbarDropdownCount = 3
@@ -25,8 +26,8 @@ private const val NavbarSafetyMarginFactor = 1.1
 
 private const val ScreenUsableMarginFactor = 0.9
 
-fun calculateWindowWidth(springboard: Springboard): Int {
-    val gridWidth = estimateGridContentWidthDp(springboard)
+fun calculateWindowWidth(springboard: Springboard, zoomPercent: Int = 100): Int {
+    val gridWidth = estimateGridContentWidthDp(springboard) * zoomPercent / 100
     val navbarMinWidth = (
         (NavbarDropdownCount * NavbarDropdownWidthDp +
         (NavbarDropdownCount - 1) * NavbarDropdownGapDp +
@@ -35,11 +36,11 @@ fun calculateWindowWidth(springboard: Springboard): Int {
     return maxOf(gridWidth, navbarMinWidth)
 }
 
-fun calculateWindowHeight(springboard: Springboard): Int {
+fun calculateWindowHeight(springboard: Springboard, zoomPercent: Int = 100): Int {
     val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
     val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
     val tabBarHeightDp = 32
-    val gridContentHeight = estimateGridContentHeightDp(springboard)
+    val gridContentHeight = estimateGridContentHeightDp(springboard) * zoomPercent / 100
 
     return navbarHeightDp +
         gridContentHeight +
@@ -78,8 +79,8 @@ fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: W
 }
 
 fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: WindowState) {
-    val allSpringboards = viewModel.tabs.mapNotNull { it.springboard }
-    if (allSpringboards.isEmpty()) return
+    val tabsWithContent = viewModel.tabs.filter { it.springboard != null }
+    if (tabsWithContent.isEmpty()) return
 
     val screenSize = Toolkit.getDefaultToolkit().screenSize
     val maxScreenWidth = (screenSize.width * ScreenUsableMarginFactor).toInt()
@@ -88,7 +89,9 @@ fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: Wind
     var neededWidth = windowState.size.width.value.toInt()
     var neededHeight = windowState.size.height.value.toInt()
 
-    for (springboard in allSpringboards) {
+    for (tab in tabsWithContent) {
+        val springboard = tab.springboard!!
+        val zoomPercent = tab.gridZoomSelection.percent
         if (springboard.displayHints != null) {
             val hintWidth = springboard.displayHints.width
             val hintHeight = springboard.displayHints.height
@@ -98,8 +101,8 @@ fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: Wind
                 continue
             }
         }
-        neededWidth = maxOf(neededWidth, calculateWindowWidth(springboard))
-        neededHeight = maxOf(neededHeight, calculateWindowHeight(springboard))
+        neededWidth = maxOf(neededWidth, calculateWindowWidth(springboard, zoomPercent))
+        neededHeight = maxOf(neededHeight, calculateWindowHeight(springboard, zoomPercent))
     }
 
     val finalWidth = minOf(neededWidth, maxScreenWidth)

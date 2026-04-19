@@ -36,18 +36,20 @@ class SettingsManager(
      * Populates all settings layers at startup.
      *
      * 1. Init defaults from the registry's hardcoded values.
-     * 2. Load persisted settings.
+     * 2. Load persisted user settings.
      * 3. Load environment variables.
-     * 4. Load command-line parameters.
+     * 4. Load CLI flags (desktop) or URL params (WASM).
      */
     fun loadSettingsAtStartup(
         environmentVariables: Map<String, String> = emptyMap(),
         commandLineArgs: List<String> = emptyList(),
+        urlParams: Map<String, String> = emptyMap(),
     ) {
         initDefaultSettings()
         loadPersistedSettings()
         loadEnvironmentVariables(environmentVariables)
         loadCommandLineArgs(commandLineArgs)
+        loadUrlParams(urlParams)
     }
 
     // -- Typed Getters --
@@ -116,10 +118,12 @@ class SettingsManager(
     }
 
     /**
-     * Returns true if the user has explicitly set this setting (effective source is USER_SETTINGS).
+     * Returns true if the user has explicitly set this setting
+     * (effective source is either session or persisted user settings).
      */
     fun isOverridden(key: SettingsKey): Boolean {
-        return getEffectiveSource(key) == SettingsSource.USER_SETTINGS
+        val source = getEffectiveSource(key)
+        return source == SettingsSource.USER_SETTINGS_FROM_SESSION || source == SettingsSource.USER_SETTINGS_FROM_PERSISTENCE
     }
 
     /**
@@ -145,7 +149,8 @@ class SettingsManager(
     // -- User Settings Mutation --
 
     /**
-     * Updates a user setting value and persists it immediately.
+     * Updates a user setting value. Writes to both the in-memory session layer
+     * (for immediate effect) and the persistence layer (for next launch).
      */
     fun setUserSetting(key: SettingsKey, value: Any?) {
         val entry = SettingsRegistry.require(key)
@@ -155,7 +160,8 @@ class SettingsManager(
                 "'$value' is not an allowed value for $key"
             }
         }
-        layers[SettingsSource.USER_SETTINGS] = layers.getValue(SettingsSource.USER_SETTINGS).withSetting(key, value)
+        layers[SettingsSource.USER_SETTINGS_FROM_SESSION] = layers.getValue(SettingsSource.USER_SETTINGS_FROM_SESSION).withSetting(key, value)
+        layers[SettingsSource.USER_SETTINGS_FROM_PERSISTENCE] = layers.getValue(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE).withSetting(key, value)
         persistSettingsLayer()
     }
 
@@ -177,7 +183,7 @@ class SettingsManager(
     private fun loadPersistedSettings() {
         val dto = persistenceService.loadSettings()
         if (dto != null) {
-            layers[SettingsSource.USER_SETTINGS] = dto.toSettingsValues()
+            layers[SettingsSource.USER_SETTINGS_FROM_PERSISTENCE] = dto.toSettingsValues()
         }
     }
 
@@ -250,11 +256,30 @@ class SettingsManager(
             i++
         }
 
-        layers[SettingsSource.PARAMS] = cliValues
+        layers[SettingsSource.CLI_FLAG] = cliValues
+    }
+
+    private fun loadUrlParams(urlParams: Map<String, String>) {
+        val applicableKeys = SettingsRegistry.settingsForEnvironment(runtimeEnvironment).map { it.key }.toSet()
+        var urlValues = SettingsValues()
+
+        for ((paramName, rawValue) in urlParams) {
+            val entry = SettingsRegistry.findByUrlParamName(paramName)
+            if (entry == null || entry.key !in applicableKeys) continue
+
+            try {
+                val typedValue = coerceStringValue(entry, rawValue)
+                urlValues = urlValues.withSetting(entry.key, typedValue)
+            } catch (e: Exception) {
+                ToastBroadcaster.warning("Invalid URL parameter '$paramName': ${e.message}")
+            }
+        }
+
+        layers[SettingsSource.URL_PARAM] = urlValues
     }
 
     private fun persistSettingsLayer() {
-        val settingsLayer = layers.getValue(SettingsSource.USER_SETTINGS)
+        val settingsLayer = layers.getValue(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE)
         val dto = SettingsDto.fromSettingsValues(settingsLayer)
         persistenceService.persistSettings(dto)
     }

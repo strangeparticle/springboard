@@ -33,6 +33,9 @@ class SpringboardViewModel(
     private val _tabs = mutableStateListOf(TabState.createEmpty(generateTabId()))
     val tabs: List<TabState> get() = _tabs
 
+    val currentTabSources: List<String>
+        get() = _tabs.mapNotNull { it.source }
+
     private val _tabToastStates = mutableMapOf<String, TabToastState>()
 
     fun tabToastState(tabId: String): TabToastState =

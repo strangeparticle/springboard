@@ -49,7 +49,7 @@ fun ToastOverlay(
         }
     }
 
-    val tabToasts = tabToastState?.activeToasts ?: emptyList()
+    val tabToasts = if (isTabVisible) tabToastState?.activeToasts ?: emptyList() else emptyList()
 
     TabToastAutoDismiss(
         tabToastState = tabToastState,

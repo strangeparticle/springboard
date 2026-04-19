@@ -8,7 +8,7 @@ import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImp
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
-import com.strangeparticle.springboard.app.settings.parseUrlParamsAsCommandLineArgs
+import com.strangeparticle.springboard.app.settings.parseUrlParams
 import com.strangeparticle.springboard.app.settings.readJsGlobalsAsEnvironmentVariables
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
@@ -35,10 +35,10 @@ fun main() {
     val persistenceService = PersistenceServiceDefaultImpl()
     val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
     val environmentVariables = readJsGlobalsAsEnvironmentVariables()
-    val urlParamArgs = parseUrlParamsAsCommandLineArgs()
+    val urlParams = parseUrlParams()
     settingsManager.loadSettingsAtStartup(
         environmentVariables = environmentVariables,
-        commandLineArgs = urlParamArgs,
+        urlParams = urlParams,
     )
 
     val networkContentService = NetworkContentServiceWasmImpl()
@@ -82,20 +82,7 @@ fun main() {
         LaunchedEffect(Unit) {
             val contentLoader = SpringboardContentLoaderWasmImpl(networkContentService)
             val tabRestorer = TabRestorer(persistenceService, contentLoader)
-            val hadPersistedTabs = persistenceService.loadTabs() != null
-            if (hadPersistedTabs) {
-                tabRestorer.restoreInto(viewModel)
-            } else if (startupTabs.isNotEmpty()) {
-                for ((index, tabSource) in startupTabs.withIndex()) {
-                    if (index > 0) viewModel.createTab()
-                    try {
-                        val jsonText = networkContentService.fetchText(tabSource)
-                        viewModel.loadConfig(jsonText, tabSource)
-                    } catch (e: Throwable) {
-                        viewModel.activeTabToast.error("Failed to fetch config: ${e.message}")
-                    }
-                }
-            }
+            tabRestorer.restoreInto(viewModel, startupTabs)
         }
     }
 }

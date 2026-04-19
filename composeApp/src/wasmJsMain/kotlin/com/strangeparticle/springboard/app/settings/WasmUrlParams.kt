@@ -4,7 +4,7 @@ package com.strangeparticle.springboard.app.settings
 private external fun getLocationSearch(): JsString
 
 /**
- * Parses URL query parameters and maps them to settings values for the PARAMS source tier.
+ * Parses URL query parameters into a map for the URL_PARAM source tier.
  *
  * URL param names use the param name form derived from [SettingsKeyNaming.urlParamName].
  * URL values that are themselves URLs must be percent-encoded by the embedding page.
@@ -12,12 +12,12 @@ private external fun getLocationSearch(): JsString
  * See `springboard_resources/settings-system.md` for the full name derivation
  * rules and a table of current settings with their external names.
  */
-fun parseUrlParamsAsCommandLineArgs(): List<String> {
+fun parseUrlParams(): Map<String, String> {
     val search = getLocationSearch().toString()
-    if (search.isBlank() || search == "?") return emptyList()
+    if (search.isBlank() || search == "?") return emptyMap()
 
     val queryString = search.removePrefix("?")
-    val args = mutableListOf<String>()
+    val params = mutableMapOf<String, String>()
 
     for (pair in queryString.split("&")) {
         val equalsIndex = pair.indexOf('=')
@@ -27,21 +27,12 @@ fun parseUrlParamsAsCommandLineArgs(): List<String> {
         val paramValue = decodeUriComponent(pair.substring(equalsIndex + 1))
 
         if (paramName.isBlank() || paramValue.isBlank()) continue
+        if (SettingsRegistry.findByUrlParamName(paramName) == null) continue
 
-        val entry = SettingsRegistry.findByUrlParamName(paramName) ?: continue
-        val cliFlag = "--$paramName"
-
-        if (entry.type == Boolean::class) {
-            if (paramValue.equals("true", ignoreCase = true)) {
-                args.add(cliFlag)
-            }
-        } else {
-            args.add(cliFlag)
-            args.add(paramValue)
-        }
+        params[paramName] = paramValue
     }
 
-    return args
+    return params
 }
 
 @JsFun("(s) => decodeURIComponent(s)")

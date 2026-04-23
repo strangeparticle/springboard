@@ -7,19 +7,19 @@ import kotlin.test.assertEquals
 
 class SpringboardSourceTest {
 
-    @Test fun `https URL returns NetworkSource`() {
+    @Test fun `https URL returns HttpSource`() {
         val result = parseSpringboardSource("https://example.com/board.json")
-        assertEquals(SpringboardSource.NetworkSource("https://example.com/board.json"), result)
+        assertEquals(SpringboardSource.HttpSource("https://example.com/board.json"), result)
     }
 
-    @Test fun `http URL returns NetworkSource`() {
+    @Test fun `http URL returns HttpSource`() {
         val result = parseSpringboardSource("http://example.com/board.json")
-        assertEquals(SpringboardSource.NetworkSource("http://example.com/board.json"), result)
+        assertEquals(SpringboardSource.HttpSource("http://example.com/board.json"), result)
     }
 
-    @Test fun `HTTPS uppercase returns NetworkSource`() {
+    @Test fun `HTTPS uppercase returns HttpSource`() {
         val result = parseSpringboardSource("HTTPS://example.com/board.json")
-        assertEquals(SpringboardSource.NetworkSource("HTTPS://example.com/board.json"), result)
+        assertEquals(SpringboardSource.HttpSource("HTTPS://example.com/board.json"), result)
     }
 
     @Test fun `file triple-slash URL returns FileSource with path`() {

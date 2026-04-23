@@ -1,5 +1,7 @@
 package com.strangeparticle.springboard.app.viewmodel
 
+import com.strangeparticle.springboard.app.domain.SpringboardSource
+import com.strangeparticle.springboard.app.domain.parseSpringboardSource
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import java.io.File
 
@@ -8,14 +10,21 @@ class SpringboardContentLoaderDesktopImpl(
 ) : SpringboardContentLoader {
 
     override suspend fun loadContent(source: String): String {
-        if (source.startsWith("http://") || source.startsWith("https://")) {
-            return networkContentService.fetchText(source)
+        return when (val parsed = parseSpringboardSource(source)) {
+            is SpringboardSource.HttpSource -> networkContentService.fetchText(parsed.url)
+            is SpringboardSource.FileSource -> readLocalFile(parsed.path)
         }
-        val raw = if (source.startsWith("file://")) source.removePrefix("file://") else source
-        val path = if (raw.startsWith("~/")) System.getProperty("user.home") + raw.removePrefix("~") else raw
-        val file = File(path)
+    }
+
+    private fun readLocalFile(path: String): String {
+        val expanded = if (path.startsWith("~/")) {
+            System.getProperty("user.home") + path.removePrefix("~")
+        } else {
+            path
+        }
+        val file = File(expanded)
         if (!file.exists()) {
-            throw IllegalStateException("File not found: $path")
+            throw IllegalStateException("File not found: $expanded")
         }
         return file.readText()
     }

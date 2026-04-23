@@ -123,7 +123,7 @@ fun MainScreen(
                         val startTime = currentTimeMillis()
                         try {
                             when (val parsed = parseSpringboardSource(source)) {
-                                is SpringboardSource.NetworkSource -> {
+                                is SpringboardSource.HttpSource -> {
                                     if (networkContentService != null) {
                                         val contents = networkContentService.fetchText(parsed.url)
                                         viewModel.loadConfig(contents, source)

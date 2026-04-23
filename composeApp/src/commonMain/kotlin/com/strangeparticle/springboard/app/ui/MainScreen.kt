@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.parseSpringboardSource
+import com.strangeparticle.springboard.app.domain.toHttpsUrl
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
@@ -126,6 +127,14 @@ fun MainScreen(
                                 is SpringboardSource.HttpSource -> {
                                     if (networkContentService != null) {
                                         val contents = networkContentService.fetchText(parsed.url)
+                                        viewModel.loadConfig(contents, source)
+                                    } else {
+                                        viewModel.activeTabToast.error("Network reload not available")
+                                    }
+                                }
+                                is SpringboardSource.S3Source -> {
+                                    if (networkContentService != null) {
+                                        val contents = networkContentService.fetchText(parsed.toHttpsUrl())
                                         viewModel.loadConfig(contents, source)
                                     } else {
                                         viewModel.activeTabToast.error("Network reload not available")

@@ -9,9 +9,16 @@ class PlatformAppleScriptRunnerServiceInMemoryFake(
 ) : PlatformAppleScriptRunnerService {
 
     val scriptsRun: MutableList<String> = mutableListOf()
+    val scriptInvocations: MutableList<ScriptInvocation> = mutableListOf()
 
-    override fun runAppleScriptFile(resourcePath: String): ScriptRunResult {
+    data class ScriptInvocation(val resourcePath: String, val args: List<String>)
+
+    override fun runAppleScriptFile(resourcePath: String): ScriptRunResult =
+        runAppleScriptFile(resourcePath, emptyList())
+
+    override fun runAppleScriptFile(resourcePath: String, args: List<String>): ScriptRunResult {
         scriptsRun.add(resourcePath)
+        scriptInvocations.add(ScriptInvocation(resourcePath, args))
         exception?.let { throw it }
         return result
     }

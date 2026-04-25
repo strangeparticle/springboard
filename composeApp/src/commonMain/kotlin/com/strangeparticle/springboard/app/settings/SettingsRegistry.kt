@@ -91,6 +91,16 @@ object SettingsRegistry {
                 runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
             )
         )
+        register(
+            SettingItem.Desktop(
+                key = SettingsKey.HIDE_APP_AFTER_ACTIVATION,
+                type = Boolean::class,
+                defaultValue = true,
+                displayName = "Hide Springboard app after activation",
+                description = "When enabled, the app hides itself after activating a cell, column, or row.",
+                runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
+            )
+        )
     }
 
     private fun MutableMap<SettingsKey, SettingItem>.register(item: SettingItem) {

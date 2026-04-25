@@ -21,6 +21,7 @@ data class SettingsValues(
     val resetKeyNavAfterKeyNavActivation: Boolean? = null,
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
     val activeBrand: String? = null,
+    val hideAppAfterActivation: Boolean? = null,
 ) {
     fun isSet(key: SettingsKey): Boolean = get(key) != null
 
@@ -32,6 +33,7 @@ data class SettingsValues(
         SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> resetKeyNavAfterKeyNavActivation
         SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> resetKeyNavAfterGridNavActivation
         SettingsKey.ACTIVE_BRAND -> activeBrand
+        SettingsKey.HIDE_APP_AFTER_ACTIVATION -> hideAppAfterActivation
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -44,6 +46,7 @@ data class SettingsValues(
             SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> copy(resetKeyNavAfterKeyNavActivation = value as Boolean?)
             SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> copy(resetKeyNavAfterGridNavActivation = value as Boolean?)
             SettingsKey.ACTIVE_BRAND -> copy(activeBrand = value as String?)
+            SettingsKey.HIDE_APP_AFTER_ACTIVATION -> copy(hideAppAfterActivation = value as Boolean?)
         }
     }
 
@@ -56,6 +59,7 @@ data class SettingsValues(
             "resetKeyNavAfterKeyNavActivation",
             "resetKeyNavAfterGridNavActivation",
             "activeBrand",
+            "hideAppAfterActivation",
         )
     }
 }

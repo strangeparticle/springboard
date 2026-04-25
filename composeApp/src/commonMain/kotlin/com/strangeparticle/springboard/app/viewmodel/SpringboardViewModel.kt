@@ -464,6 +464,10 @@ class SpringboardViewModel(
                 executeActivator(activator)
             }
         }
+
+        if (settingsManager.getBoolean(SettingsKey.HIDE_APP_AFTER_ACTIVATION)) {
+            platformActivationService.hideApplicationViaPid()
+        }
     }
 
     fun resetKeyNavSelections() {

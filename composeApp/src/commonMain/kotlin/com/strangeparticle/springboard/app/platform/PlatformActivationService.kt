@@ -5,4 +5,5 @@ interface PlatformActivationService {
     fun openUrls(urls: List<String>) { urls.forEach { openUrl(it) } }
     fun executeCommand(command: String, onError: (String) -> Unit)
     fun openNewBrowserWindowIfAppropriate()
+    fun hideApplicationViaPid() {}
 }

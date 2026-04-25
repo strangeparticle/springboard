@@ -17,4 +17,16 @@ class PlatformActivationServiceDesktopImpl(
     override fun openNewBrowserWindowIfAppropriate() {
         openNewBrowserWindow(browserDetectionService, appleScriptRunnerService, surfaceAppleScriptErrors)
     }
+
+    override fun hideApplicationViaPid() {
+        val pid = ProcessHandle.current().pid().toString()
+        try {
+            appleScriptRunnerService.runAppleScriptFile(
+                "applescript/hide_application_via_pid.applescript",
+                listOf(pid),
+            )
+        } catch (e: Exception) {
+            println("[Springboard] hideApplicationViaPid failed: ${e.message}")
+        }
+    }
 }

@@ -6,7 +6,7 @@ sealed class SpringboardSource {
     data class FileSource(val path: String) : SpringboardSource()
 }
 
-fun parseSpringboardSource(rawSource: String): SpringboardSource {
+fun determineSpringboardSource(rawSource: String): SpringboardSource {
     val lowercase = rawSource.lowercase()
     return when {
         lowercase.startsWith("https://") || lowercase.startsWith("http://") ->

@@ -5,7 +5,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
-import com.strangeparticle.springboard.app.domain.parseSpringboardSource
+import com.strangeparticle.springboard.app.domain.determineSpringboardSource
 import com.strangeparticle.springboard.app.domain.toHttpsUrl
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
@@ -123,10 +123,10 @@ fun MainScreen(
                         isReloading = true
                         val startTime = currentTimeMillis()
                         try {
-                            when (val parsed = parseSpringboardSource(source)) {
+                            when (val springboardSource = determineSpringboardSource(source)) {
                                 is SpringboardSource.HttpSource -> {
                                     if (networkContentService != null) {
-                                        val contents = networkContentService.fetchText(parsed.url)
+                                        val contents = networkContentService.fetchText(springboardSource.url)
                                         viewModel.loadConfig(contents, source)
                                     } else {
                                         viewModel.activeTabToast.error("Network reload not available")
@@ -134,14 +134,14 @@ fun MainScreen(
                                 }
                                 is SpringboardSource.S3Source -> {
                                     if (networkContentService != null) {
-                                        val contents = networkContentService.fetchText(parsed.toHttpsUrl())
+                                        val contents = networkContentService.fetchText(springboardSource.toHttpsUrl())
                                         viewModel.loadConfig(contents, source)
                                     } else {
                                         viewModel.activeTabToast.error("Network reload not available")
                                     }
                                 }
                                 is SpringboardSource.FileSource -> {
-                                    val contents = fileContentService.readFileContents(parsed.path)
+                                    val contents = fileContentService.readFileContents(springboardSource.path)
                                     if (contents != null) {
                                         viewModel.loadConfig(contents, source)
                                     } else {

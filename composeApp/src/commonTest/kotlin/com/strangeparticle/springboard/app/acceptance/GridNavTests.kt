@@ -58,9 +58,15 @@ class GridNavTests {
     @Test fun `keynav dropdowns reset to defaults after grid activation`() =
         GridNavTestScenarios.keyNavDropdownsResetToDefaultsAfterGridActivation()
 
-    @Test fun `wildcard cells show in all environments`() =
-        GridNavTestScenarios.wildcardCellsShowInAllEnvironments()
+    @Test fun `all-envs section heading appears above all-envs resources`() =
+        GridNavTestScenarios.allEnvsSectionHeadingAppearsAboveAllEnvsResources()
 
-    @Test fun `wildcard cell activation works across environments`() =
-        GridNavTestScenarios.wildcardCellActivationWorksAcrossEnvironments()
+    @Test fun `all-envs section is absent when springboard has no all-envs activators`() =
+        GridNavTestScenarios.allEnvsSectionIsAbsentWhenSpringboardHasNoAllEnvsActivators()
+
+    @Test fun `all-envs cell activates all-envs activator regardless of selected environment`() =
+        GridNavTestScenarios.allEnvsCellActivatesAllEnvsActivatorRegardlessOfSelectedEnvironment()
+
+    @Test fun `all-envs section renders when no environment is selected`() =
+        GridNavTestScenarios.allEnvsSectionRendersWhenNoEnvironmentSelected()
 }

@@ -1,6 +1,9 @@
 package com.strangeparticle.springboard.app.ui.gridnav
 
 import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.domain.model.allEnvsResources
+import com.strangeparticle.springboard.app.domain.model.envSpecificResources
+import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import kotlin.math.min
 
@@ -47,16 +50,30 @@ fun estimateGridContentWidthDp(springboard: Springboard): Int {
 }
 
 /**
- * Estimates the natural grid content height in dp: header + data rows + dividers +
+ * Estimates the natural grid content height in dp: rotated-header slot + data rows
+ * across all rendered sections + per-section heading and spacer rows + dividers +
  * content padding.
+ *
+ * When both the all-envs and env-specific sections render, the env section
+ * contributes two extra GridRowHeight rows (one inter-section spacer + one heading
+ * row) that the rotated header slot does not absorb.
  */
 fun estimateGridContentHeightDp(springboard: Springboard): Int {
     val headerHeightDp = estimateHeaderHeightDp(springboard)
     val gridRowHeightDp = CommonUiConstants.GridRowHeight.value
-    val dividersTotalDp = springboard.resources.size * 0.5f
+
+    val hasAllEnvsSection = springboard.hasAnyAllEnvsActivators()
+    val allEnvsRowCount = if (hasAllEnvsSection) springboard.allEnvsResources().size else 0
+    val envRowCount = springboard.envSpecificResources().size
+    val totalRowCount = allEnvsRowCount + envRowCount
+
+    val sectionCount = (if (hasAllEnvsSection) 1 else 0) + 1
+    val interSectionRowCount = (sectionCount - 1) * 2  // spacer + heading per extra section
+
+    val dividersTotalDp = totalRowCount * 0.5f
 
     val gridContentHeight = headerHeightDp +
-        (springboard.resources.size * gridRowHeightDp) +
+        ((totalRowCount + interSectionRowCount) * gridRowHeightDp) +
         dividersTotalDp +
         GridContentPaddingDp
 

@@ -41,11 +41,11 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
-    val MULTI_ENV_WITH_ALL = """
+    val MULTI_ENV_WITH_COMMON = """
     {
-      "name": "Multi-Env With All",
+      "name": "Multi-Env With Common",
       "environments": [
-        { "id": "all", "name": "All" },
+        { "id": "common", "name": "Common" },
         { "id": "preprod", "name": "Preprod" },
         { "id": "prod", "name": "Production" }
       ],
@@ -58,9 +58,9 @@ object TestFixtureJson {
         { "id": "res2", "name": "Logs" }
       ],
       "activators": [
-        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app1/dash" },
-        { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "all", "url": "https://example.com/all/app1/logs" },
-        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app2/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "common", "url": "https://example.com/common/app1/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "common", "url": "https://example.com/common/app1/logs" },
+        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "common", "url": "https://example.com/common/app2/dash" },
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "preprod", "url": "https://example.com/preprod/app1/dash" },
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://example.com/prod/app1/dash" }
       ]
@@ -71,7 +71,7 @@ object TestFixtureJson {
     {
       "name": "Multi-Env With Guidance",
       "environments": [
-        { "id": "all", "name": "All" },
+        { "id": "common", "name": "Common" },
         { "id": "preprod", "name": "Preprod" },
         { "id": "prod", "name": "Production" }
       ],
@@ -84,15 +84,15 @@ object TestFixtureJson {
         { "id": "res2", "name": "Logs" }
       ],
       "activators": [
-        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app1/dash" },
-        { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "all", "url": "https://example.com/all/app1/logs" },
-        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all/app2/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "common", "url": "https://example.com/common/app1/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "common", "url": "https://example.com/common/app1/logs" },
+        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "common", "url": "https://example.com/common/app2/dash" },
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "preprod", "url": "https://example.com/preprod/app1/dash" },
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://example.com/prod/app1/dash" }
       ],
       "guidanceData": [
         {
-          "environmentId": "all",
+          "environmentId": "common",
           "appId": "app1",
           "resourceId": "res1",
           "guidanceLines": ["Open the dashboard for this environment."]
@@ -101,9 +101,9 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
-    val MULTI_ENV_WITHOUT_ALL = """
+    val MULTI_ENV_WITHOUT_COMMON = """
     {
-      "name": "Multi-Env Without All",
+      "name": "Multi-Env Without Common",
       "environments": [
         { "id": "preprod", "name": "Preprod" },
         { "id": "prod", "name": "Production" }
@@ -121,9 +121,9 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
-    val WILDCARD_ACTIVATORS = """
+    val ALL_ENVS_ACTIVATORS = """
     {
-      "name": "Wildcard Springboard",
+      "name": "All-envs Springboard",
       "environments": [
         { "id": "dev", "name": "Dev" },
         { "id": "prod", "name": "Production" }
@@ -137,15 +137,15 @@ object TestFixtureJson {
         { "id": "res2", "name": "Logs" }
       ],
       "activators": [
-        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/app1/dash" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/app1/dash" },
         { "type": "url", "appId": "app2", "resourceId": "res2", "environmentId": "prod", "url": "https://example.com/prod/app2/logs" }
       ]
     }
     """.trimIndent()
 
-    val WILDCARD_GUIDANCE = """
+    val ALL_ENVS_GUIDANCE = """
     {
-      "name": "Wildcard Guidance Springboard",
+      "name": "All-envs Guidance Springboard",
       "environments": [
         { "id": "dev", "name": "Dev" },
         { "id": "prod", "name": "Production" }
@@ -157,17 +157,17 @@ object TestFixtureJson {
         { "id": "res1", "name": "Dashboard" }
       ],
       "activators": [
-        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/app1/dash" }
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/app1/dash" }
       ],
       "guidanceData": [
-        { "environmentId": "*", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Step one.", "Step two."] }
+        { "environmentId": "ALL", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Step one.", "Step two."] }
       ]
     }
     """.trimIndent()
 
-    val WILDCARD_CONFLICT = """
+    val ALL_ENVS_AND_ENV_SPECIFIC_FOR_SAME_APP_RESOURCE = """
     {
-      "name": "Wildcard Conflict",
+      "name": "All-envs And Env Specific Coexistence",
       "environments": [
         { "id": "dev", "name": "Dev" },
         { "id": "prod", "name": "Production" }
@@ -175,27 +175,37 @@ object TestFixtureJson {
       "apps": [{ "id": "app1", "name": "App" }],
       "resources": [{ "id": "res1", "name": "Resource" }],
       "activators": [
-        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/star" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/all" },
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/dev" }
       ]
     }
     """.trimIndent()
 
-    val WILDCARD_GUIDANCE_CONFLICT = """
+    val STAR_ENVIRONMENT_REJECTED = """
     {
-      "name": "Wildcard Guidance Conflict",
+      "name": "Star Rejected",
       "environments": [
-        { "id": "dev", "name": "Dev" },
-        { "id": "prod", "name": "Production" }
+        { "id": "dev", "name": "Dev" }
       ],
       "apps": [{ "id": "app1", "name": "App" }],
       "resources": [{ "id": "res1", "name": "Resource" }],
       "activators": [
         { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "*", "url": "https://example.com/star" }
+      ]
+    }
+    """.trimIndent()
+
+    val ALL_ENVS_RESERVED_AS_CONFIGURED_ENVIRONMENT = """
+    {
+      "name": "All-envs Reserved",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "ALL", "name": "Should Be Rejected" }
       ],
-      "guidanceData": [
-        { "environmentId": "*", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Wildcard guidance."] },
-        { "environmentId": "dev", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Dev guidance."] }
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/dev" }
       ]
     }
     """.trimIndent()

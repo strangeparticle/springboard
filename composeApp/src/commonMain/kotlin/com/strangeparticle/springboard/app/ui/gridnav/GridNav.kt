@@ -13,6 +13,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
@@ -21,13 +22,13 @@ import kotlin.math.roundToInt
 @Composable
 fun GridNav(
     springboard: Springboard,
-    selectedEnvironmentId: String,
+    selectedEnvironmentId: String?,
     multiSelectSet: Set<Coordinate>,
     keyNavCoordinate: Coordinate?,
     isShiftHeld: Boolean,
     onCellActivate: (Coordinate) -> Unit,
-    onColumnActivate: (String) -> Unit,
-    onRowActivate: (String) -> Unit,
+    onColumnActivate: (environmentId: String, appId: String) -> Unit,
+    onRowActivate: (environmentId: String, resourceId: String) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
     zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
@@ -66,7 +67,9 @@ fun GridNav(
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
 
-    val environmentName = springboard.environments.find { it.id == selectedEnvironmentId }?.name ?: selectedEnvironmentId
+    val sections = remember(springboard, selectedEnvironmentId) {
+        buildGridNavSections(springboard, selectedEnvironmentId)
+    }
 
     // Header sizing is derived from font metrics and the longest app name. The
     // initial height is clamped to min/max bounds. gridHeaderHeight is mutable
@@ -166,8 +169,7 @@ fun GridNav(
                     }
                 ) {
                     GridNavRowHeaderColumn(
-                        environmentName = environmentName,
-                        resources = springboard.resources,
+                        sections = sections,
                         gridHeaderHeight = gridHeaderHeight,
                         hoveredHeaderResourceId = hoveredHeaderResourceId,
                         hoveredResourceId = hoveredResourceId,
@@ -196,8 +198,7 @@ fun GridNav(
 
                             GridNavColumnCells(
                                 appId = app.id,
-                                environmentId = selectedEnvironmentId,
-                                resources = springboard.resources,
+                                sections = sections,
                                 activatorByCoordinate = springboard.indexes.activatorByCoordinate,
                                 guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
                                 multiSelectSet = multiSelectSet,
@@ -248,7 +249,7 @@ fun GridNav(
                 gridHeaderHeight = gridHeaderHeight,
                 horizontalOffset = CommonUiConstants.ResourceLabelWidth,
                 onHoveredAppChange = { hoveredHeaderAppId = it },
-                onColumnClick = onColumnActivate,
+                onColumnClick = { appId -> onColumnActivate(selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID, appId) },
             )
         }
     }

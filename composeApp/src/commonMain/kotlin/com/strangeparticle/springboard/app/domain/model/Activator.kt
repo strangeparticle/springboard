@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.domain.model
 
-const val WILDCARD_ENVIRONMENT_ID = "*"
+const val ALL_ENVS_ENVIRONMENT_ID = "ALL"
 
 sealed class Activator {
     abstract val appId: String

@@ -47,7 +47,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
@@ -104,11 +104,11 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Select a full coordinate: all / app1 / res1
-        components.viewModel.selectEnvironment("all")
+        // Select a full coordinate: common / app1 / res1
+        components.viewModel.selectEnvironment("common")
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
         waitForIdle()
@@ -117,8 +117,8 @@ object KeyNavTestScenarios {
         components.viewModel.activateCurrentSelection()
         waitForIdle()
 
-        // After activation, selections should reset: env back to "all", app/resource cleared.
-        assertEquals("all", components.viewModel.selectedEnvironmentId)
+        // After activation, selections should reset: env back to first declared, app/resource cleared.
+        assertEquals("common", components.viewModel.selectedEnvironmentId)
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
         assertTrue(components.activationService.openedUrls.isNotEmpty())
@@ -126,16 +126,16 @@ object KeyNavTestScenarios {
 
     // --- Environment defaults ---
 
-    fun environmentDefaultsToAllWhenPresent() {
+    fun environmentDefaultsToFirstDeclaredEnvironment() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
-        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
 
-        assertEquals("all", viewModel.selectedEnvironmentId)
+        assertEquals("common", viewModel.selectedEnvironmentId)
     }
 
-    fun environmentDefaultsToFirstWhenAllIsNotPresent() {
+    fun environmentDefaultsToFirstDeclaredEnvironmentInTwoEnvFixture() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
-        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_ALL, "/test/springboard.json")
+        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_COMMON, "/test/springboard.json")
 
         val expected = viewModel.springboard?.environments?.firstOrNull()?.id
         assertEquals(expected, viewModel.selectedEnvironmentId)
@@ -148,13 +148,13 @@ object KeyNavTestScenarios {
         setSpringboardApp(components)
         waitForIdle()
 
-        // In MULTI_ENV_WITH_ALL, env "all" + app2 has only res1 (Dashboard), not res2 (Logs)
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        // In MULTI_ENV_WITH_COMMON, env "common" + app2 has only res1 (Dashboard), not res2 (Logs)
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
         components.viewModel.selectApp("app2")
         waitForIdle()
 
-        // app2 in "all" env has activator for res1 (Dashboard) but not res2 (Logs)
+        // app2 in "common" env has activator for res1 (Dashboard) but not res2 (Logs)
         val resourceStates = components.viewModel.resourceEnabledStates
         assertEquals(true, resourceStates["res1"])
         assertEquals(false, resourceStates["res2"])
@@ -164,15 +164,15 @@ object KeyNavTestScenarios {
 
     fun selectedResourceResetsWhenUnavailableAfterAppChange() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
-        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
-        viewModel.selectEnvironment("all")
+        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        viewModel.selectEnvironment("common")
 
-        // Select app1 which has res1 and res2 in "all" env
+        // Select app1 which has res1 and res2 in "common" env
         viewModel.selectApp("app1")
         viewModel.selectResource("res2")
         assertEquals("res2", viewModel.selectedResourceId)
 
-        // Switch to app2 which only has res1 in "all" env. Resource selection is retained;
+        // Switch to app2 which only has res1 in "common" env. Resource selection is retained;
         // the resource dropdown shows res2 as disabled instead of silently clearing it.
         viewModel.selectApp("app2")
         assertEquals("res2", viewModel.selectedResourceId)
@@ -180,14 +180,14 @@ object KeyNavTestScenarios {
 
     fun selectedResourceIsRetainedWhenAvailableAfterAppChange() {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
-        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
 
-        // Select app1 which has res1 in "all" env
+        // Select app1 which has res1 in "common" env
         viewModel.selectApp("app1")
         viewModel.selectResource("res1")
         assertEquals("res1", viewModel.selectedResourceId)
 
-        // Switch to app2 which also has res1 in "all" env — res1 stays selected
+        // Switch to app2 which also has res1 in "common" env — res1 stays selected
         viewModel.selectApp("app2")
         assertEquals("res1", viewModel.selectedResourceId)
     }
@@ -198,7 +198,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectEnvironment("preprod")
@@ -216,7 +216,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectEnvironment("prod")
@@ -230,54 +230,58 @@ object KeyNavTestScenarios {
         assertTrue(components.activationService.openedUrls.contains("https://example.com/prod/app1/dash"))
     }
 
-    // --- Wildcard environment ---
+    // --- All-envs environment ---
 
-    fun wildcardActivatorAppIsEnabledForAllEnvironments() = runComposeUiTest {
+    fun allEnvsActivatorIsActivatableWhenOnlyAppAndResourceSelected() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
         waitForIdle()
 
-        // In dev env, app1 should be enabled (wildcard activator)
-        components.viewModel.selectEnvironment("dev")
+        // Clear the auto-selected environment so only app + resource are set.
+        components.viewModel.selectEnvironment(null)
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
         waitForIdle()
-        assertEquals(true, components.viewModel.appEnabledStates["app1"])
 
-        // In prod env, app1 should still be enabled (wildcard activator)
-        components.viewModel.selectEnvironment("prod")
+        assertEquals(true, components.viewModel.isActivateEnabled)
+
+        components.viewModel.activateCurrentSelection()
         waitForIdle()
-        assertEquals(true, components.viewModel.appEnabledStates["app1"])
+
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/app1/dash"))
     }
 
-    fun wildcardActivatorResourceIsEnabledAfterSelectingApp() = runComposeUiTest {
+    fun allEnvsActivatorIsNotConfusedWithEnvSpecificActivatorInDropdownStates() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
         waitForIdle()
 
-        // Select dev env and app1 — res1 should be enabled (wildcard activator)
+        // Selecting a specific env should not surface all-envs activators in env-specific dropdown states.
         components.viewModel.selectEnvironment("dev")
         components.viewModel.selectApp("app1")
         waitForIdle()
-        assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
+        // app1's only activator under dev is the all-envs one, which is not env-specific.
+        assertEquals(false, components.viewModel.resourceEnabledStates["res1"])
 
-        // Switch to prod — res1 should still be enabled
+        // app2 has a prod-specific activator — should be enabled in prod, not in dev.
+        components.viewModel.selectApp("app2")
         components.viewModel.selectEnvironment("prod")
-        components.viewModel.selectApp("app1")
         waitForIdle()
-        assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
+        assertEquals(true, components.viewModel.resourceEnabledStates["res2"])
     }
 
     fun changingEnvironmentKeepsAppAndResourceWhenStillValid() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Select a full coordinate in "all", then switch environment to one that still
+        // Select a full coordinate in "common", then switch environment to one that still
         // supports the same coordinate.
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
@@ -293,15 +297,15 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // app2 + res1 exists only in "all" for this fixture.
+        // app2 + res1 exists only in "common" for this fixture.
         components.viewModel.selectApp("app2")
         components.viewModel.selectResource("res1")
         waitForIdle()
 
-        assertEquals(true, components.viewModel.environmentEnabledStates["all"])
+        assertEquals(true, components.viewModel.environmentEnabledStates["common"])
         assertEquals(false, components.viewModel.environmentEnabledStates["preprod"])
         assertEquals(false, components.viewModel.environmentEnabledStates["prod"])
     }
@@ -310,7 +314,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectApp("app1")
@@ -329,7 +333,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         mainClock.autoAdvance = false
@@ -347,8 +351,8 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
-        components.viewModel.selectEnvironment("all")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        components.viewModel.selectEnvironment("common")
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
         waitForIdle()
@@ -374,7 +378,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         mainClock.autoAdvance = false
@@ -389,14 +393,14 @@ object KeyNavTestScenarios {
         onAllNodes(hasText("None") and hasClickAction())[0].performClick()
         waitForIdle()
 
-        onNodeWithTag(TestTags.GRID_ENVIRONMENT_TITLE).assertDoesNotExist()
+        onNodeWithTag(TestTags.gridSectionHeading("common")).assertDoesNotExist()
     }
 
     fun typingSelectsEntryWhenDropdownIsOpen() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         components.viewModel.selectApp("app1")
         waitForIdle()
 
@@ -421,7 +425,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         waitForIdle()
@@ -446,7 +450,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents(activationService = activationService)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
         components.viewModel.selectEnvironment("prod")
@@ -478,7 +482,7 @@ object KeyNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         components.viewModel.selectEnvironment("preprod")
         components.viewModel.selectApp("app1")
         components.viewModel.selectResource("res1")
@@ -494,7 +498,7 @@ object KeyNavTestScenarios {
         onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Escape) }
         waitForIdle()
 
-        assertEquals("all", components.viewModel.selectedEnvironmentId)
+        assertEquals("common", components.viewModel.selectedEnvironmentId)
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
         onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()

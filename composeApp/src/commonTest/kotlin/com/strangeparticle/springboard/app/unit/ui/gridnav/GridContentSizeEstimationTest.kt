@@ -1,11 +1,13 @@
 package com.strangeparticle.springboard.app.unit.ui.gridnav
 
 import com.strangeparticle.springboard.app.domain.model.*
+import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.gridnav.ActivatorPreviewHeightDp
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
+import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentHeightDp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -53,6 +55,61 @@ class GridContentSizeEstimationTest {
         val result = computeZoomToFit(1000, 800, springboard)
         assertTrue(result is GridZoomSelection.FixedZoom)
         assertTrue(result.percent >= 100)
+    }
+
+    @Test
+    fun estimateGridContentHeightDp_includesEnvSectionHeadingAndSpacerWhenBothSectionsRender() {
+        val springboardWithBoth = SpringboardFactory.fromJson(
+            """
+            {
+              "name": "Both sections",
+              "environments": [{ "id": "dev", "name": "Dev" }],
+              "apps": [{ "id": "app1", "name": "App" }],
+              "resources": [
+                { "id": "res1", "name": "All-envs only" },
+                { "id": "res2", "name": "Dev only" },
+                { "id": "res3", "name": "Dev only 2" }
+              ],
+              "activators": [
+                { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/1" },
+                { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "dev", "url": "https://example.com/2" },
+                { "type": "url", "appId": "app1", "resourceId": "res3", "environmentId": "dev", "url": "https://example.com/3" }
+              ]
+            }
+            """.trimIndent(),
+            source = "/test",
+        )
+        val springboardWithEnvOnly = SpringboardFactory.fromJson(
+            """
+            {
+              "name": "Env-only",
+              "environments": [{ "id": "dev", "name": "Dev" }],
+              "apps": [{ "id": "app1", "name": "App" }],
+              "resources": [
+                { "id": "res2", "name": "Dev only" },
+                { "id": "res3", "name": "Dev only 2" }
+              ],
+              "activators": [
+                { "type": "url", "appId": "app1", "resourceId": "res2", "environmentId": "dev", "url": "https://example.com/2" },
+                { "type": "url", "appId": "app1", "resourceId": "res3", "environmentId": "dev", "url": "https://example.com/3" }
+              ]
+            }
+            """.trimIndent(),
+            source = "/test",
+        )
+
+        val rowHeight = CommonUiConstants.GridRowHeight.value.toInt()
+        val delta = estimateGridContentHeightDp(springboardWithBoth) -
+            estimateGridContentHeightDp(springboardWithEnvOnly)
+
+        // Adding an all-envs section adds: 1 ALL-envs resource row + 1 inter-section
+        // spacer row + 1 env-section heading row = 3 × GridRowHeight (plus a small
+        // dividers contribution).
+        val expectedMinDelta = 3 * rowHeight
+        assertTrue(
+            delta >= expectedMinDelta,
+            "Expected estimate to grow by at least $expectedMinDelta when adding an all-envs section, but grew by only $delta",
+        )
     }
 
     private fun makeSmallSpringboard(): Springboard = makeSpringboard(

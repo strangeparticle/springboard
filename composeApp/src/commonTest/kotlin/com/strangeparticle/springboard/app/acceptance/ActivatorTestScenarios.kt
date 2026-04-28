@@ -45,7 +45,7 @@ object ActivatorTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         // Click a single cell with a URL activator
@@ -53,7 +53,7 @@ object ActivatorTestScenarios {
         waitForIdle()
 
         assertEquals(1, components.activationService.openedUrls.size)
-        assertEquals("https://example.com/all/app1/dash", components.activationService.openedUrls.first())
+        assertEquals("https://example.com/common/app1/dash", components.activationService.openedUrls.first())
     }
 
     // --- Multiple URL activation ---
@@ -62,15 +62,15 @@ object ActivatorTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Activate an entire column — app1 in "all" env has res1 and res2
-        components.viewModel.activateColumn("app1")
+        // Activate an entire column — app1 in "common" env has res1 and res2
+        components.viewModel.activateColumn("common", "app1")
         waitForIdle()
 
         assertEquals(2, components.activationService.openedUrls.size)
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/dash"))
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/logs"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/logs"))
     }
 }

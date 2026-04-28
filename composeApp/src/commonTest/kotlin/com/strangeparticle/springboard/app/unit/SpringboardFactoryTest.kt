@@ -343,87 +343,139 @@ class SpringboardFactoryTest {
         }
     }
 
-    // --- Wildcard environment tests ---
+    // --- ALL-envs environment tests ---
 
     @Test
-    fun `wildcard activator expands into all environments`() {
-        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+    fun `ALL-envs activator preserved with environmentId ALL`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test")
 
-        // No activator should retain the wildcard environment ID
-        assertTrue(sb.activators.none { it.environmentId == "*" })
+        // 1 ALL-envs + 1 env-specific = 2 total. No expansion happens.
+        assertEquals(2, sb.activators.size)
 
-        // 1 wildcard expanded into 2 envs + 1 env-specific = 3 total
-        assertEquals(3, sb.activators.size)
-
-        // The wildcard (app1, res1) should exist for both dev and prod
-        val app1Res1 = sb.activators.filter { it.appId == "app1" && it.resourceId == "res1" }
-        assertEquals(2, app1Res1.size)
-        assertEquals(setOf("dev", "prod"), app1Res1.map { it.environmentId }.toSet())
+        val allEnvsActivator = sb.activators.single { it.appId == "app1" && it.resourceId == "res1" }
+        assertEquals(ALL_ENVS_ENVIRONMENT_ID, allEnvsActivator.environmentId)
     }
 
     @Test
-    fun `wildcard activator populates indexes for all environments`() {
-        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+    fun `ALL-envs activator indexed under ALL-envs coordinate`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test")
 
-        val devCoord = Coordinate("dev", "app1", "res1")
-        val prodCoord = Coordinate("prod", "app1", "res1")
-        assertNotNull(sb.indexes.activatorByCoordinate[devCoord])
-        assertNotNull(sb.indexes.activatorByCoordinate[prodCoord])
+        val allEnvsCoord = Coordinate(ALL_ENVS_ENVIRONMENT_ID, "app1", "res1")
+        val activator = sb.indexes.activatorByCoordinate[allEnvsCoord]
+        assertNotNull(activator)
+        assertEquals("https://example.com/app1/dash", (activator as UrlActivator).url)
 
-        // Both should have the same URL (expanded from the wildcard)
-        val devActivator = sb.indexes.activatorByCoordinate[devCoord] as UrlActivator
-        val prodActivator = sb.indexes.activatorByCoordinate[prodCoord] as UrlActivator
-        assertEquals("https://example.com/app1/dash", devActivator.url)
-        assertEquals("https://example.com/app1/dash", prodActivator.url)
+        // No env-specific copies were created for the ALL-envs activator.
+        assertNull(sb.indexes.activatorByCoordinate[Coordinate("dev", "app1", "res1")])
+        assertNull(sb.indexes.activatorByCoordinate[Coordinate("prod", "app1", "res1")])
     }
 
     @Test
-    fun `wildcard does not appear in environments list`() {
-        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
-        assertTrue(sb.environments.none { it.id == "*" })
+    fun `ALL does not appear in environments list`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test")
+        assertTrue(sb.environments.none { it.id == ALL_ENVS_ENVIRONMENT_ID })
         assertEquals(2, sb.environments.size)
     }
 
     @Test
-    fun `wildcard activator env-app-resource index`() {
-        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_ACTIVATORS, "/test")
+    fun `ALL-envs activator coexists with env-specific activator for same app and resource`() {
+        val sb = SpringboardFactory.fromJson(
+            TestFixtureJson.ALL_ENVS_AND_ENV_SPECIFIC_FOR_SAME_APP_RESOURCE,
+            "/test",
+        )
 
-        val devApp1 = sb.indexes.activatableResourcesByEnvApp["dev" to "app1"]
-        assertNotNull(devApp1)
-        assertTrue(devApp1.contains("res1"))
-
-        val prodApp1 = sb.indexes.activatableResourcesByEnvApp["prod" to "app1"]
-        assertNotNull(prodApp1)
-        assertTrue(prodApp1.contains("res1"))
+        assertEquals(2, sb.activators.size)
+        val allEnvs = sb.indexes.activatorByCoordinate[Coordinate(ALL_ENVS_ENVIRONMENT_ID, "app1", "res1")] as UrlActivator
+        val devSpecific = sb.indexes.activatorByCoordinate[Coordinate("dev", "app1", "res1")] as UrlActivator
+        assertEquals("https://example.com/all", allEnvs.url)
+        assertEquals("https://example.com/dev", devSpecific.url)
     }
 
     @Test
-    fun `wildcard activator conflict throws`() {
-        assertFailsWith<IllegalArgumentException> {
-            SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_CONFLICT, "/test")
+    fun `ALL-envs guidance preserved under ALL-envs coordinate`() {
+        val sb = SpringboardFactory.fromJson(TestFixtureJson.ALL_ENVS_GUIDANCE, "/test")
+
+        assertEquals(1, sb.guidanceData.size)
+        val allEnvsGuidance = sb.indexes.guidanceByCoordinate[Coordinate(ALL_ENVS_ENVIRONMENT_ID, "app1", "res1")]
+        assertNotNull(allEnvsGuidance)
+        assertEquals(listOf("Step one.", "Step two."), allEnvsGuidance.guidanceLines)
+
+        // No env-specific guidance copies were created.
+        assertNull(sb.indexes.guidanceByCoordinate[Coordinate("dev", "app1", "res1")])
+        assertNull(sb.indexes.guidanceByCoordinate[Coordinate("prod", "app1", "res1")])
+    }
+
+    @Test
+    fun `star environmentId is rejected with helpful message`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(TestFixtureJson.STAR_ENVIRONMENT_REJECTED, "/test")
         }
+        assertTrue(
+            exception.message!!.contains("'ALL'"),
+            "Error should suggest using 'ALL' but was: ${exception.message}",
+        )
     }
 
     @Test
-    fun `wildcard guidance expands into all environments`() {
-        val sb = SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_GUIDANCE, "/test")
-
-        assertTrue(sb.guidanceData.none { it.environmentId == "*" })
-        assertEquals(2, sb.guidanceData.size)
-
-        val devGuidance = sb.indexes.guidanceByCoordinate[Coordinate("dev", "app1", "res1")]
-        val prodGuidance = sb.indexes.guidanceByCoordinate[Coordinate("prod", "app1", "res1")]
-        assertNotNull(devGuidance)
-        assertNotNull(prodGuidance)
-        assertEquals(listOf("Step one.", "Step two."), devGuidance.guidanceLines)
-        assertEquals(listOf("Step one.", "Step two."), prodGuidance.guidanceLines)
-    }
-
-    @Test
-    fun `wildcard guidance conflict throws`() {
-        assertFailsWith<IllegalArgumentException> {
-            SpringboardFactory.fromJson(TestFixtureJson.WILDCARD_GUIDANCE_CONFLICT, "/test")
+    fun `activator with lowercase all environmentId is normalized to canonical ALL`() {
+        val jsonWithLowercaseAll = """
+        {
+          "name": "Lowercase all",
+          "environments": [
+            { "id": "dev", "name": "Dev" },
+            { "id": "prod", "name": "Production" }
+          ],
+          "apps": [{ "id": "app1", "name": "App" }],
+          "resources": [{ "id": "res1", "name": "Resource" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "all", "url": "https://example.com/all" }
+          ]
         }
+        """.trimIndent()
+
+        val sb = SpringboardFactory.fromJson(jsonWithLowercaseAll, "/test")
+
+        val activator = sb.activators.single()
+        assertEquals(ALL_ENVS_ENVIRONMENT_ID, activator.environmentId)
+        assertNotNull(sb.indexes.activatorByCoordinate[Coordinate(ALL_ENVS_ENVIRONMENT_ID, "app1", "res1")])
+    }
+
+    @Test
+    fun `guidance with mixed-case All environmentId is normalized to canonical ALL`() {
+        val jsonWithMixedCaseAll = """
+        {
+          "name": "Mixed-case All",
+          "environments": [
+            { "id": "dev", "name": "Dev" }
+          ],
+          "apps": [{ "id": "app1", "name": "App" }],
+          "resources": [{ "id": "res1", "name": "Resource" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "All", "url": "https://example.com/all" }
+          ],
+          "guidanceData": [
+            { "environmentId": "aLl", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Hi."] }
+          ]
+        }
+        """.trimIndent()
+
+        val sb = SpringboardFactory.fromJson(jsonWithMixedCaseAll, "/test")
+
+        assertEquals(ALL_ENVS_ENVIRONMENT_ID, sb.activators.single().environmentId)
+        val guidance = sb.guidanceData.single()
+        assertEquals(ALL_ENVS_ENVIRONMENT_ID, guidance.environmentId)
+        assertNotNull(sb.indexes.guidanceByCoordinate[Coordinate(ALL_ENVS_ENVIRONMENT_ID, "app1", "res1")])
+    }
+
+    @Test
+    fun `environment configured with id ALL is rejected`() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(TestFixtureJson.ALL_ENVS_RESERVED_AS_CONFIGURED_ENVIRONMENT, "/test")
+        }
+        assertTrue(
+            exception.message!!.contains("reserved"),
+            "Error should mention ALL is reserved but was: ${exception.message}",
+        )
     }
 
     @Test

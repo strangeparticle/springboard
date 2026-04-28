@@ -380,4 +380,99 @@ class SpringboardViewModelTest {
         assertTrue(sb.guidanceData.isEmpty())
         assertTrue(sb.indexes.guidanceByCoordinate.isEmpty())
     }
+
+    private val jsonWithAllEnvsActivator = """
+    {
+      "name": "All-envs Activator",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" },
+        { "id": "app2", "name": "App Two" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" },
+        { "id": "res2", "name": "Logs" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/all" },
+        { "type": "url", "appId": "app2", "resourceId": "res2", "environmentId": "prod", "url": "https://example.com/prod" }
+      ]
+    }
+    """.trimIndent()
+
+    @Test
+    fun `keyNavCoordinate falls back to ALL when env unselected and app and resource are set`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.selectEnvironment(null)
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        assertEquals(Coordinate("ALL", "app1", "res1"), vm.keyNavCoordinate)
+    }
+
+    @Test
+    fun `isActivateEnabled is true for ALL coordinate when env unselected`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.selectEnvironment(null)
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        assertTrue(vm.isActivateEnabled)
+    }
+
+    @Test
+    fun `activateCurrentSelection executes ALL activator with no env selected`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.selectEnvironment(null)
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+        vm.activateCurrentSelection()
+
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
+
+    @Test
+    fun `activateColumn for ALL env executes only ALL activators in that column`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateColumn("ALL", "app1")
+
+        // Only the ALL activator at (ALL, app1, res1) should have run.
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
+
+    @Test
+    fun `activateRow for ALL env executes only ALL activators in that row`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateRow("ALL", "res1")
+
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
 }

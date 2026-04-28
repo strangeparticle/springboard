@@ -18,12 +18,20 @@ object SpringboardFactory {
     }
 
     private fun fromDto(dto: SpringboardDto, source: String, jsonSource: String): Springboard {
+        require(dto.environments.none { it.id.equals(ALL_ENVS_ENVIRONMENT_ID, ignoreCase = true) }) {
+            "Environment id '$ALL_ENVS_ENVIRONMENT_ID' is reserved for non-environment-specific activators and cannot be used as a configured environment id."
+        }
+
         val environmentIds = dto.environments.map { it.id }.toSet()
         val appIds = dto.apps.map { it.id }.toSet()
         val resourceIds = dto.resources.map { it.id }.toSet()
 
-        val parsedActivators = dto.activators.map { activatorDto ->
-            require(activatorDto.environmentId in environmentIds || activatorDto.environmentId == WILDCARD_ENVIRONMENT_ID) {
+        val activators = dto.activators.map { activatorDto ->
+            require(activatorDto.environmentId != "*") {
+                "Activator uses '*' for environmentId, which is no longer supported. Use '$ALL_ENVS_ENVIRONMENT_ID' instead for non-environment-specific activators."
+            }
+            val normalizedEnvironmentId = canonicalizeEnvironmentId(activatorDto.environmentId)
+            require(normalizedEnvironmentId in environmentIds || normalizedEnvironmentId == ALL_ENVS_ENVIRONMENT_ID) {
                 "Activator references non-existent environment: '${activatorDto.environmentId}'"
             }
             require(activatorDto.appId in appIds) {
@@ -37,29 +45,32 @@ object SpringboardFactory {
                 is UrlActivatorDto -> UrlActivator(
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
-                    environmentId = activatorDto.environmentId,
+                    environmentId = normalizedEnvironmentId,
                     url = activatorDto.url
                 )
                 is UrlTemplateActivatorDto -> UrlTemplateActivator(
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
-                    environmentId = activatorDto.environmentId,
+                    environmentId = normalizedEnvironmentId,
                     urlTemplate = activatorDto.urlTemplate
                 )
                 is CommandActivatorDto -> CommandActivator(
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
-                    environmentId = activatorDto.environmentId,
+                    environmentId = normalizedEnvironmentId,
                     commandTemplate = activatorDto.commandTemplate
                 )
             }
         }
 
-        val activators = expandWildcardActivators(parsedActivators, environmentIds)
         val indexes = buildIndexes(activators)
 
-        val parsedGuidance = dto.guidanceData.map { guidanceDto ->
-            require(guidanceDto.environmentId in environmentIds || guidanceDto.environmentId == WILDCARD_ENVIRONMENT_ID) {
+        val guidanceData = dto.guidanceData.map { guidanceDto ->
+            require(guidanceDto.environmentId != "*") {
+                "Guidance data uses '*' for environmentId, which is no longer supported. Use '$ALL_ENVS_ENVIRONMENT_ID' instead for non-environment-specific guidance."
+            }
+            val normalizedEnvironmentId = canonicalizeEnvironmentId(guidanceDto.environmentId)
+            require(normalizedEnvironmentId in environmentIds || normalizedEnvironmentId == ALL_ENVS_ENVIRONMENT_ID) {
                 "Guidance data references non-existent environment: '${guidanceDto.environmentId}'"
             }
             require(guidanceDto.appId in appIds) {
@@ -69,14 +80,12 @@ object SpringboardFactory {
                 "Guidance data references non-existent resource: '${guidanceDto.resourceId}'"
             }
             GuidanceData(
-                environmentId = guidanceDto.environmentId,
+                environmentId = normalizedEnvironmentId,
                 appId = guidanceDto.appId,
                 resourceId = guidanceDto.resourceId,
                 guidanceLines = guidanceDto.guidanceLines
             )
         }
-
-        val guidanceData = expandWildcardGuidance(parsedGuidance, environmentIds)
 
         for (guidance in guidanceData) {
             val coordinate = Coordinate(guidance.environmentId, guidance.appId, guidance.resourceId)
@@ -106,61 +115,8 @@ object SpringboardFactory {
         )
     }
 
-    private fun expandWildcardActivators(
-        activators: List<Activator>,
-        environmentIds: Set<String>,
-    ): List<Activator> {
-        val (wildcardActivators, regularActivators) = activators.partition {
-            it.environmentId == WILDCARD_ENVIRONMENT_ID
-        }
-        if (wildcardActivators.isEmpty()) return activators
-
-        val regularAppResourcePairs = regularActivators
-            .map { it.appId to it.resourceId }
-            .toSet()
-
-        for (wildcard in wildcardActivators) {
-            val pair = wildcard.appId to wildcard.resourceId
-            require(pair !in regularAppResourcePairs) {
-                "Conflict: activator for app='${wildcard.appId}', resource='${wildcard.resourceId}' " +
-                    "has both a wildcard (*) and environment-specific definition"
-            }
-        }
-
-        val expandedActivators = wildcardActivators.flatMap { wildcard ->
-            environmentIds.map { environmentId -> wildcard.withEnvironmentId(environmentId) }
-        }
-
-        return regularActivators + expandedActivators
-    }
-
-    private fun expandWildcardGuidance(
-        guidanceData: List<GuidanceData>,
-        environmentIds: Set<String>,
-    ): List<GuidanceData> {
-        val (wildcardGuidance, regularGuidance) = guidanceData.partition {
-            it.environmentId == WILDCARD_ENVIRONMENT_ID
-        }
-        if (wildcardGuidance.isEmpty()) return guidanceData
-
-        val regularAppResourcePairs = regularGuidance
-            .map { it.appId to it.resourceId }
-            .toSet()
-
-        for (wildcard in wildcardGuidance) {
-            val pair = wildcard.appId to wildcard.resourceId
-            require(pair !in regularAppResourcePairs) {
-                "Conflict: guidance data for app='${wildcard.appId}', resource='${wildcard.resourceId}' " +
-                    "has both a wildcard (*) and environment-specific definition"
-            }
-        }
-
-        val expandedGuidance = wildcardGuidance.flatMap { wildcard ->
-            environmentIds.map { environmentId -> wildcard.copy(environmentId = environmentId) }
-        }
-
-        return regularGuidance + expandedGuidance
-    }
+    private fun canonicalizeEnvironmentId(environmentId: String): String =
+        if (environmentId.equals(ALL_ENVS_ENVIRONMENT_ID, ignoreCase = true)) ALL_ENVS_ENVIRONMENT_ID else environmentId
 
     private fun buildIndexes(activators: List<Activator>): SpringboardIndexes {
         val byCoordinate = mutableMapOf<Coordinate, Activator>()

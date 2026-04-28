@@ -52,7 +52,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithContentDescription(HEADER_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION)
@@ -65,7 +65,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).assertExists()
@@ -75,7 +75,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.GRID_HEADER_RESIZE_GRIP_GLYPH, useUnmergedTree = true)
@@ -86,7 +86,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         val thumb = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
@@ -111,7 +111,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         // First drag down so we have headroom to shrink back.
@@ -144,7 +144,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         // Drag well past the maximum bound.
@@ -182,13 +182,13 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Default environment is the first in the list ("all" with name "All" in this fixture)
-        onNodeWithTag(TestTags.GRID_ENVIRONMENT_TITLE)
+        // Default environment is the first in the list ("common" with name "Common" in this fixture)
+        onNodeWithTag(TestTags.gridSectionHeading("common"))
             .assertExists()
-            .assertTextEquals("All")
+            .assertTextEquals("Common Environment")
     }
 
     // --- Environment title follows dropdown changes ---
@@ -197,15 +197,15 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectEnvironment("prod")
         waitForIdle()
 
-        onNodeWithTag(TestTags.GRID_ENVIRONMENT_TITLE)
+        onNodeWithTag(TestTags.gridSectionHeading("prod"))
             .assertExists()
-            .assertTextEquals("Production")
+            .assertTextEquals("Production Environment")
     }
 
     // --- Activator visibility by environment ---
@@ -214,10 +214,10 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // In "all" env: app1/res1, app1/res2, app2/res1 have activators; app2/res2 does not
+        // In "common" env: app1/res1, app1/res2, app2/res1 have activators; app2/res2 does not
         onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true).assertExists()
         onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res2"), useUnmergedTree = true).assertExists()
         onNodeWithTag(TestTags.gridCellActivatorIndicator("app2", "res1"), useUnmergedTree = true).assertExists()
@@ -277,7 +277,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectEnvironment("preprod")
@@ -293,7 +293,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         components.viewModel.selectEnvironment("prod")
@@ -314,15 +314,15 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // In "all" env, app1 has activators for res1 and res2
-        components.viewModel.activateColumn("app1")
+        // In "common" env, app1 has activators for res1 and res2
+        components.viewModel.activateColumn("common", "app1")
         waitForIdle()
 
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/dash"))
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/logs"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/logs"))
         assertEquals(2, components.activationService.openedUrls.size)
     }
 
@@ -332,15 +332,15 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // In "all" env, res1 has activators for app1 and app2
+        // In "common" env, res1 has activators for app1 and app2
         onNodeWithTag(TestTags.gridRowLabel("res1")).performClick()
         waitForIdle()
 
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/dash"))
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app2/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app2/dash"))
         assertEquals(2, components.activationService.openedUrls.size)
     }
 
@@ -352,20 +352,20 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Toggle-select two cells in "all" env
-        components.viewModel.toggleMultiSelect(Coordinate("all", "app1", "res1"))
-        components.viewModel.toggleMultiSelect(Coordinate("all", "app2", "res1"))
+        // Toggle-select two cells in "common" env
+        components.viewModel.toggleMultiSelect(Coordinate("common", "app1", "res1"))
+        components.viewModel.toggleMultiSelect(Coordinate("common", "app2", "res1"))
         waitForIdle()
 
         // Simulate shift release — triggers multi-activation
         components.viewModel.activateMultiSelect()
         waitForIdle()
 
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app1/dash"))
-        assertTrue(components.activationService.openedUrls.contains("https://example.com/all/app2/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app2/dash"))
         assertEquals(2, components.activationService.openedUrls.size)
     }
 
@@ -375,7 +375,7 @@ object GridNavTestScenarios {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         // Set keynav selections to non-default values
@@ -389,54 +389,73 @@ object GridNavTestScenarios {
         waitForIdle()
 
         // Keynav selections should reset: env back to default (first in list), app/resource cleared.
-        assertEquals("all", components.viewModel.selectedEnvironmentId)
+        assertEquals("common", components.viewModel.selectedEnvironmentId)
         assertNull(components.viewModel.selectedAppId)
         assertNull(components.viewModel.selectedResourceId)
     }
 
-    // --- Wildcard environment ---
+    // --- All-envs section ---
 
-    fun wildcardCellsShowInAllEnvironments() = runComposeUiTest {
+    fun allEnvsSectionHeadingAppearsAboveAllEnvsResources() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
         waitForIdle()
 
-        // Default env is the first one in the list.
-        assertEquals("dev", components.viewModel.selectedEnvironmentId)
-
-        components.viewModel.selectEnvironment("dev")
-        waitForIdle()
-
-        // Wildcard (app1, res1) should show in dev
-        onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
+        onNodeWithTag(TestTags.gridSectionHeading("ALL"), useUnmergedTree = true)
             .assertExists()
-
-        // Switch to prod — wildcard cell should still show
-        components.viewModel.selectEnvironment("prod")
-        waitForIdle()
-        onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
+        // The all-envs section renders an all-envs cell for app1+res1 (the all-envs activator coordinate).
+        onNodeWithTag(TestTags.gridAllEnvsCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
             .assertExists()
     }
 
-    fun wildcardCellActivationWorksAcrossEnvironments() = runComposeUiTest {
+    fun allEnvsSectionIsAbsentWhenSpringboardHasNoAllEnvsActivators() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.WILDCARD_ACTIVATORS, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Activate wildcard cell in dev
-        onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
+        onNodeWithTag(TestTags.gridSectionHeading("ALL"), useUnmergedTree = true)
+            .assertDoesNotExist()
+    }
+
+    fun allEnvsSectionRendersWhenNoEnvironmentSelected() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        components.viewModel.selectEnvironment(null)
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridSectionHeading("ALL"), useUnmergedTree = true)
+            .assertExists()
+        onNodeWithTag(TestTags.gridAllEnvsCellActivatorIndicator("app1", "res1"), useUnmergedTree = true)
+            .assertExists()
+    }
+
+    fun allEnvsCellActivatesAllEnvsActivatorRegardlessOfSelectedEnvironment() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // Default selected env is the first configured env (dev).
+        assertEquals("dev", components.viewModel.selectedEnvironmentId)
+
+        onNodeWithTag(TestTags.gridAllEnvsCell("app1", "res1")).performClick()
         waitForIdle()
         assertEquals(1, components.activationService.openedUrls.size)
         assertEquals("https://example.com/app1/dash", components.activationService.openedUrls.first())
 
-        // Switch to prod and activate same cell
+        // Switch env and activate again — the all-envs cell still activates the all-envs activator.
         components.viewModel.selectEnvironment("prod")
         waitForIdle()
-        onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
+        onNodeWithTag(TestTags.gridAllEnvsCell("app1", "res1")).performClick()
         waitForIdle()
         assertEquals(2, components.activationService.openedUrls.size)
         assertEquals("https://example.com/app1/dash", components.activationService.openedUrls[1])

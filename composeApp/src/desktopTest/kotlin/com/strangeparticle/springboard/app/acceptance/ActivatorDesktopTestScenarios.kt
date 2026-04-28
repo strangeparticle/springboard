@@ -102,7 +102,7 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Safari)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         // Single cell click activates one URL
@@ -118,11 +118,11 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Safari)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        // Column activation — app1 in "all" env has res1 + res2
-        components.viewModel.activateColumn("app1")
+        // Column activation — app1 in "common" env has res1 + res2
+        components.viewModel.activateColumn("common", "app1")
         waitForIdle()
 
         // One new window script call, two URLs opened
@@ -137,7 +137,7 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Chrome)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
@@ -152,10 +152,10 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Chrome)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        components.viewModel.activateColumn("app1")
+        components.viewModel.activateColumn("common", "app1")
         waitForIdle()
 
         assertEquals(1, components.activationService.appleScriptRunnerService.scriptsRun.size)
@@ -169,7 +169,7 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Unsupported)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()
@@ -185,10 +185,10 @@ object ActivatorDesktopTestScenarios {
         val components = createTestComponents(browser = DesktopBrowser.Unsupported)
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
-        components.viewModel.activateColumn("app1")
+        components.viewModel.activateColumn("common", "app1")
         waitForIdle()
 
         assertTrue(components.activationService.appleScriptRunnerService.scriptsRun.isEmpty())
@@ -205,7 +205,7 @@ object ActivatorDesktopTestScenarios {
         )
         setSpringboardApp(components)
         waitForIdle()
-        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_ALL, "/test/springboard.json")
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
         waitForIdle()
 
         onNodeWithTag(TestTags.gridCell("app1", "res1")).performClick()

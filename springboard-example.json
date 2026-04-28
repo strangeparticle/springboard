@@ -91,21 +91,21 @@
       "type": "url",
       "appId": "springboard",
       "resourceId": "github",
-      "environmentId": "*",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "springboard",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -133,14 +133,14 @@
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "springboard",
       "resourceId": "ci",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -168,7 +168,7 @@
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -203,14 +203,14 @@
       "type": "cmd",
       "appId": "springboard",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "springboard",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -238,21 +238,21 @@
       "type": "url",
       "appId": "dervish",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "dervish",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "dervish",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -280,14 +280,14 @@
       "type": "url",
       "appId": "dervish",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "dervish",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -322,21 +322,21 @@
       "type": "url",
       "appId": "dervish",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "dervish",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "dervish",
       "resourceId": "ci",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -364,21 +364,21 @@
       "type": "url",
       "appId": "dervish",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "dervish",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "dervish",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -406,14 +406,14 @@
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "fretnaut",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -448,21 +448,21 @@
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "fretnaut",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "ci",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -490,21 +490,21 @@
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "fretnaut",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "ci",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -532,14 +532,14 @@
       "type": "url",
       "appId": "fretnaut",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "fretnaut",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -574,21 +574,21 @@
       "type": "url",
       "appId": "keelson",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "keelson",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "keelson",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -616,21 +616,21 @@
       "type": "url",
       "appId": "keelson",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "keelson",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "keelson",
       "resourceId": "ci",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -658,14 +658,14 @@
       "type": "url",
       "appId": "keelson",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "keelson",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -700,21 +700,21 @@
       "type": "url",
       "appId": "keelson",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "keelson",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "keelson",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -742,21 +742,21 @@
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "wayfinder",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -784,14 +784,14 @@
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "wayfinder",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -826,21 +826,21 @@
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "wayfinder",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "ci",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -868,21 +868,21 @@
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "wayfinder",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "wayfinder",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -910,14 +910,14 @@
       "type": "url",
       "appId": "bramble",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "bramble",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -952,21 +952,21 @@
       "type": "url",
       "appId": "bramble",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "bramble",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "bramble",
       "resourceId": "ci",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -994,21 +994,21 @@
       "type": "url",
       "appId": "bramble",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "bramble",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "bramble",
       "resourceId": "ci",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1036,14 +1036,14 @@
       "type": "url",
       "appId": "bramble",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "bramble",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -1078,21 +1078,21 @@
       "type": "url",
       "appId": "halyard",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "halyard",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "halyard",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1120,21 +1120,21 @@
       "type": "url",
       "appId": "halyard",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "halyard",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "halyard",
       "resourceId": "ci",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1162,14 +1162,14 @@
       "type": "url",
       "appId": "halyard",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "halyard",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -1204,21 +1204,21 @@
       "type": "url",
       "appId": "halyard",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "halyard",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "halyard",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1246,21 +1246,21 @@
       "type": "url",
       "appId": "quarry",
       "resourceId": "github",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "quarry",
       "resourceId": "open-in-ide",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "quarry",
       "resourceId": "ci",
-      "environmentId": "sandbox",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1288,14 +1288,14 @@
       "type": "url",
       "appId": "quarry",
       "resourceId": "github",
-      "environmentId": "staging",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "quarry",
       "resourceId": "open-in-ide",
-      "environmentId": "staging",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
@@ -1330,21 +1330,21 @@
       "type": "url",
       "appId": "quarry",
       "resourceId": "github",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "quarry",
       "resourceId": "open-in-ide",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "quarry",
       "resourceId": "ci",
-      "environmentId": "pre-prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
@@ -1372,21 +1372,21 @@
       "type": "url",
       "appId": "quarry",
       "resourceId": "github",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {
       "type": "cmd",
       "appId": "quarry",
       "resourceId": "open-in-ide",
-      "environmentId": "prod",
+      "environmentId": "all",
       "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
     },
     {
       "type": "url",
       "appId": "quarry",
       "resourceId": "ci",
-      "environmentId": "prod",
+      "environmentId": "all",
       "url": "https://example.com/"
     },
     {

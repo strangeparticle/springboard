@@ -237,19 +237,21 @@ class SpringboardViewModel(
         }
     }
 
+    /**
+     * Coordinate represented by the current keynav selection. When app and resource are
+     * both selected but env is not, the coordinate falls back to the all-envs id so a
+     * matching all-envs activator can be previewed and activated without an env selection.
+     */
     val keyNavCoordinate by derivedStateOf {
-        val environmentId = selectedEnvironmentId ?: return@derivedStateOf null
         val appId = selectedAppId ?: return@derivedStateOf null
         val resourceId = selectedResourceId ?: return@derivedStateOf null
+        val environmentId = selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID
         Coordinate(environmentId, appId, resourceId)
     }
 
     val isActivateEnabled by derivedStateOf {
-        val environmentId = selectedEnvironmentId ?: return@derivedStateOf false
-        val appId = selectedAppId ?: return@derivedStateOf false
-        val resourceId = selectedResourceId ?: return@derivedStateOf false
+        val coordinate = keyNavCoordinate ?: return@derivedStateOf false
         val currentSpringboard = springboard ?: return@derivedStateOf false
-        val coordinate = Coordinate(environmentId, appId, resourceId)
         currentSpringboard.indexes.activatorByCoordinate.containsKey(coordinate)
     }
 
@@ -288,10 +290,7 @@ class SpringboardViewModel(
     }
 
     private fun applySpringboard(springboardConfig: Springboard, source: String) {
-        val defaultEnvironment = springboardConfig.environments.find {
-            it.id.equals("all", ignoreCase = true)
-        }
-        val initialEnvironmentId = defaultEnvironment?.id ?: springboardConfig.environments.firstOrNull()?.id
+        val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
 
         updateActiveTab { current ->
             current.copy(
@@ -334,12 +333,8 @@ class SpringboardViewModel(
 
     /** Activated via keyNav (drop-down selection + enter). */
     fun activateCurrentSelection() {
-        val environmentId = selectedEnvironmentId ?: return
-        val appId = selectedAppId ?: return
-        val resourceId = selectedResourceId ?: return
+        val coordinate = keyNavCoordinate ?: return
         val currentSpringboard = springboard ?: return
-
-        val coordinate = Coordinate(environmentId, appId, resourceId)
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
 
         executeActivators(listOf(activator), isSingleSelection = true)
@@ -358,15 +353,18 @@ class SpringboardViewModel(
         }
     }
 
-    /** Activated via grid-nav (column header click). */
-    fun activateColumn(appId: String) {
-        val environmentId = selectedEnvironmentId ?: return
+    /**
+     * Activated via grid-nav (column header click). The environmentId identifies which
+     * grid section the click came from — the env-specific section uses the selected env,
+     * the all-envs section uses the all-envs env id.
+     */
+    fun activateColumn(environmentId: String, appId: String) {
         val currentSpringboard = springboard ?: return
         val activators = buildList {
             currentSpringboard.resources.forEach { resource ->
-            val coordinate = Coordinate(environmentId, appId, resource.id)
-            val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
-            if (activator != null) {
+                val coordinate = Coordinate(environmentId, appId, resource.id)
+                val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
+                if (activator != null) {
                     add(activator)
                 }
             }
@@ -377,15 +375,18 @@ class SpringboardViewModel(
         }
     }
 
-    /** Activated via grid-nav (row label click). */
-    fun activateRow(resourceId: String) {
-        val environmentId = selectedEnvironmentId ?: return
+    /**
+     * Activated via grid-nav (row label click). The environmentId identifies which grid
+     * section the click came from — the env-specific section uses the selected env, the
+     * all-envs section uses the all-envs env id.
+     */
+    fun activateRow(environmentId: String, resourceId: String) {
         val currentSpringboard = springboard ?: return
         val activators = buildList {
             currentSpringboard.apps.forEach { app ->
-            val coordinate = Coordinate(environmentId, app.id, resourceId)
-            val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
-            if (activator != null) {
+                val coordinate = Coordinate(environmentId, app.id, resourceId)
+                val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
+                if (activator != null) {
                     add(activator)
                 }
             }
@@ -472,10 +473,7 @@ class SpringboardViewModel(
 
     fun resetKeyNavSelections() {
         val currentSpringboard = springboard ?: return
-        val defaultEnvironment = currentSpringboard.environments.find {
-            it.id.equals("all", ignoreCase = true)
-        }
-        val environmentId = defaultEnvironment?.id ?: currentSpringboard.environments.firstOrNull()?.id
+        val environmentId = currentSpringboard.environments.firstOrNull()?.id
         updateActiveTab {
             it.copy(
                 selectedEnvironmentId = environmentId,

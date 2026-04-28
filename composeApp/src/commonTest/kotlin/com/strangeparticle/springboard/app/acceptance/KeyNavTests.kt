@@ -16,11 +16,11 @@ class KeyNavTests {
     @Test fun `dropdowns reset to defaults after keynav activation`() =
         KeyNavTestScenarios.dropdownsResetToDefaultsAfterKeyNavActivation()
 
-    @Test fun `environment defaults to all when present`() =
-        KeyNavTestScenarios.environmentDefaultsToAllWhenPresent()
+    @Test fun `environment defaults to first declared environment`() =
+        KeyNavTestScenarios.environmentDefaultsToFirstDeclaredEnvironment()
 
-    @Test fun `environment defaults to first when all is not present`() =
-        KeyNavTestScenarios.environmentDefaultsToFirstWhenAllIsNotPresent()
+    @Test fun `environment defaults to first declared environment in two-env fixture`() =
+        KeyNavTestScenarios.environmentDefaultsToFirstDeclaredEnvironmentInTwoEnvFixture()
 
     @Test fun `unavailable resources are disabled for selected app`() =
         KeyNavTestScenarios.unavailableResourcesAreDisabledForSelectedApp()
@@ -37,11 +37,11 @@ class KeyNavTests {
     @Test fun `keynav activation works for prod environment`() =
         KeyNavTestScenarios.keyNavActivationWorksForProdEnvironment()
 
-    @Test fun `wildcard activator app is enabled for all environments`() =
-        KeyNavTestScenarios.wildcardActivatorAppIsEnabledForAllEnvironments()
+    @Test fun `all-envs activator is activatable when only app and resource selected`() =
+        KeyNavTestScenarios.allEnvsActivatorIsActivatableWhenOnlyAppAndResourceSelected()
 
-    @Test fun `wildcard activator resource is enabled after selecting app`() =
-        KeyNavTestScenarios.wildcardActivatorResourceIsEnabledAfterSelectingApp()
+    @Test fun `all-envs activator is not confused with env-specific activator in dropdown states`() =
+        KeyNavTestScenarios.allEnvsActivatorIsNotConfusedWithEnvSpecificActivatorInDropdownStates()
 
     @Test fun `changing environment keeps app and resource when still valid`() =
         KeyNavTestScenarios.changingEnvironmentKeepsAppAndResourceWhenStillValid()

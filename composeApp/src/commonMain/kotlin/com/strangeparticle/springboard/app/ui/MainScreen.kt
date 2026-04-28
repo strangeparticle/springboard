@@ -6,6 +6,7 @@ import androidx.compose.ui.Modifier
 import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.determineSpringboardSource
+import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.domain.toHttpsUrl
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
@@ -94,7 +95,9 @@ fun MainScreen(
             val currentEnvironmentId = activeTab.selectedEnvironmentId
 
             Box(modifier = Modifier.weight(1f)) {
-                if (currentSpringboard != null && currentEnvironmentId != null) {
+                if (currentSpringboard != null &&
+                    (currentEnvironmentId != null || currentSpringboard.hasAnyAllEnvsActivators())
+                ) {
                     GridNav(
                         springboard = currentSpringboard,
                         selectedEnvironmentId = currentEnvironmentId,
@@ -102,8 +105,8 @@ fun MainScreen(
                         keyNavCoordinate = viewModel.keyNavCoordinate,
                         isShiftHeld = isShiftHeld,
                         onCellActivate = { viewModel.activateCell(it) },
-                        onColumnActivate = { viewModel.activateColumn(it) },
-                        onRowActivate = { viewModel.activateRow(it) },
+                        onColumnActivate = { environmentId, appId -> viewModel.activateColumn(environmentId, appId) },
+                        onRowActivate = { environmentId, resourceId -> viewModel.activateRow(environmentId, resourceId) },
                         onToggleMultiSelect = { viewModel.toggleMultiSelect(it) },
                         onActivatorPreviewChange = { viewModel.hoveredActivatorPreview = it },
                         zoomSelection = viewModel.gridZoomSelection,

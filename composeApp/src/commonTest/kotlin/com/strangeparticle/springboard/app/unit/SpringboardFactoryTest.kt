@@ -498,4 +498,109 @@ class SpringboardFactoryTest {
             SpringboardFactory.fromJson(badJson, "/test")
         }
     }
+
+    // --- App groups ---
+
+    @Test
+    fun `appGroups parse with id and description and apps reference them via appGroupId`() {
+        val configJson = """
+        {
+          "name": "With groups",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "appGroups": [
+            { "id": "core", "description": "Core services" },
+            { "id": "tools", "description": "Internal tools" }
+          ],
+          "apps": [
+            { "id": "app1", "name": "App One", "appGroupId": "core" },
+            { "id": "app2", "name": "App Two", "appGroupId": "tools" }
+          ],
+          "resources": [{ "id": "res1", "name": "Dashboard" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/1" },
+            { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/2" }
+          ]
+        }
+        """.trimIndent()
+
+        val springboard = SpringboardFactory.fromJson(configJson, "/test")
+
+        assertEquals(
+            listOf(AppGroup("core", "Core services"), AppGroup("tools", "Internal tools")),
+            springboard.appGroups,
+        )
+        assertEquals("core", springboard.apps.first { it.id == "app1" }.appGroupId)
+        assertEquals("tools", springboard.apps.first { it.id == "app2" }.appGroupId)
+    }
+
+    @Test
+    fun `apps without appGroupId parse with null appGroupId`() {
+        val configJson = """
+        {
+          "name": "No group on app",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "apps": [{ "id": "app1", "name": "App One" }],
+          "resources": [{ "id": "res1", "name": "Dashboard" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com" }
+          ]
+        }
+        """.trimIndent()
+
+        val springboard = SpringboardFactory.fromJson(configJson, "/test")
+
+        assertNull(springboard.apps.first().appGroupId)
+        assertTrue(springboard.appGroups.isEmpty())
+    }
+
+    @Test
+    fun `duplicate appGroup id is rejected`() {
+        val badJson = """
+        {
+          "name": "Dup",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "appGroups": [
+            { "id": "core", "description": "First" },
+            { "id": "core", "description": "Second" }
+          ],
+          "apps": [{ "id": "app1", "name": "App", "appGroupId": "core" }],
+          "resources": [{ "id": "res1", "name": "R" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://x" }
+          ]
+        }
+        """.trimIndent()
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(badJson, "/test")
+        }
+        assertTrue(
+            exception.message!!.contains("Duplicate appGroup id"),
+            "Expected duplicate-id error, got: ${exception.message}",
+        )
+    }
+
+    @Test
+    fun `app referencing non-existent appGroupId is rejected`() {
+        val badJson = """
+        {
+          "name": "Bad ref",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "appGroups": [{ "id": "core", "description": "Core" }],
+          "apps": [{ "id": "app1", "name": "App", "appGroupId": "missing" }],
+          "resources": [{ "id": "res1", "name": "R" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://x" }
+          ]
+        }
+        """.trimIndent()
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            SpringboardFactory.fromJson(badJson, "/test")
+        }
+        assertTrue(
+            exception.message!!.contains("App 'app1' references non-existent appGroup: 'missing'"),
+            "Expected missing-appGroup error, got: ${exception.message}",
+        )
+    }
 }

@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.ui.gridnav
 
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.domain.model.allEnvsResources
+import com.strangeparticle.springboard.app.domain.model.appColumnLayout
 import com.strangeparticle.springboard.app.domain.model.envSpecificResources
 import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
@@ -43,8 +44,9 @@ fun estimateGridContentWidthDp(springboard: Springboard): Int {
     val gridColumnWidthDp = CommonUiConstants.GridColumnWidth.value.toInt()
     val resourceLabelWidthDp = CommonUiConstants.ResourceLabelWidth.value.toInt()
 
+    val columnSlotCount = springboard.appColumnLayout().size
     return resourceLabelWidthDp +
-        (springboard.apps.size * gridColumnWidthDp) +
+        (columnSlotCount * gridColumnWidthDp) +
         headerOverhangDp +
         GridContentPaddingDp
 }

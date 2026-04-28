@@ -475,4 +475,45 @@ class SpringboardViewModelTest {
 
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
     }
+
+    @Test
+    fun `apps property returns apps in visual column order when groups are declared`() {
+        val groupedJson = """
+        {
+          "name": "Grouped",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "apps": [
+            { "id": "a1", "name": "A1", "appGroupId": "g1" },
+            { "id": "a2", "name": "A2", "appGroupId": "g2" },
+            { "id": "a3", "name": "A3", "appGroupId": "g1" },
+            { "id": "a4", "name": "A4" }
+          ],
+          "resources": [{ "id": "r1", "name": "R1" }],
+          "activators": [
+            { "type": "url", "appId": "a1", "resourceId": "r1", "environmentId": "dev", "url": "https://example.com/a1" },
+            { "type": "url", "appId": "a2", "resourceId": "r1", "environmentId": "dev", "url": "https://example.com/a2" },
+            { "type": "url", "appId": "a3", "resourceId": "r1", "environmentId": "dev", "url": "https://example.com/a3" },
+            { "type": "url", "appId": "a4", "resourceId": "r1", "environmentId": "dev", "url": "https://example.com/a4" }
+          ],
+          "appGroups": [
+            { "id": "g1", "description": "Group 1" },
+            { "id": "g2", "description": "Group 2" }
+          ]
+        }
+        """.trimIndent()
+        val vm = createViewModel()
+        vm.loadConfig(groupedJson, "/test.json")
+
+        // Visual layout is [a1, a3, sep, a2, sep, a4]; the dropdown's app order
+        // should match the visible column order, with separators filtered out.
+        assertEquals(listOf("a1", "a3", "a2", "a4"), vm.apps.map { it.id })
+    }
+
+    @Test
+    fun `apps property preserves declaration order when no groups declared`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        assertEquals(listOf("app1", "app2"), vm.apps.map { it.id })
+    }
 }

@@ -9,7 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
-import com.strangeparticle.springboard.app.domain.model.App
+import com.strangeparticle.springboard.app.domain.model.AppColumn
+import com.strangeparticle.springboard.app.domain.model.AppColumnSlot
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 
 /**
@@ -37,7 +38,7 @@ import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
  */
 @Composable
 fun GridNavAppColumnHeadingHoverDetectionOverlay(
-    apps: List<App>,
+    columnLayout: List<AppColumnSlot>,
     gridHeaderHeight: Dp,
     horizontalOffset: Dp,
     onHoveredAppChange: (String?) -> Unit,
@@ -46,16 +47,18 @@ fun GridNavAppColumnHeadingHoverDetectionOverlay(
     Box(
         modifier = Modifier
             .offset(x = horizontalOffset)
-            .width(CommonUiConstants.GridColumnWidth * apps.size + gridHeaderHeight)
+            .width(CommonUiConstants.GridColumnWidth * columnLayout.size + gridHeaderHeight)
             .height(gridHeaderHeight)
-            .pointerInput(apps) {
+            .pointerInput(columnLayout) {
                 val columnWidthPx = CommonUiConstants.GridColumnWidth.toPx()
 
-                fun columnIndexAtPointer(x: Float, y: Float): Int? {
+                fun appIdAtPointer(x: Float, y: Float): String? {
                     val effectiveX = x + y - size.height
                     if (effectiveX < 0) return null
-                    val index = (effectiveX / columnWidthPx).toInt()
-                    return if (index in apps.indices) index else null
+                    val slotIndex = (effectiveX / columnWidthPx).toInt()
+                    if (slotIndex !in columnLayout.indices) return null
+                    val slot = columnLayout[slotIndex]
+                    return if (slot is AppColumn) slot.app.id else null
                 }
 
                 awaitPointerEventScope {
@@ -65,8 +68,7 @@ fun GridNavAppColumnHeadingHoverDetectionOverlay(
                         when (event.type) {
                             PointerEventType.Move, PointerEventType.Enter -> {
                                 if (position != null) {
-                                    val columnIndex = columnIndexAtPointer(position.x, position.y)
-                                    onHoveredAppChange(columnIndex?.let { apps[it].id })
+                                    onHoveredAppChange(appIdAtPointer(position.x, position.y))
                                 }
                             }
                             PointerEventType.Exit -> {
@@ -74,9 +76,9 @@ fun GridNavAppColumnHeadingHoverDetectionOverlay(
                             }
                             PointerEventType.Press -> {
                                 if (position != null) {
-                                    val columnIndex = columnIndexAtPointer(position.x, position.y)
-                                    if (columnIndex != null) {
-                                        onColumnClick(apps[columnIndex].id)
+                                    val appId = appIdAtPointer(position.x, position.y)
+                                    if (appId != null) {
+                                        onColumnClick(appId)
                                     }
                                 }
                             }

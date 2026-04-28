@@ -39,6 +39,7 @@ object TestTags {
     fun gridAllEnvsCellGuidanceIndicator(appId: String, resourceId: String) = "gridAllEnvsCellGuidance_${appId}_${resourceId}"
     fun gridAllEnvsRowLabel(resourceId: String) = "gridAllEnvsRowLabel_${resourceId}"
     fun gridSectionHeading(sectionId: String) = "gridSectionHeading_${sectionId}"
+    fun gridColumnSeparator(slotIndex: Int) = "gridColumnSeparator_$slotIndex"
     fun activeSettingsSourceLabel(displayName: String) = "activeSettingsSource_${displayName}"
     fun activeSettingsValue(displayName: String) = "activeSettingsValue_${displayName}"
 }

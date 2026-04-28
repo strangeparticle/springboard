@@ -8,6 +8,7 @@ import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.gridnav.computeAvailableGridArea
 import com.strangeparticle.springboard.app.ui.gridnav.computeZoomToFit
 import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentHeightDp
+import com.strangeparticle.springboard.app.ui.gridnav.estimateGridContentWidthDp
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -110,6 +111,64 @@ class GridContentSizeEstimationTest {
             delta >= expectedMinDelta,
             "Expected estimate to grow by at least $expectedMinDelta when adding an all-envs section, but grew by only $delta",
         )
+    }
+
+    @Test
+    fun estimateGridContentWidthDp_addsOneColumnPerSeparatorSlot() {
+        val withoutGroups = SpringboardFactory.fromJson(
+            """
+            {
+              "name": "No groups",
+              "environments": [{ "id": "dev", "name": "Dev" }],
+              "apps": [
+                { "id": "a1", "name": "A" },
+                { "id": "a2", "name": "B" },
+                { "id": "a3", "name": "C" },
+                { "id": "a4", "name": "D" }
+              ],
+              "resources": [{ "id": "res1", "name": "Resource" }],
+              "activators": [
+                { "type": "url", "appId": "a1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a1" },
+                { "type": "url", "appId": "a2", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a2" },
+                { "type": "url", "appId": "a3", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a3" },
+                { "type": "url", "appId": "a4", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a4" }
+              ]
+            }
+            """.trimIndent(),
+            source = "/test",
+        )
+        val withTwoSeparators = SpringboardFactory.fromJson(
+            """
+            {
+              "name": "Two separators",
+              "environments": [{ "id": "dev", "name": "Dev" }],
+              "apps": [
+                { "id": "a1", "name": "A", "appGroupId": "g1" },
+                { "id": "a2", "name": "B", "appGroupId": "g2" },
+                { "id": "a3", "name": "C", "appGroupId": "g1" },
+                { "id": "a4", "name": "D" }
+              ],
+              "resources": [{ "id": "res1", "name": "Resource" }],
+              "activators": [
+                { "type": "url", "appId": "a1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a1" },
+                { "type": "url", "appId": "a2", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a2" },
+                { "type": "url", "appId": "a3", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a3" },
+                { "type": "url", "appId": "a4", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/a4" }
+              ],
+              "appGroups": [
+                { "id": "g1", "description": "Group 1" },
+                { "id": "g2", "description": "Group 2" }
+              ]
+            }
+            """.trimIndent(),
+            source = "/test",
+        )
+
+        val columnWidth = CommonUiConstants.GridColumnWidth.value.toInt()
+        val widthDelta = estimateGridContentWidthDp(withTwoSeparators) -
+            estimateGridContentWidthDp(withoutGroups)
+        // Layout for the grouped fixture: [a1, a3, sep, a2, sep, a4] → +2 separator slots.
+        assertEquals(2 * columnWidth, widthDelta)
     }
 
     private fun makeSmallSpringboard(): Springboard = makeSpringboard(

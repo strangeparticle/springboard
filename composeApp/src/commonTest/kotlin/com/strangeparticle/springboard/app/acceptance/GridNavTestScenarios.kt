@@ -437,6 +437,58 @@ object GridNavTestScenarios {
             .assertExists()
     }
 
+    // --- App groups: visual reordering with separator columns ---
+
+    fun appGroupsRenderColumnsInGroupOrderWithSeparators() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.APP_GROUPS_WITH_SEPARATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // All four cells exist regardless of the visual reorder.
+        onNodeWithTag(TestTags.gridCell("app1", "res1")).assertExists()
+        onNodeWithTag(TestTags.gridCell("app2", "res1")).assertExists()
+        onNodeWithTag(TestTags.gridCell("app3", "res1")).assertExists()
+        onNodeWithTag(TestTags.gridCell("app4", "res1")).assertExists()
+
+        // Layout slots: [app1, app3, sep, app2, sep, app4] → separators at indices 2 and 4.
+        onNodeWithTag(TestTags.gridColumnSeparator(2), useUnmergedTree = true).assertExists()
+        onNodeWithTag(TestTags.gridColumnSeparator(4), useUnmergedTree = true).assertExists()
+
+        // Visual ordering: app3 (groupA, second member) sits left of app2 (groupB).
+        val app1Left = onNodeWithTag(TestTags.gridCell("app1", "res1"))
+            .fetchSemanticsNode().boundsInRoot.left
+        val app3Left = onNodeWithTag(TestTags.gridCell("app3", "res1"))
+            .fetchSemanticsNode().boundsInRoot.left
+        val app2Left = onNodeWithTag(TestTags.gridCell("app2", "res1"))
+            .fetchSemanticsNode().boundsInRoot.left
+        val app4Left = onNodeWithTag(TestTags.gridCell("app4", "res1"))
+            .fetchSemanticsNode().boundsInRoot.left
+        assertTrue(app1Left < app3Left, "app1 should sit left of app3 (same group)")
+        assertTrue(app3Left < app2Left, "app3 (groupA) should sit left of app2 (groupB)")
+        assertTrue(app2Left < app4Left, "app2 (groupB) should sit left of app4 (ungrouped tail)")
+
+        // Cell click still activates the matching activator after the visual reorder.
+        onNodeWithTag(TestTags.gridCell("app2", "res1")).performClick()
+        waitForIdle()
+        assertEquals(1, components.activationService.openedUrls.size)
+        assertEquals("https://example.com/app2", components.activationService.openedUrls.first())
+    }
+
+    fun appGroupsAreAbsentFromLayoutWhenNoneDeclared() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        // No appGroups declared in this fixture — no separator slots should render.
+        onNodeWithTag(TestTags.gridColumnSeparator(0), useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag(TestTags.gridColumnSeparator(1), useUnmergedTree = true).assertDoesNotExist()
+        onNodeWithTag(TestTags.gridColumnSeparator(2), useUnmergedTree = true).assertDoesNotExist()
+    }
+
     fun allEnvsCellActivatesAllEnvsActivatorRegardlessOfSelectedEnvironment() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)

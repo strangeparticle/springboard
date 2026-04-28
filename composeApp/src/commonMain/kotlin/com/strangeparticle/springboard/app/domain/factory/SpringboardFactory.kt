@@ -26,6 +26,20 @@ object SpringboardFactory {
         val appIds = dto.apps.map { it.id }.toSet()
         val resourceIds = dto.resources.map { it.id }.toSet()
 
+        val appGroupIds = mutableSetOf<String>()
+        for (groupDto in dto.appGroups) {
+            require(appGroupIds.add(groupDto.id)) {
+                "Duplicate appGroup id: '${groupDto.id}'"
+            }
+        }
+        for (appDto in dto.apps) {
+            if (appDto.appGroupId != null) {
+                require(appDto.appGroupId in appGroupIds) {
+                    "App '${appDto.id}' references non-existent appGroup: '${appDto.appGroupId}'"
+                }
+            }
+        }
+
         val activators = dto.activators.map { activatorDto ->
             require(activatorDto.environmentId != "*") {
                 "Activator uses '*' for environmentId, which is no longer supported. Use '$ALL_ENVS_ENVIRONMENT_ID' instead for non-environment-specific activators."
@@ -103,7 +117,7 @@ object SpringboardFactory {
         return Springboard(
             name = dto.name,
             environments = dto.environments.map { Environment(it.id, it.name) },
-            apps = dto.apps.map { App(it.id, it.name) },
+            apps = dto.apps.map { App(it.id, it.name, appGroupId = it.appGroupId) },
             resources = dto.resources.map { Resource(it.id, it.name) },
             activators = activators,
             guidanceData = guidanceData,
@@ -112,6 +126,7 @@ object SpringboardFactory {
             source = source,
             lastLoadTime = currentTimeMillis(),
             jsonSource = jsonSource,
+            appGroups = dto.appGroups.map { AppGroup(it.id, it.description) },
         )
     }
 

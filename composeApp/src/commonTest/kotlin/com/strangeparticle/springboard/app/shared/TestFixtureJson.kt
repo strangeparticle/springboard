@@ -210,6 +210,30 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
+    val APP_GROUPS_WITH_SEPARATORS = """
+    {
+      "name": "App Groups With Separators",
+      "environments": [{ "id": "dev", "name": "Dev" }],
+      "apps": [
+        { "id": "app1", "name": "App One",   "appGroupId": "groupA" },
+        { "id": "app2", "name": "App Two",   "appGroupId": "groupB" },
+        { "id": "app3", "name": "App Three", "appGroupId": "groupA" },
+        { "id": "app4", "name": "App Four" }
+      ],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/app1" },
+        { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/app2" },
+        { "type": "url", "appId": "app3", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/app3" },
+        { "type": "url", "appId": "app4", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/app4" }
+      ],
+      "appGroups": [
+        { "id": "groupA", "description": "Group A" },
+        { "id": "groupB", "description": "Group B" }
+      ]
+    }
+    """.trimIndent()
+
     val MALFORMED_JSON = "{ this is not valid json"
 
     val INVALID_ACTIVATOR_REFERENCE = """

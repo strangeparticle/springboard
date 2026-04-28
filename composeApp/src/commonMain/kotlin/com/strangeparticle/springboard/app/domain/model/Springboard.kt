@@ -12,4 +12,5 @@ data class Springboard(
     val source: String,
     val lastLoadTime: Long,
     val jsonSource: String,     // the source-file used to build this springboard
+    val appGroups: List<AppGroup> = emptyList(),
 )

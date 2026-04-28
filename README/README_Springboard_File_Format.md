@@ -46,9 +46,10 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `environments` | yes | Ordered list — rendered in the order declared |
 | `environments[].id` | yes | Unique identifier, referenced by activators |
 | `environments[].name` | yes | Display label |
-| `apps` | yes | Ordered list — rendered in the order declared |
+| `apps` | yes | Ordered list — rendered in the order declared, except apps with `appGroupId` are visually grouped (see "App Groups") |
 | `apps[].id` | yes | |
 | `apps[].name` | yes | |
+| `apps[].appGroupId` | optional | Must match a declared `appGroups[].id` |
 | `resources` | yes | Ordered list — rendered in the order declared |
 | `resources[].id` | yes | |
 | `resources[].name` | yes | |
@@ -66,6 +67,9 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `guidanceData[].appId` | yes | Must match a declared `apps[].id` |
 | `guidanceData[].resourceId` | yes | Must match a declared `resources[].id` |
 | `guidanceData[].guidanceLines` | yes | Ordered list of plain-text strings shown in the guidance tooltip |
+| `appGroups` | optional | Ordered list of app groups used to cluster app columns visually |
+| `appGroups[].id` | yes | Unique identifier, referenced by `apps[].appGroupId` |
+| `appGroups[].description` | yes | Free-text description (not currently shown in the UI) |
 
 ## Guidance Data
 
@@ -107,6 +111,31 @@ Use `"environmentId": "ALL"` on an activator (or guidance entry) to make it appl
 - The `ALL` environment does not appear in the environment dropdown.
 - All-envs activators activate regardless of which environment is selected.
 - Guidance data supports `"environmentId": "ALL"` with the same rules.
+
+## App Groups
+
+App groups let you visually cluster related app columns in the grid. Declare an `appGroups` array, then assign each app to a group via the optional `appGroupId` field. Apps that share a group are rendered next to each other, and a blank separator column is drawn between adjacent groups (and between the last group and any ungrouped apps).
+
+```json
+"apps": [
+  { "id": "service-a", "name": "Service A", "appGroupId": "billing" },
+  { "id": "service-b", "name": "Service B", "appGroupId": "auth" },
+  { "id": "service-c", "name": "Service C", "appGroupId": "billing" },
+  { "id": "service-d", "name": "Service D" }
+],
+"appGroups": [
+  { "id": "billing", "description": "Billing services" },
+  { "id": "auth",    "description": "Auth services" }
+]
+```
+
+- Groups are rendered in the order they appear in `appGroups`.
+- Within a group, apps appear in the order they appear in `apps`.
+- Apps without an `appGroupId` are rendered last, after a separator column.
+- Declared groups with no member apps are silently skipped (no orphan separator).
+- The `description` field is reserved for future UI use and is not currently displayed.
+- Duplicate `appGroups[].id` values, or an `appGroupId` that does not match a declared group, are rejected at load time.
+- Files without an `appGroups` field continue to work unchanged — apps render in declaration order with no separators.
 
 ## Rules
 

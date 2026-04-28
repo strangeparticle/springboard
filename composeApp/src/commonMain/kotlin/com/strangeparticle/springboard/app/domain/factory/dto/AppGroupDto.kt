@@ -3,8 +3,4 @@ package com.strangeparticle.springboard.app.domain.factory.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal data class AppDto(
-    val id: String,
-    val name: String,
-    val appGroupId: String? = null,
-)
+internal data class AppGroupDto(val id: String, val description: String)

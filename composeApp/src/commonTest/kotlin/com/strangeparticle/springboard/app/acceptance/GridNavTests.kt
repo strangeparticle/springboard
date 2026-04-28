@@ -69,4 +69,10 @@ class GridNavTests {
 
     @Test fun `all-envs section renders when no environment is selected`() =
         GridNavTestScenarios.allEnvsSectionRendersWhenNoEnvironmentSelected()
+
+    @Test fun `app groups render columns in group order with separators`() =
+        GridNavTestScenarios.appGroupsRenderColumnsInGroupOrderWithSeparators()
+
+    @Test fun `app groups are absent from layout when none declared`() =
+        GridNavTestScenarios.appGroupsAreAbsentFromLayoutWhenNoneDeclared()
 }

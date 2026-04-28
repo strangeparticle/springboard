@@ -10,5 +10,6 @@ internal data class SpringboardDto(
     val resources: List<ResourceDto>,
     val activators: List<ActivatorDto>,
     val displayHints: DisplayHintsDto? = null,
-    val guidanceData: List<GuidanceDataDto> = emptyList()
+    val guidanceData: List<GuidanceDataDto> = emptyList(),
+    val appGroups: List<AppGroupDto> = emptyList(),
 )

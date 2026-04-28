@@ -13,9 +13,14 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
+import com.strangeparticle.springboard.app.domain.model.AppColumn
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.model.SeparatorColumn
 import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.domain.model.appColumnLayout
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import kotlin.math.roundToInt
 
@@ -93,11 +98,17 @@ fun GridNav(
         )
     }
 
+    // Visual order of columns: apps grouped by `appGroupId` with blank separator
+    // slots between adjacent groups. Falls back to one AppColumn per app in
+    // declaration order when no `appGroups` are declared.
+    val columnLayout = remember(springboard) { springboard.appColumnLayout() }
+
     // The logical grid width used for centering and scroll bounds. Does not
     // include the rotated header overflow — that extends past the right edge
-    // visually but is not part of the scrollable content width.
+    // visually but is not part of the scrollable content width. Separator slots
+    // count toward the width since they each occupy one full GridColumnWidth.
     val totalGridWidth = CommonUiConstants.ResourceLabelWidth +
-        CommonUiConstants.GridColumnWidth * springboard.apps.size
+        CommonUiConstants.GridColumnWidth * columnLayout.size
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
@@ -177,43 +188,57 @@ fun GridNav(
                         onResourceClick = onRowActivate,
                     )
 
-                    // Each app gets a fixed-width column containing its rotated
-                    // header and data cells. A column is highlighted when either a
-                    // data cell in that column is hovered (hoveredAppId) or the
-                    // column header itself is hovered via the overlay (hoveredHeaderAppId).
-                    springboard.apps.forEach { app ->
-                        val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
+                    // Each layout slot gets a fixed-width column. AppColumn slots
+                    // render the rotated header and data cells; SeparatorColumn slots
+                    // render an empty fixed-width Box that visually separates app
+                    // groups. A column is highlighted when either a data cell in
+                    // that column is hovered (hoveredAppId) or the column header
+                    // itself is hovered via the overlay (hoveredHeaderAppId).
+                    columnLayout.forEachIndexed { slotIndex, slot ->
+                        when (slot) {
+                            is AppColumn -> {
+                                val app = slot.app
+                                val isHeaderHighlighted = hoveredAppId == app.id || hoveredHeaderAppId == app.id
 
-                        Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
-                            GridNavColumnHeader(
-                                appId = app.id,
-                                displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
-                                gridHeaderHeight = gridHeaderHeight,
-                                isHeaderHighlighted = isHeaderHighlighted,
-                                isHeaderHovered = hoveredHeaderAppId == app.id,
-                            )
+                                Column(modifier = Modifier.width(CommonUiConstants.GridColumnWidth)) {
+                                    GridNavColumnHeader(
+                                        appId = app.id,
+                                        displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
+                                        gridHeaderHeight = gridHeaderHeight,
+                                        isHeaderHighlighted = isHeaderHighlighted,
+                                        isHeaderHovered = hoveredHeaderAppId == app.id,
+                                    )
 
-                            // Header/data boundary divider is rendered by
-                            // GridNavHeaderResizeBoundary below.
+                                    // Header/data boundary divider is rendered by
+                                    // GridNavHeaderResizeBoundary below.
 
-                            GridNavColumnCells(
-                                appId = app.id,
-                                sections = sections,
-                                activatorByCoordinate = springboard.indexes.activatorByCoordinate,
-                                guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
-                                multiSelectSet = multiSelectSet,
-                                isColumnHighlighted = isHeaderHighlighted,
-                                isShiftHeld = isShiftHeld,
-                                hoveredResourceId = hoveredResourceId,
-                                onCellActivate = onCellActivate,
-                                onToggleMultiSelect = onToggleMultiSelect,
-                                onActivatorPreviewChange = onActivatorPreviewChange,
-                                onCellHover = { appId, resourceId ->
-                                    hoveredAppId = appId
-                                    hoveredResourceId = resourceId
-                                },
-                                guidanceState = guidanceState,
-                            )
+                                    GridNavColumnCells(
+                                        appId = app.id,
+                                        sections = sections,
+                                        activatorByCoordinate = springboard.indexes.activatorByCoordinate,
+                                        guidanceByCoordinate = springboard.indexes.guidanceByCoordinate,
+                                        multiSelectSet = multiSelectSet,
+                                        isColumnHighlighted = isHeaderHighlighted,
+                                        isShiftHeld = isShiftHeld,
+                                        hoveredResourceId = hoveredResourceId,
+                                        onCellActivate = onCellActivate,
+                                        onToggleMultiSelect = onToggleMultiSelect,
+                                        onActivatorPreviewChange = onActivatorPreviewChange,
+                                        onCellHover = { appId, resourceId ->
+                                            hoveredAppId = appId
+                                            hoveredResourceId = resourceId
+                                        },
+                                        guidanceState = guidanceState,
+                                    )
+                                }
+                            }
+                            SeparatorColumn -> {
+                                Box(
+                                    modifier = Modifier
+                                        .width(CommonUiConstants.GridColumnWidth)
+                                        .testTag(TestTags.gridColumnSeparator(slotIndex))
+                                )
+                            }
                         }
                     }
                 }
@@ -245,7 +270,7 @@ fun GridNav(
             // It must be a sibling of the vertical-scroll Box (not inside it) so
             // it stays fixed at the top while data cells scroll underneath.
             GridNavAppColumnHeadingHoverDetectionOverlay(
-                apps = springboard.apps,
+                columnLayout = columnLayout,
                 gridHeaderHeight = gridHeaderHeight,
                 horizontalOffset = CommonUiConstants.ResourceLabelWidth,
                 onHoveredAppChange = { hoveredHeaderAppId = it },

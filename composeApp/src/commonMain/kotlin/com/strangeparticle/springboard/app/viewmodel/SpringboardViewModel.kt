@@ -199,7 +199,12 @@ class SpringboardViewModel(
     var focusAppDropdownRequested by mutableStateOf(false)
 
     val environments by derivedStateOf { springboard?.environments ?: emptyList() }
-    val apps by derivedStateOf { springboard?.apps ?: emptyList() }
+    val apps by derivedStateOf {
+        val currentSpringboard = springboard ?: return@derivedStateOf emptyList()
+        currentSpringboard.appColumnLayout()
+            .filterIsInstance<AppColumn>()
+            .map { it.app }
+    }
     val resources by derivedStateOf { springboard?.resources ?: emptyList() }
 
     val isConfigLoaded by derivedStateOf { springboard != null }

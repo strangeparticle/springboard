@@ -37,6 +37,7 @@ fun GridNavColumnCells(
     isColumnHighlighted: Boolean,
     isShiftHeld: Boolean,
     hoveredResourceId: String?,
+    hoveredHeaderResourceId: String?,
     onCellActivate: (Coordinate) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
@@ -64,7 +65,7 @@ fun GridNavColumnCells(
                 multiSelectSet = multiSelectSet,
                 isColumnHighlighted = isColumnHighlighted,
                 isShiftHeld = isShiftHeld,
-                hoveredResourceId = hoveredResourceId,
+                isRowHighlighted = hoveredResourceId == resource.id || hoveredHeaderResourceId == resource.id,
                 onCellActivate = onCellActivate,
                 onToggleMultiSelect = onToggleMultiSelect,
                 onActivatorPreviewChange = onActivatorPreviewChange,
@@ -85,7 +86,7 @@ private fun SectionCell(
     multiSelectSet: Set<Coordinate>,
     isColumnHighlighted: Boolean,
     isShiftHeld: Boolean,
-    hoveredResourceId: String?,
+    isRowHighlighted: Boolean,
     onCellActivate: (Coordinate) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
@@ -121,7 +122,6 @@ private fun SectionCell(
         }
     }
 
-    val isRowHighlighted = hoveredResourceId == resource.id
     val isInMultiSelect = coordinate in multiSelectSet
 
     val cellBackground = when {

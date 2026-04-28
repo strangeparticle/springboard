@@ -221,6 +221,7 @@ fun GridNav(
                                         isColumnHighlighted = isHeaderHighlighted,
                                         isShiftHeld = isShiftHeld,
                                         hoveredResourceId = hoveredResourceId,
+                                        hoveredHeaderResourceId = hoveredHeaderResourceId,
                                         onCellActivate = onCellActivate,
                                         onToggleMultiSelect = onToggleMultiSelect,
                                         onActivatorPreviewChange = onActivatorPreviewChange,

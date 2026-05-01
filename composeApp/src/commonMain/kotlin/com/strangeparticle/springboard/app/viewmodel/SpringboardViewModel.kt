@@ -301,7 +301,7 @@ class SpringboardViewModel(
             current.copy(
                 springboard = springboardConfig,
                 source = source,
-                label = deriveTabLabel(source),
+                label = deriveTabLabel(springboardConfig.name),
                 selectedEnvironmentId = initialEnvironmentId,
                 selectedAppId = null,
                 selectedResourceId = null,

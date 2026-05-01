@@ -23,6 +23,7 @@ class SpringboardViewModel(
     private val settingsManager: SettingsManager,
     private val persistenceService: PersistenceService,
     private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
+    private val contentLoader: SpringboardContentLoader? = null,
 ) : ViewModel() {
 
     private var suppressAutosave: Boolean = false
@@ -268,6 +269,24 @@ class SpringboardViewModel(
         } catch (e: Exception) {
             activeTabToast.error("Failed to load config: ${e.message}")
             isLoading = false
+        }
+    }
+
+    /**
+     * Reloads the active tab's springboard from its current source. Dispatches
+     * to the configured [SpringboardContentLoader], which knows how to fetch
+     * the raw JSON for any supported source kind (file path, http URL, s3 URL).
+     * No-op when there is no active springboard.
+     */
+    suspend fun reloadCurrentSource() {
+        val source = activeTab?.springboard?.source ?: return
+        val loader = contentLoader
+            ?: error("Cannot reload: SpringboardViewModel was constructed without a SpringboardContentLoader")
+        try {
+            val contents = loader.loadContent(source)
+            loadConfig(contents, source)
+        } catch (e: Exception) {
+            activeTabToast.error("Failed to reload: ${e.message}")
         }
     }
 

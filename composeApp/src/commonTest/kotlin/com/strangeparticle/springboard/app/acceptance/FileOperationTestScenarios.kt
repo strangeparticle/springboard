@@ -3,6 +3,7 @@ package com.strangeparticle.springboard.app.acceptance
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
+import com.strangeparticle.springboard.app.shared.SpringboardContentLoaderInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -25,7 +26,12 @@ object FileOperationTestScenarios {
         fileContentService: PlatformFileContentService = PlatformFileContentServiceInMemoryFake(),
     ): FileOperationTestComponents {
         val settingsManager = createSettingsManagerForTest()
-        val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
+        val contentLoader = SpringboardContentLoaderInMemoryFake(fileContentService)
+        val viewModel = SpringboardViewModel(
+            settingsManager = settingsManager,
+            persistenceService = PersistenceServiceInMemoryFake(),
+            contentLoader = contentLoader,
+        )
         val settingsViewModel = SettingsViewModel(settingsManager)
         return FileOperationTestComponents(viewModel, settingsViewModel, fileContentService)
     }

@@ -3,11 +3,8 @@ package com.strangeparticle.springboard.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import com.strangeparticle.springboard.app.domain.SpringboardSource
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
-import com.strangeparticle.springboard.app.domain.determineSpringboardSource
 import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
-import com.strangeparticle.springboard.app.domain.toHttpsUrl
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
@@ -32,7 +29,6 @@ fun MainScreen(
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
 ) {
-    var lastLoadedPath by remember { mutableStateOf<String?>(null) }
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -48,7 +44,6 @@ fun MainScreen(
             scope.launch {
                 try {
                     val contents = networkContentService.fetchText(url)
-                    lastLoadedPath = url
                     viewModel.loadConfig(contents, url)
                     println("[Springboard] grid ready")
                     println("[Springboard] application ready")
@@ -80,7 +75,6 @@ fun MainScreen(
                     onFileSelected = { path ->
                         val contents = fileContentService.readFileContents(path)
                         if (contents != null) {
-                            lastLoadedPath = path
                             viewModel.loadConfig(contents, path)
                             println("[Springboard] grid ready")
                             println("[Springboard] application ready")
@@ -121,40 +115,11 @@ fun MainScreen(
                 isReloading = isReloading,
                 onZoomSelectionChange = { viewModel.gridZoomSelection = it },
                 onReload = {
-                    val source = lastLoadedPath ?: viewModel.springboard?.source ?: return@StatusBar
+                    if (viewModel.springboard?.source == null) return@StatusBar
                     scope.launch {
                         isReloading = true
                         val startTime = currentTimeMillis()
-                        try {
-                            when (val springboardSource = determineSpringboardSource(source)) {
-                                is SpringboardSource.HttpSource -> {
-                                    if (networkContentService != null) {
-                                        val contents = networkContentService.fetchText(springboardSource.url)
-                                        viewModel.loadConfig(contents, source)
-                                    } else {
-                                        viewModel.activeTabToast.error("Network reload not available")
-                                    }
-                                }
-                                is SpringboardSource.S3Source -> {
-                                    if (networkContentService != null) {
-                                        val contents = networkContentService.fetchText(springboardSource.toHttpsUrl())
-                                        viewModel.loadConfig(contents, source)
-                                    } else {
-                                        viewModel.activeTabToast.error("Network reload not available")
-                                    }
-                                }
-                                is SpringboardSource.FileSource -> {
-                                    val contents = fileContentService.readFileContents(springboardSource.path)
-                                    if (contents != null) {
-                                        viewModel.loadConfig(contents, source)
-                                    } else {
-                                        viewModel.activeTabToast.error("Failed to reload: file not found")
-                                    }
-                                }
-                            }
-                        } catch (e: Exception) {
-                            viewModel.activeTabToast.error("Failed to reload: ${e.message}")
-                        }
+                        viewModel.reloadCurrentSource()
                         val elapsed = currentTimeMillis() - startTime
                         if (elapsed < CommonUiConstants.ReloadSpinMinMs) {
                             delay(CommonUiConstants.ReloadSpinMinMs - elapsed)

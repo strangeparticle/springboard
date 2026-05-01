@@ -516,4 +516,80 @@ class SpringboardViewModelTest {
 
         assertEquals(listOf("app1", "app2"), vm.apps.map { it.id })
     }
+
+    private class RecordingLoader(
+        private val contentsBySource: MutableMap<String, String>,
+    ) : com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoader {
+        val calls = mutableListOf<String>()
+        override suspend fun loadContent(source: String): String {
+            calls += source
+            return contentsBySource[source] ?: throw IllegalStateException("missing source: $source")
+        }
+    }
+
+    private fun jsonWithName(name: String): String = """
+    {
+      "name": "$name",
+      "environments": [{ "id": "prod", "name": "Prod" }],
+      "apps": [{ "id": "app1", "name": "App One" }],
+      "resources": [{ "id": "res1", "name": "Res One" }],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://example.com" }
+      ]
+    }
+    """.trimIndent()
+
+    @Test
+    fun `reloadCurrentSource fetches latest content via loader and updates active springboard`() = kotlinx.coroutines.test.runTest {
+        val contents = mutableMapOf("/foo.json" to jsonWithName("Initial"))
+        val loader = RecordingLoader(contents)
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            contentLoader = loader,
+        )
+        vm.loadConfig(jsonWithName("Initial"), "/foo.json")
+
+        contents["/foo.json"] = jsonWithName("Updated")
+        vm.reloadCurrentSource()
+
+        assertEquals("Updated", vm.springboard?.name)
+        assertEquals(listOf("/foo.json"), loader.calls)
+    }
+
+    @Test
+    fun `reloadCurrentSource is a no-op when no springboard is loaded`() = kotlinx.coroutines.test.runTest {
+        val loader = RecordingLoader(mutableMapOf())
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            contentLoader = loader,
+        )
+
+        vm.reloadCurrentSource()
+
+        assertTrue(loader.calls.isEmpty())
+    }
+
+    @Test
+    fun `reloadCurrentSource reports a toast error when the loader throws`() = kotlinx.coroutines.test.runTest {
+        val loader = object : com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoader {
+            override suspend fun loadContent(source: String): String =
+                throw IllegalStateException("network down")
+        }
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            contentLoader = loader,
+        )
+        vm.loadConfig(jsonWithName("Initial"), "/foo.json")
+
+        vm.reloadCurrentSource()
+
+        assertEquals("Initial", vm.springboard?.name)
+        val errorToasts = vm.activeTabToast.activeToasts.filter {
+            it.severity == com.strangeparticle.springboard.app.ui.toast.ToastSeverity.ERROR
+        }
+        assertTrue(errorToasts.any { it.message.contains("network down") })
+    }
 }

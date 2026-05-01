@@ -53,6 +53,7 @@ fun main(args: Array<String>) {
     )
 
     val networkContentService = NetworkContentServiceDesktopImpl()
+    val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
 
     val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
 
@@ -67,7 +68,9 @@ fun main(args: Array<String>) {
             position = WindowPosition(Alignment.Center)
         )
 
-        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService, activationService) }
+        val viewModel = remember {
+            SpringboardViewModel(settingsManager, persistenceService, activationService, contentLoader)
+        }
         val settingsViewModel = remember {
             SettingsViewModel(settingsManager = settingsManager)
         }
@@ -173,13 +176,9 @@ fun main(args: Array<String>) {
                     }
                 },
                 onReload = {
-                    val springboard = viewModel.springboard ?: return@SpringboardMenuBar
-                    val path = springboard.source
-                    val contents = readFileContents(path)
-                    if (contents != null) {
-                        loadSpringboardConfig(path, contents)
-                    } else {
-                        viewModel.activeTabToast.error("Failed to reload: file not found")
+                    if (viewModel.springboard == null) return@SpringboardMenuBar
+                    kotlinx.coroutines.MainScope().launch {
+                        viewModel.reloadCurrentSource()
                     }
                 },
                 onOpenSettings = openSettingsScreen,
@@ -235,7 +234,6 @@ fun main(args: Array<String>) {
             }
 
             LaunchedEffect(Unit) {
-                val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
                 val tabRestorer = TabRestorer(persistenceService, contentLoader)
                 tabRestorer.restoreInto(viewModel, startupTabs)
 

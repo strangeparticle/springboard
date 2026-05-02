@@ -12,3 +12,12 @@ import androidx.compose.ui.semantics.SemanticsPropertyReceiver
  */
 val IsRowHighlightedKey = SemanticsPropertyKey<Boolean>("IsRowHighlighted")
 var SemanticsPropertyReceiver.isRowHighlighted by IsRowHighlightedKey
+
+/**
+ * Custom semantic property that exposes a grid cell's "in multi-select" state
+ * (true when the cell's coordinate is in the active shift-select bucket and
+ * its activator indicator is therefore drawn in the selected style). Used
+ * exclusively by UI tests; production code does not rely on it.
+ */
+val IsInMultiSelectKey = SemanticsPropertyKey<Boolean>("IsInMultiSelect")
+var SemanticsPropertyReceiver.isInMultiSelect by IsInMultiSelectKey

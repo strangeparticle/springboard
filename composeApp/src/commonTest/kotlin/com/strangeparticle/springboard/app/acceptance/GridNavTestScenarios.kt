@@ -5,6 +5,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
+import com.strangeparticle.springboard.app.ui.gridnav.IsInMultiSelectKey
 import com.strangeparticle.springboard.app.ui.gridnav.IsRowHighlightedKey
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -368,6 +369,46 @@ object GridNavTestScenarios {
         assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
         assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app2/dash"))
         assertEquals(2, components.activationService.openedUrls.size)
+    }
+
+    // Regression test: while a shift-select is in progress, each cell that has been
+    // added to the selection bucket must visually indicate that — not just on
+    // shift-release. The cell's activator indicator carries an IsInMultiSelect
+    // semantic so the test can verify the visual state tracks the bucket.
+    fun shiftSelectedCellsVisuallyIndicateSelection() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        fun cellInMultiSelect(appId: String, resourceId: String): Boolean {
+            val config = onNodeWithTag(TestTags.gridCell(appId, resourceId))
+                .fetchSemanticsNode().config
+            return config.getOrElseNullable(IsInMultiSelectKey) { false } == true
+        }
+
+        // Baseline: nothing selected.
+        assertEquals(false, cellInMultiSelect("app1", "res1"))
+        assertEquals(false, cellInMultiSelect("app2", "res1"))
+
+        // Add app1/res1 to the bucket (no shift release yet); indicator should reflect it.
+        components.viewModel.toggleMultiSelect(Coordinate("common", "app1", "res1"))
+        waitForIdle()
+        assertTrue(cellInMultiSelect("app1", "res1"), "app1/res1 should show as selected after toggle")
+        assertEquals(false, cellInMultiSelect("app2", "res1"))
+
+        // Add a second cell.
+        components.viewModel.toggleMultiSelect(Coordinate("common", "app2", "res1"))
+        waitForIdle()
+        assertTrue(cellInMultiSelect("app1", "res1"), "app1/res1 should still be selected")
+        assertTrue(cellInMultiSelect("app2", "res1"), "app2/res1 should now be selected")
+
+        // Toggle the first cell off — its indicator should clear, the second stays.
+        components.viewModel.toggleMultiSelect(Coordinate("common", "app1", "res1"))
+        waitForIdle()
+        assertEquals(false, cellInMultiSelect("app1", "res1"))
+        assertTrue(cellInMultiSelect("app2", "res1"))
     }
 
     // --- Dropdowns reset after grid activation ---

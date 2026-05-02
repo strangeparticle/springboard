@@ -55,6 +55,9 @@ class GridNavTests {
     @Test fun `shift-select activates multiple cells on release`() =
         GridNavTestScenarios.shiftSelectActivatesMultipleCellsOnRelease()
 
+    @Test fun `shift-selected cells visually indicate selection`() =
+        GridNavTestScenarios.shiftSelectedCellsVisuallyIndicateSelection()
+
     @Test fun `keynav dropdowns reset to defaults after grid activation`() =
         GridNavTestScenarios.keyNavDropdownsResetToDefaultsAfterGridActivation()
 

@@ -127,7 +127,6 @@ private fun SectionCell(
 
     val cellBackground = when {
         isCellHovered && hasActivator -> MaterialTheme.colorScheme.surfaceContainer
-        isInMultiSelect -> MaterialTheme.colorScheme.surfaceContainer
         isColumnHighlighted -> MaterialTheme.colorScheme.surfaceContainer
         isRowHighlighted -> MaterialTheme.colorScheme.surfaceContainer
         else -> Color.Transparent
@@ -153,7 +152,10 @@ private fun SectionCell(
             .height(CommonUiConstants.GridRowHeight)
             .background(cellBackground)
             .testTag(cellTag)
-            .semantics { set(IsRowHighlightedKey, isRowHighlighted) }
+            .semantics {
+                set(IsRowHighlightedKey, isRowHighlighted)
+                set(IsInMultiSelectKey, isInMultiSelect)
+            }
             .hoverable(cellInteractionSource)
             .then(
                 if (hasActivator) {
@@ -171,19 +173,28 @@ private fun SectionCell(
         contentAlignment = Alignment.Center,
     ) {
         if (hasActivator) {
-            if (isCellHovered) {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .testTag(activatorIndicatorTag)
+            // Three indicator states, in priority order:
+            //   in-multi-select  → solid filled circle in `primary` (most saturated)
+            //   hovered          → solid filled circle in `primaryContainer`
+            //   default          → outlined circle with `primaryContainer` border
+            // Multi-select wins over hover so the user can see which cells are
+            // already in the shift-select bucket while moving the mouse around.
+            val indicatorBaseModifier = Modifier
+                .size(14.dp)
+                .testTag(activatorIndicatorTag)
+            when {
+                isInMultiSelect -> Box(
+                    modifier = indicatorBaseModifier
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+                isCellHovered -> Box(
+                    modifier = indicatorBaseModifier
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .testTag(activatorIndicatorTag)
+                else -> Box(
+                    modifier = indicatorBaseModifier
                         .border(2.dp, MaterialTheme.colorScheme.primaryContainer, CircleShape)
                 )
             }

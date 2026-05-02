@@ -78,4 +78,10 @@ class GridNavTests {
 
     @Test fun `hovering row header highlights cells in that row`() =
         GridNavTestScenarios.hoveringRowHeaderHighlightsCellsInThatRow()
+
+    @Test fun `clicking column header activates all resources in column`() =
+        GridNavTestScenarios.clickingColumnHeaderActivatesAllResourcesInColumn()
+
+    @Test fun `clicking column header in app-groups layout activates all resources in column`() =
+        GridNavTestScenarios.clickingColumnHeaderInAppGroupsLayoutActivatesAllResourcesInColumn()
 }

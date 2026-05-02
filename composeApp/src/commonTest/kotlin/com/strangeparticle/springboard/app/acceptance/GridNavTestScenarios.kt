@@ -514,6 +514,72 @@ object GridNavTestScenarios {
         assertEquals("https://example.com/app1/dash", components.activationService.openedUrls[1])
     }
 
+    // Regression test: clicking a column header must trigger activateColumn for that
+    // column. The click goes through GridNavAppColumnHeadingHoverDetectionOverlay's
+    // parallelogram pointerInput handler. We discover the click position by hovering
+    // first (which we already verified works in the row-hover regression test) — when
+    // the overlay reports the hovered app, we know the same pointer-x/y will resolve
+    // to that app for the Press event too.
+    fun clickingColumnHeaderActivatesAllResourcesInColumn() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+        components.viewModel.selectEnvironment("common")
+        waitForIdle()
+
+        // Find the data-cell column for app1 to derive a horizontal x that lies
+        // within app1's column. Click at the very bottom edge of the header overlay
+        // at that x — the parallelogram skew transform reduces to identity on the
+        // bottom edge, so x maps directly to the column.
+        val app1Cell = onNodeWithTag(TestTags.gridCell("app1", "res1")).fetchSemanticsNode()
+        val app1CenterX = app1Cell.boundsInRoot.left + app1Cell.size.width / 2
+
+        // Click on the header overlay at app1's column-x, at the bottom of the header.
+        // Use the cell's column-x; pick a y inside the header area (above the cell row).
+        onRoot().performMouseInput {
+            val y = app1Cell.boundsInRoot.top - 4f
+            click(androidx.compose.ui.geometry.Offset(app1CenterX, y))
+        }
+        waitForIdle()
+
+        assertTrue(
+            components.activationService.openedUrls.contains("https://example.com/common/app1/dash"),
+            "expected app1/res1 dashboard URL to be opened, got: ${components.activationService.openedUrls}",
+        )
+        assertTrue(
+            components.activationService.openedUrls.contains("https://example.com/common/app1/logs"),
+            "expected app1/res2 logs URL to be opened, got: ${components.activationService.openedUrls}",
+        )
+        assertEquals(2, components.activationService.openedUrls.size)
+    }
+
+    // Same regression check as the previous test, but for an app that sits AFTER
+    // a separator slot (groupB). With app groups the parallelogram overlay's
+    // column-index math has to account for separator slots correctly.
+    fun clickingColumnHeaderInAppGroupsLayoutActivatesAllResourcesInColumn() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.APP_GROUPS_WITH_SEPARATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // Layout: [app1, app3, sep, app2, sep, app4]. Click on app2 (after a separator).
+        val app2Cell = onNodeWithTag(TestTags.gridCell("app2", "res1")).fetchSemanticsNode()
+        val app2CenterX = app2Cell.boundsInRoot.left + app2Cell.size.width / 2
+        onRoot().performMouseInput {
+            val y = app2Cell.boundsInRoot.top - 4f
+            click(androidx.compose.ui.geometry.Offset(app2CenterX, y))
+        }
+        waitForIdle()
+
+        assertTrue(
+            components.activationService.openedUrls.contains("https://example.com/app2"),
+            "expected app2/res1 URL to be opened, got: ${components.activationService.openedUrls}",
+        )
+    }
+
     // Regression test: hovering a row header label must propagate the row-highlight
     // state into all data cells in that row, not just the header label itself.
     fun hoveringRowHeaderHighlightsCellsInThatRow() = runComposeUiTest {

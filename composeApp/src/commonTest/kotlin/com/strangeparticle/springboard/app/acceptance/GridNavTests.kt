@@ -75,4 +75,7 @@ class GridNavTests {
 
     @Test fun `app groups are absent from layout when none declared`() =
         GridNavTestScenarios.appGroupsAreAbsentFromLayoutWhenNoneDeclared()
+
+    @Test fun `hovering row header highlights cells in that row`() =
+        GridNavTestScenarios.hoveringRowHeaderHighlightsCellsInThatRow()
 }

@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.ui.TestTags
@@ -37,6 +38,7 @@ fun GridNavColumnCells(
     isColumnHighlighted: Boolean,
     isShiftHeld: Boolean,
     hoveredResourceId: String?,
+    hoveredHeaderResourceId: String?,
     onCellActivate: (Coordinate) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
@@ -64,7 +66,7 @@ fun GridNavColumnCells(
                 multiSelectSet = multiSelectSet,
                 isColumnHighlighted = isColumnHighlighted,
                 isShiftHeld = isShiftHeld,
-                hoveredResourceId = hoveredResourceId,
+                isRowHighlighted = hoveredResourceId == resource.id || hoveredHeaderResourceId == resource.id,
                 onCellActivate = onCellActivate,
                 onToggleMultiSelect = onToggleMultiSelect,
                 onActivatorPreviewChange = onActivatorPreviewChange,
@@ -85,7 +87,7 @@ private fun SectionCell(
     multiSelectSet: Set<Coordinate>,
     isColumnHighlighted: Boolean,
     isShiftHeld: Boolean,
-    hoveredResourceId: String?,
+    isRowHighlighted: Boolean,
     onCellActivate: (Coordinate) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
@@ -121,7 +123,6 @@ private fun SectionCell(
         }
     }
 
-    val isRowHighlighted = hoveredResourceId == resource.id
     val isInMultiSelect = coordinate in multiSelectSet
 
     val cellBackground = when {
@@ -152,6 +153,7 @@ private fun SectionCell(
             .height(CommonUiConstants.GridRowHeight)
             .background(cellBackground)
             .testTag(cellTag)
+            .semantics { set(IsRowHighlightedKey, isRowHighlighted) }
             .hoverable(cellInteractionSource)
             .then(
                 if (hasActivator) {

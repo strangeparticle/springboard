@@ -5,6 +5,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
+import com.strangeparticle.springboard.app.ui.gridnav.IsRowHighlightedKey
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
@@ -511,5 +512,36 @@ object GridNavTestScenarios {
         waitForIdle()
         assertEquals(2, components.activationService.openedUrls.size)
         assertEquals("https://example.com/app1/dash", components.activationService.openedUrls[1])
+    }
+
+    // Regression test: hovering a row header label must propagate the row-highlight
+    // state into all data cells in that row, not just the header label itself.
+    fun hoveringRowHeaderHighlightsCellsInThatRow() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        fun cellHighlighted(appId: String, resourceId: String): Boolean {
+            val config = onNodeWithTag(TestTags.gridCell(appId, resourceId))
+                .fetchSemanticsNode().config
+            return config.getOrElseNullable(IsRowHighlightedKey) { false } == true
+        }
+
+        // Baseline: no hover, nothing highlighted.
+        assertEquals(false, cellHighlighted("app1", "res1"))
+        assertEquals(false, cellHighlighted("app2", "res1"))
+
+        // Move the mouse over the row header for res1; cells in that row should highlight.
+        onNodeWithTag(TestTags.gridRowLabel("res1")).performMouseInput {
+            moveTo(center)
+        }
+        waitForIdle()
+
+        assertTrue(cellHighlighted("app1", "res1"), "app1/res1 cell should be row-highlighted")
+        assertTrue(cellHighlighted("app2", "res1"), "app2/res1 cell should be row-highlighted")
+        // Cells in other rows must not be highlighted.
+        assertEquals(false, cellHighlighted("app1", "res2"))
     }
 }

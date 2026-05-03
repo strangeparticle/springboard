@@ -517,6 +517,173 @@ class SpringboardViewModelTest {
         assertEquals(listOf("app1", "app2"), vm.apps.map { it.id })
     }
 
+    private val jsonWithMixedAllEnvsAndEnvSpecific = """
+    {
+      "name": "Mixed",
+      "environments": [
+        { "id": "dev", "name": "Dev" },
+        { "id": "prod", "name": "Production" }
+      ],
+      "apps": [
+        { "id": "appA", "name": "A" },
+        { "id": "appB", "name": "B" },
+        { "id": "appC", "name": "C" }
+      ],
+      "resources": [
+        { "id": "resX", "name": "X" },
+        { "id": "resY", "name": "Y" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "appA", "resourceId": "resX", "environmentId": "ALL",  "url": "https://example.com/A/X/all" },
+        { "type": "url", "appId": "appB", "resourceId": "resY", "environmentId": "dev",  "url": "https://example.com/B/Y/dev" },
+        { "type": "url", "appId": "appC", "resourceId": "resX", "environmentId": "prod", "url": "https://example.com/C/X/prod" }
+      ]
+    }
+    """.trimIndent()
+
+    @Test
+    fun `resourceEnabledStates with selected env includes resources reachable via ALL-envs activators`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("dev")
+        vm.selectApp("appA")
+
+        // appA only has an ALL-envs activator at resX. With env=dev selected the
+        // resource dropdown must still enable resX since the ALL activator covers dev.
+        val states = vm.resourceEnabledStates
+        assertEquals(true, states["resX"], "resX should be enabled via the ALL-envs activator for appA")
+        assertEquals(false, states["resY"])
+    }
+
+    @Test
+    fun `appEnabledStates with selected env includes apps reachable via ALL-envs activators`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("dev")
+        vm.selectResource("resX")
+
+        // For env=dev + resX, only appA (via ALL) and (no env-specific) match.
+        // Without the all-envs expansion, appA would be disabled.
+        val states = vm.appEnabledStates
+        assertEquals(true, states["appA"], "appA should be enabled via the ALL-envs activator at resX")
+        assertEquals(false, states["appB"])
+        assertEquals(false, states["appC"])
+    }
+
+    @Test
+    fun `resourceEnabledStates still respects env-specific activators when no ALL match exists`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("prod")
+        vm.selectApp("appB")
+
+        // appB has an env-specific activator only at (dev, resY). With env=prod
+        // and no ALL activator for appB, resY should remain disabled.
+        val states = vm.resourceEnabledStates
+        assertEquals(false, states["resX"])
+        assertEquals(false, states["resY"])
+    }
+
+    @Test
+    fun `environmentEnabledStates lights every env when selection is reachable only via ALL-envs activator`() {
+        val onlyAllEnvsJson = """
+        {
+          "name": "Only ALL",
+          "environments": [
+            { "id": "dev", "name": "Dev" },
+            { "id": "staging", "name": "Staging" },
+            { "id": "prod", "name": "Prod" }
+          ],
+          "apps": [{ "id": "appOnly", "name": "Only" }],
+          "resources": [{ "id": "resOnly", "name": "Only" }],
+          "activators": [
+            { "type": "url", "appId": "appOnly", "resourceId": "resOnly", "environmentId": "ALL", "url": "https://example.com/only" }
+          ]
+        }
+        """.trimIndent()
+        val vm = createViewModel()
+        vm.loadConfig(onlyAllEnvsJson, "/test.json")
+        vm.selectApp("appOnly")
+        vm.selectResource("resOnly")
+
+        // Picking any env would activate via the ALL activator (per keyNavCoordinate's
+        // fallback), so every env should be enabled in the env dropdown.
+        val states = vm.environmentEnabledStates
+        assertEquals(true, states["dev"])
+        assertEquals(true, states["staging"])
+        assertEquals(true, states["prod"])
+    }
+
+    @Test
+    fun `keyNavCoordinate falls back to ALL when selected env has no matching activator but ALL does`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("dev")
+        vm.selectApp("appA")
+        vm.selectResource("resX")
+
+        // (dev, appA, resX) has no activator; (ALL, appA, resX) does. The
+        // coordinate must resolve to the ALL one so Enter can activate it.
+        assertEquals(Coordinate("ALL", "appA", "resX"), vm.keyNavCoordinate)
+        assertTrue(vm.isActivateEnabled)
+    }
+
+    @Test
+    fun `keyNavCoordinate prefers env-specific activator when both exist`() {
+        val mixedJson = """
+        {
+          "name": "Both",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "apps": [{ "id": "appX", "name": "X" }],
+          "resources": [{ "id": "resX", "name": "X" }],
+          "activators": [
+            { "type": "url", "appId": "appX", "resourceId": "resX", "environmentId": "dev", "url": "https://example.com/dev" },
+            { "type": "url", "appId": "appX", "resourceId": "resX", "environmentId": "ALL", "url": "https://example.com/all" }
+          ]
+        }
+        """.trimIndent()
+        val vm = createViewModel()
+        vm.loadConfig(mixedJson, "/test.json")
+        vm.selectEnvironment("dev")
+        vm.selectApp("appX")
+        vm.selectResource("resX")
+
+        // Strict env-specific activator wins over the ALL fallback.
+        assertEquals(Coordinate("dev", "appX", "resX"), vm.keyNavCoordinate)
+        assertTrue(vm.isActivateEnabled)
+    }
+
+    @Test
+    fun `keyNavCoordinate keeps strict coordinate and disables activation when neither env-specific nor ALL match`() {
+        val vm = createViewModel()
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("prod")
+        vm.selectApp("appB")
+        vm.selectResource("resY")
+
+        // appB only has (dev, resY); no prod, no ALL. Coordinate stays strict
+        // and isActivateEnabled stays false.
+        assertEquals(Coordinate("prod", "appB", "resY"), vm.keyNavCoordinate)
+        assertFalse(vm.isActivateEnabled)
+    }
+
+    @Test
+    fun `activateCurrentSelection fires ALL-envs activator when selected env has no env-specific match`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithMixedAllEnvsAndEnvSpecific, "/test.json")
+        vm.selectEnvironment("dev")
+        vm.selectApp("appA")
+        vm.selectResource("resX")
+        vm.activateCurrentSelection()
+
+        assertEquals(listOf("https://example.com/A/X/all"), activationService.openedUrls)
+    }
+
     private class RecordingLoader(
         private val contentsBySource: MutableMap<String, String>,
     ) : com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoader {

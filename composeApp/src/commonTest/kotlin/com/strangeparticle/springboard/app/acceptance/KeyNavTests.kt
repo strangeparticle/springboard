@@ -40,8 +40,8 @@ class KeyNavTests {
     @Test fun `all-envs activator is activatable when only app and resource selected`() =
         KeyNavTestScenarios.allEnvsActivatorIsActivatableWhenOnlyAppAndResourceSelected()
 
-    @Test fun `all-envs activator is not confused with env-specific activator in dropdown states`() =
-        KeyNavTestScenarios.allEnvsActivatorIsNotConfusedWithEnvSpecificActivatorInDropdownStates()
+    @Test fun `all-envs activators are surfaced in dropdown states for selected env`() =
+        KeyNavTestScenarios.allEnvsActivatorsAreSurfacedInDropdownStatesForSelectedEnv()
 
     @Test fun `changing environment keeps app and resource when still valid`() =
         KeyNavTestScenarios.changingEnvironmentKeepsAppAndResourceWhenStillValid()

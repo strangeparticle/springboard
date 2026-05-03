@@ -50,6 +50,10 @@
     {
       "id": "quarry",
       "name": "Quarry"
+    },
+    {
+      "id": "nimbus",
+      "name": "Nimbus"
     }
   ],
   "resources": [
@@ -84,6 +88,10 @@
     {
       "id": "open-in-ide",
       "name": "Open in IDE"
+    },
+    {
+      "id": "wiki",
+      "name": "Wiki"
     }
   ],
   "activators": [
@@ -1408,6 +1416,55 @@
       "appId": "quarry",
       "resourceId": "database",
       "environmentId": "prod",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "github",
+      "environmentId": "all",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "cmd",
+      "appId": "nimbus",
+      "resourceId": "open-in-ide",
+      "environmentId": "all",
+      "commandTemplate": "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"echo Springboard sample command ran successfully\"'"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "ci",
+      "environmentId": "all",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "wiki",
+      "environmentId": "all",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "dashboard",
+      "environmentId": "all",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "logs",
+      "environmentId": "all",
+      "url": "https://example.com/"
+    },
+    {
+      "type": "url",
+      "appId": "nimbus",
+      "resourceId": "metrics",
+      "environmentId": "all",
       "url": "https://example.com/"
     }
   ]

@@ -232,6 +232,11 @@ class SpringboardViewModel(
         }
     }
 
+    // Each env lights up when there is an activator at (this env, selectedApp,
+    // selectedResource) OR at (ALL, selectedApp, selectedResource). The ALL
+    // branch keeps this consistent with [keyNavCoordinate]'s ALL-envs fallback,
+    // so an env that would activate via the all-envs activator is not falsely
+    // shown as disabled.
     val environmentEnabledStates by derivedStateOf {
         val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
         currentSpringboard.environments.associate { environment ->
@@ -244,15 +249,42 @@ class SpringboardViewModel(
     }
 
     /**
-     * Coordinate represented by the current keynav selection. When app and resource are
-     * both selected but env is not, the coordinate falls back to the all-envs id so a
-     * matching all-envs activator can be previewed and activated without an env selection.
+     * Coordinate represented by the current keynav selection. App and resource must
+     * both be selected for this to be non-null. The environment portion resolves in
+     * this priority order:
+     *
+     *   1. The strict (selectedEnv, app, resource) coordinate — if it has a matching
+     *      activator, that wins.
+     *   2. The (ALL, app, resource) coordinate — used when an env is selected but
+     *      the strict coordinate has no activator and an all-envs activator does
+     *      cover the (app, resource) pair. Mirrors the dropdown-filtering rule that
+     *      all-envs activators apply to every environment.
+     *   3. Otherwise the strict coordinate is returned anyway, so callers can
+     *      distinguish "selection incomplete" (null) from "selection complete but
+     *      no matching activator" (non-null + isActivateEnabled = false).
+     *
+     * When no env is selected the strict coordinate uses the all-envs sentinel as
+     * the env, so an all-envs activator can be previewed and activated without
+     * choosing an environment.
      */
     val keyNavCoordinate by derivedStateOf {
         val appId = selectedAppId ?: return@derivedStateOf null
         val resourceId = selectedResourceId ?: return@derivedStateOf null
-        val environmentId = selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID
-        Coordinate(environmentId, appId, resourceId)
+
+        val strictEnv = selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID
+        val strictCoordinate = Coordinate(strictEnv, appId, resourceId)
+
+        val activators = springboard?.indexes?.activatorByCoordinate
+            ?: return@derivedStateOf strictCoordinate
+
+        if (activators.containsKey(strictCoordinate)) return@derivedStateOf strictCoordinate
+
+        if (selectedEnvironmentId != null) {
+            val allEnvsCoordinate = Coordinate(ALL_ENVS_ENVIRONMENT_ID, appId, resourceId)
+            if (activators.containsKey(allEnvsCoordinate)) return@derivedStateOf allEnvsCoordinate
+        }
+
+        strictCoordinate
     }
 
     val isActivateEnabled by derivedStateOf {
@@ -507,6 +539,13 @@ class SpringboardViewModel(
         }
     }
 
+    /**
+     * Returns true if any activator's coordinate matches the given filter.
+     * A null on `environmentId`, `appId`, or `resourceId` means "any value" for
+     * that field. The env match is all-envs-aware: when a non-null env is given,
+     * a coordinate also matches if its env equals [ALL_ENVS_ENVIRONMENT_ID]
+     * (the all-envs sentinel applies to every environment).
+     */
     private fun hasMatchingActivator(
         environmentId: String?,
         appId: String?,
@@ -514,7 +553,9 @@ class SpringboardViewModel(
     ): Boolean {
         val currentSpringboard = springboard ?: return false
         return currentSpringboard.indexes.activatorByCoordinate.keys.any { coordinate ->
-            (environmentId == null || coordinate.environmentId == environmentId) &&
+            (environmentId == null ||
+                coordinate.environmentId == environmentId ||
+                coordinate.environmentId == ALL_ENVS_ENVIRONMENT_ID) &&
                 (appId == null || coordinate.appId == appId) &&
                 (resourceId == null || coordinate.resourceId == resourceId)
         }

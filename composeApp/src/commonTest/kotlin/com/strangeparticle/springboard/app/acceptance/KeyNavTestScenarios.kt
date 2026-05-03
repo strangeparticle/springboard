@@ -253,19 +253,19 @@ object KeyNavTestScenarios {
         assertTrue(components.activationService.openedUrls.contains("https://example.com/app1/dash"))
     }
 
-    fun allEnvsActivatorIsNotConfusedWithEnvSpecificActivatorInDropdownStates() = runComposeUiTest {
+    fun allEnvsActivatorsAreSurfacedInDropdownStatesForSelectedEnv() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
         components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
         waitForIdle()
 
-        // Selecting a specific env should not surface all-envs activators in env-specific dropdown states.
+        // app1 only has an all-envs activator at res1. With env=dev selected, the
+        // resource dropdown must still enable res1 — the all-envs activator covers dev.
         components.viewModel.selectEnvironment("dev")
         components.viewModel.selectApp("app1")
         waitForIdle()
-        // app1's only activator under dev is the all-envs one, which is not env-specific.
-        assertEquals(false, components.viewModel.resourceEnabledStates["res1"])
+        assertEquals(true, components.viewModel.resourceEnabledStates["res1"])
 
         // app2 has a prod-specific activator — should be enabled in prod, not in dev.
         components.viewModel.selectApp("app2")

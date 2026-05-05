@@ -186,7 +186,6 @@ class GridContentSizeEstimationTest {
         resources = resources,
         activators = emptyList(),
         guidanceData = emptyList(),
-        displayHints = null,
         indexes = SpringboardIndexes(
             activatorByCoordinate = emptyMap(),
             activatableResourcesByApp = emptyMap(),

@@ -121,7 +121,6 @@ object SpringboardFactory {
             resources = dto.resources.map { Resource(it.id, it.name) },
             activators = activators,
             guidanceData = guidanceData,
-            displayHints = dto.displayHints?.let { DisplayHints(it.width, it.height) },
             indexes = indexesWithGuidance,
             source = source,
             lastLoadTime = currentTimeMillis(),

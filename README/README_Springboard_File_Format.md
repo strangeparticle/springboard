@@ -60,8 +60,6 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `activators[].environmentId` | yes | Must match a declared `environments[].id`, or `"ALL"` for all environments |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
-| `displayHints.width` | optional | Preferred window width in pixels |
-| `displayHints.height` | optional | Preferred window height in pixels |
 | `guidanceData` | optional | List of per-coordinate guidance entries (see below) |
 | `guidanceData[].environmentId` | yes | Must match a declared `environments[].id`, or `"ALL"` for all environments |
 | `guidanceData[].appId` | yes | Must match a declared `apps[].id` |

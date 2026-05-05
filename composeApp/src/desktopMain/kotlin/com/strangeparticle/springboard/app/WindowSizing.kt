@@ -52,16 +52,6 @@ fun calculateWindowHeight(springboard: Springboard, zoomPercent: Int = 100): Int
 
 fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: WindowState) {
     val springboard = viewModel.springboard ?: return
-    if (springboard.displayHints != null) {
-        val width = springboard.displayHints.width
-        val height = springboard.displayHints.height
-        if (width != null && height != null) {
-            windowState.size = DpSize(width.dp, height.dp)
-            windowState.position = WindowPosition(Alignment.Center)
-            viewModel.gridZoomSelection = GridZoomSelection.FixedZoom(100)
-            return
-        }
-    }
 
     val contentWidth = calculateWindowWidth(springboard)
     val contentHeight = calculateWindowHeight(springboard)
@@ -92,15 +82,6 @@ fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: Wind
     for (tab in tabsWithContent) {
         val springboard = tab.springboard!!
         val zoomPercent = tab.gridZoomSelection.percent
-        if (springboard.displayHints != null) {
-            val hintWidth = springboard.displayHints.width
-            val hintHeight = springboard.displayHints.height
-            if (hintWidth != null && hintHeight != null) {
-                neededWidth = maxOf(neededWidth, hintWidth)
-                neededHeight = maxOf(neededHeight, hintHeight)
-                continue
-            }
-        }
         neededWidth = maxOf(neededWidth, calculateWindowWidth(springboard, zoomPercent))
         neededHeight = maxOf(neededHeight, calculateWindowHeight(springboard, zoomPercent))
     }

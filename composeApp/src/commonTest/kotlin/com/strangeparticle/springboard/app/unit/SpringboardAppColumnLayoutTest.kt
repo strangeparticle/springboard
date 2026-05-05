@@ -23,7 +23,6 @@ class SpringboardAppColumnLayoutTest {
         resources = emptyList(),
         activators = emptyList(),
         guidanceData = emptyList(),
-        displayHints = null,
         indexes = SpringboardIndexes(
             activatorByCoordinate = emptyMap(),
             activatableResourcesByApp = emptyMap(),

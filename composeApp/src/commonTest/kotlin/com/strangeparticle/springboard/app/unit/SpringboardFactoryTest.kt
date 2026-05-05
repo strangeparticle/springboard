@@ -195,10 +195,10 @@ class SpringboardFactoryTest {
     }
 
     @Test
-    fun `display hints are parsed`() {
-        val jsonWithHints = """
+    fun `legacy display hints field is ignored`() {
+        val jsonWithLegacyWindowHints = """
         {
-          "name": "With Hints",
+          "name": "Legacy Hints",
           "environments": [{ "id": "e1", "name": "E1" }],
           "apps": [{ "id": "a1", "name": "A1" }],
           "resources": [{ "id": "r1", "name": "R1" }],
@@ -206,16 +206,17 @@ class SpringboardFactoryTest {
           "displayHints": { "width": 800, "height": 600 }
         }
         """.trimIndent()
-        val sb = SpringboardFactory.fromJson(jsonWithHints, "/test")
-        assertNotNull(sb.displayHints)
-        assertEquals(800, sb.displayHints!!.width)
-        assertEquals(600, sb.displayHints!!.height)
+        val sb = SpringboardFactory.fromJson(jsonWithLegacyWindowHints, "/test")
+        assertEquals("Legacy Hints", sb.name)
+        assertEquals(1, sb.environments.size)
+        assertEquals(1, sb.apps.size)
+        assertEquals(1, sb.resources.size)
     }
 
     @Test
-    fun `no display hints returns null`() {
+    fun `springboard parses without legacy display hints field`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
-        assertNull(sb.displayHints)
+        assertEquals("Test Springboard", sb.name)
     }
 
     // --- Guidance data tests ---

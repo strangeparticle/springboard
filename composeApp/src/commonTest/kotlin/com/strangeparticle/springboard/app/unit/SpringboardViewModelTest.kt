@@ -476,6 +476,93 @@ class SpringboardViewModelTest {
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
     }
 
+    // Bug fix: activateColumn / activateRow used a strict env-only lookup, so a
+    // column/row click in an env-specific section missed activators whose env is
+    // ALL. The keynav coordinate fallback ((env, app, res) miss → (ALL, app, res))
+    // now also applies to these click paths.
+
+    @Test
+    fun `activateColumn in env-specific section falls back to ALL activator when strict coordinate is empty`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        // jsonWithAllEnvsActivator has only (ALL, app1, res1); no prod-specific
+        // activator for app1. Before the fix, this fired nothing.
+        vm.activateColumn("prod", "app1")
+
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
+
+    @Test
+    fun `activateRow in env-specific section falls back to ALL activator when strict coordinate is empty`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateRow("prod", "res1")
+
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
+
+    private val jsonWithMixedEnvAndAllActivators = """
+    {
+      "name": "Mixed",
+      "environments": [
+        { "id": "dev", "name": "Dev" }
+      ],
+      "apps": [
+        { "id": "app1", "name": "App One" }
+      ],
+      "resources": [
+        { "id": "res1", "name": "Dashboard" }
+      ],
+      "activators": [
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/all" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com/dev" }
+      ]
+    }
+    """.trimIndent()
+
+    @Test
+    fun `activateColumn in env-specific section prefers env-specific activator over ALL when both exist`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithMixedEnvAndAllActivators, "/test.json")
+
+        vm.activateColumn("dev", "app1")
+
+        // Strict (dev, app1, res1) wins; ALL fallback is not consulted.
+        assertEquals(listOf("https://example.com/dev"), activationService.openedUrls)
+    }
+
+    @Test
+    fun `activateRow in env-specific section prefers env-specific activator over ALL when both exist`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithMixedEnvAndAllActivators, "/test.json")
+
+        vm.activateRow("dev", "res1")
+
+        assertEquals(listOf("https://example.com/dev"), activationService.openedUrls)
+    }
+
     @Test
     fun `apps property returns apps in visual column order when groups are declared`() {
         val groupedJson = """

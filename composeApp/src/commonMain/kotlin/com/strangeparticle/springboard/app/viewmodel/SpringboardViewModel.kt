@@ -413,13 +413,17 @@ class SpringboardViewModel(
      * Activated via grid-nav (column header click). The environmentId identifies which
      * grid section the click came from — the env-specific section uses the selected env,
      * the all-envs section uses the all-envs env id.
+     *
+     * Per-resource lookup is all-envs-aware: when a non-ALL env is given and the strict
+     * (env, app, resource) coordinate has no activator, falls back to (ALL, app, resource).
+     * Mirrors the same fallback used by [keyNavCoordinate], so column-header clicks in an
+     * env-specific section also fire all-envs activators that apply to the column.
      */
     fun activateColumn(environmentId: String, appId: String) {
         val currentSpringboard = springboard ?: return
         val activators = buildList {
             currentSpringboard.resources.forEach { resource ->
-                val coordinate = Coordinate(environmentId, appId, resource.id)
-                val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
+                val activator = findActivatorWithAllEnvsFallback(environmentId, appId, resource.id)
                 if (activator != null) {
                     add(activator)
                 }
@@ -435,13 +439,17 @@ class SpringboardViewModel(
      * Activated via grid-nav (row label click). The environmentId identifies which grid
      * section the click came from — the env-specific section uses the selected env, the
      * all-envs section uses the all-envs env id.
+     *
+     * Per-app lookup is all-envs-aware: when a non-ALL env is given and the strict
+     * (env, app, resource) coordinate has no activator, falls back to (ALL, app, resource).
+     * Mirrors the same fallback used by [keyNavCoordinate], so row-label clicks in an
+     * env-specific section also fire all-envs activators that apply to the row.
      */
     fun activateRow(environmentId: String, resourceId: String) {
         val currentSpringboard = springboard ?: return
         val activators = buildList {
             currentSpringboard.apps.forEach { app ->
-                val coordinate = Coordinate(environmentId, app.id, resourceId)
-                val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
+                val activator = findActivatorWithAllEnvsFallback(environmentId, app.id, resourceId)
                 if (activator != null) {
                     add(activator)
                 }
@@ -451,6 +459,27 @@ class SpringboardViewModel(
         if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
             resetKeyNavSelections()
         }
+    }
+
+    /**
+     * Resolves an activator for a single (environmentId, appId, resourceId) coordinate
+     * with the all-envs fallback. Strict coordinate wins; when env != ALL and the strict
+     * coordinate has no activator, the (ALL, app, resource) coordinate is consulted.
+     * Returns null when neither yields an activator.
+     */
+    private fun findActivatorWithAllEnvsFallback(
+        environmentId: String,
+        appId: String,
+        resourceId: String,
+    ): Activator? {
+        val activators = springboard?.indexes?.activatorByCoordinate ?: return null
+        val strictCoordinate = Coordinate(environmentId, appId, resourceId)
+        activators[strictCoordinate]?.let { return it }
+        if (environmentId != ALL_ENVS_ENVIRONMENT_ID) {
+            val allEnvsCoordinate = Coordinate(ALL_ENVS_ENVIRONMENT_ID, appId, resourceId)
+            return activators[allEnvsCoordinate]
+        }
+        return null
     }
 
     fun toggleMultiSelect(coordinate: Coordinate) {

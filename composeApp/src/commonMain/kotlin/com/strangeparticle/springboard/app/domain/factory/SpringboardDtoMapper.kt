@@ -1,0 +1,63 @@
+package com.strangeparticle.springboard.app.domain.factory
+
+import com.strangeparticle.springboard.app.domain.factory.dto.AppDto
+import com.strangeparticle.springboard.app.domain.factory.dto.AppGroupDto
+import com.strangeparticle.springboard.app.domain.factory.dto.CommandActivatorDto
+import com.strangeparticle.springboard.app.domain.factory.dto.EnvironmentDto
+import com.strangeparticle.springboard.app.domain.factory.dto.GuidanceDataDto
+import com.strangeparticle.springboard.app.domain.factory.dto.ResourceDto
+import com.strangeparticle.springboard.app.domain.factory.dto.SpringboardDto
+import com.strangeparticle.springboard.app.domain.factory.dto.UrlActivatorDto
+import com.strangeparticle.springboard.app.domain.factory.dto.UrlTemplateActivatorDto
+import com.strangeparticle.springboard.app.domain.model.CommandActivator
+import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.domain.model.UrlActivator
+import com.strangeparticle.springboard.app.domain.model.UrlTemplateActivator
+
+/**
+ * Maps a domain [Springboard] back to a [SpringboardDto] suitable for serialization.
+ * Inverse of [SpringboardFactory.fromDto]. Used by both [SpringboardJsonWriter] (to
+ * emit on-disk JSON) and the AI editing snapshot machinery (to embed a tab's
+ * springboard inside an `AppStateSnapshot`).
+ *
+ * Lives in `domain.factory` rather than the AI feature package because the mapping
+ * is purely between domain and DTO — it doesn't know anything about AI, snapshots,
+ * or persistence sinks.
+ */
+internal fun springboardToDto(springboard: Springboard): SpringboardDto = SpringboardDto(
+    name = springboard.name,
+    environments = springboard.environments.map { EnvironmentDto(it.id, it.name) },
+    apps = springboard.apps.map { AppDto(it.id, it.name, appGroupId = it.appGroupId) },
+    resources = springboard.resources.map { ResourceDto(it.id, it.name) },
+    activators = springboard.activators.map { activator ->
+        when (activator) {
+            is UrlActivator -> UrlActivatorDto(
+                appId = activator.appId,
+                resourceId = activator.resourceId,
+                environmentId = activator.environmentId,
+                url = activator.url,
+            )
+            is UrlTemplateActivator -> UrlTemplateActivatorDto(
+                appId = activator.appId,
+                resourceId = activator.resourceId,
+                environmentId = activator.environmentId,
+                urlTemplate = activator.urlTemplate,
+            )
+            is CommandActivator -> CommandActivatorDto(
+                appId = activator.appId,
+                resourceId = activator.resourceId,
+                environmentId = activator.environmentId,
+                commandTemplate = activator.commandTemplate,
+            )
+        }
+    },
+    guidanceData = springboard.guidanceData.map { guidance ->
+        GuidanceDataDto(
+            environmentId = guidance.environmentId,
+            appId = guidance.appId,
+            resourceId = guidance.resourceId,
+            guidanceLines = guidance.guidanceLines,
+        )
+    },
+    appGroups = springboard.appGroups.map { AppGroupDto(it.id, it.description) },
+)

@@ -1,0 +1,91 @@
+package com.strangeparticle.springboard.app.unit
+
+import com.strangeparticle.springboard.app.ai.providers.openai.OpenAiModelFilter
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+/**
+ * Tests for [OpenAiModelFilter] — the heuristic that picks chat-completion-capable
+ * models out of OpenAI's `/v1/models` response.
+ */
+internal class OpenAiModelFilterTest {
+
+    @Test
+    fun `gpt-5 is chat-capable`() {
+        assertTrue(OpenAiModelFilter.isChatCompletionCapable("gpt-5"))
+    }
+
+    @Test
+    fun `gpt-5-mini is chat-capable`() {
+        assertTrue(OpenAiModelFilter.isChatCompletionCapable("gpt-5-mini"))
+    }
+
+    @Test
+    fun `gpt-4o is chat-capable`() {
+        assertTrue(OpenAiModelFilter.isChatCompletionCapable("gpt-4o"))
+    }
+
+    @Test
+    fun `text-embedding-3-large is rejected`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("text-embedding-3-large"))
+    }
+
+    @Test
+    fun `omni-moderation-latest is rejected`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("omni-moderation-latest"))
+    }
+
+    @Test
+    fun `whisper-1 is rejected`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("whisper-1"))
+    }
+
+    @Test
+    fun `dall-e-3 is rejected`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("dall-e-3"))
+    }
+
+    @Test
+    fun `babbage-002 is rejected`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("babbage-002"))
+    }
+
+    @Test
+    fun `gpt-4o-audio-preview is rejected (audio variant)`() {
+        assertFalse(OpenAiModelFilter.isChatCompletionCapable("gpt-4o-audio-preview"))
+    }
+
+    @Test
+    fun `filterAndMap returns sorted descending model infos`() {
+        val body = Json.parseToJsonElement(
+            """
+            {
+              "object": "list",
+              "data": [
+                { "id": "gpt-4o-mini", "object": "model" },
+                { "id": "gpt-5", "object": "model" },
+                { "id": "text-embedding-3-large", "object": "model" },
+                { "id": "gpt-5-mini", "object": "model" },
+                { "id": "whisper-1", "object": "model" }
+              ]
+            }
+            """.trimIndent()
+        ) as JsonObject
+
+        val result = OpenAiModelFilter.filterAndMap(body)
+
+        assertEquals(listOf("gpt-5-mini", "gpt-5", "gpt-4o-mini"), result.map { it.id })
+        // All surfaced as tool-calling-capable.
+        assertTrue(result.all { it.supportsToolCalling })
+    }
+
+    @Test
+    fun `filterAndMap returns empty list when data field is missing`() {
+        val body = Json.parseToJsonElement("""{ "object": "list" }""") as JsonObject
+        assertTrue(OpenAiModelFilter.filterAndMap(body).isEmpty())
+    }
+}

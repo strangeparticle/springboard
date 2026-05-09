@@ -11,8 +11,11 @@ import com.strangeparticle.springboard.app.domain.model.*
 import com.strangeparticle.springboard.app.loading.SpringboardLoader
 import com.strangeparticle.springboard.app.persistence.PersistenceService
 import com.strangeparticle.springboard.app.persistence.buildTabsDto
+import com.strangeparticle.springboard.app.domain.factory.SpringboardJsonWriter
 import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
+import com.strangeparticle.springboard.app.platform.PlatformFileContentService
+import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
@@ -24,6 +27,7 @@ class SpringboardViewModel(
     private val persistenceService: PersistenceService,
     private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
     private val contentLoader: SpringboardContentLoader? = null,
+    private val fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
 ) : ViewModel() {
 
     private var suppressAutosave: Boolean = false
@@ -55,6 +59,94 @@ class SpringboardViewModel(
         val index = _tabs.indexOfFirst { it.tabId == activeTabId }
         if (index < 0) return
         _tabs[index] = transform(_tabs[index])
+    }
+
+    /**
+     * Marks the active tab dirty (in-memory springboard differs from its source).
+     * Wired up by chat-driven mutations in Phase 2; no callers in Phase 1.
+     */
+    fun markActiveTabDirty() {
+        updateActiveTab { it.copy(isDirty = true) }
+    }
+
+    /** Clears the active tab's dirty flag (e.g. after a successful save). */
+    fun clearActiveTabDirty() {
+        updateActiveTab { it.copy(isDirty = false) }
+    }
+
+    /**
+     * True when the active tab has a loaded springboard whose source is a local-file
+     * path (and therefore can be saved in place via [saveActiveTab]). False for empty
+     * tabs, network-sourced tabs (HTTP / S3), and tabs with no source at all.
+     */
+    val canSaveActiveTabInPlace: Boolean
+        get() {
+            val tab = activeTab ?: return false
+            if (tab.springboard == null) return false
+            val source = tab.source ?: return false
+            return !isNonSaveableInPlaceSource(source)
+        }
+
+    /**
+     * Re-serializes the active tab's in-memory springboard via [SpringboardJsonWriter]
+     * and writes it to the tab's existing local-file source path. Clears dirty on
+     * success. Returns a [SaveResult] describing the outcome; the caller dispatches
+     * user-facing feedback (toast, dialog, etc.).
+     *
+     * Use [saveActiveTabAs] for "save to a new location" flows. Network-sourced tabs
+     * (HTTP, `s3://`) cannot be saved in place — those return [SaveResult.NotSupportedForSource].
+     */
+    fun saveActiveTab(): SaveResult {
+        val tab = activeTab ?: return SaveResult.NoSpringboard
+        val springboard = tab.springboard ?: return SaveResult.NoSpringboard
+        val source = tab.source ?: return SaveResult.NotSupportedForSource
+        if (isNonSaveableInPlaceSource(source)) return SaveResult.NotSupportedForSource
+        return writeSpringboardTo(source, springboard, rewriteTabSource = false)
+    }
+
+    /**
+     * Re-serializes the active tab's springboard via [SpringboardJsonWriter] and writes
+     * to [targetPath] (a local-file path chosen by the user via Save As). On success
+     * the tab's [TabState.source] is rewritten to [targetPath] so subsequent in-place
+     * saves overwrite that file. Works for any active-tab source, including HTTP and
+     * `s3://` URLs — Save As is the supported way to take a network-loaded springboard
+     * to disk.
+     */
+    fun saveActiveTabAs(targetPath: String): SaveResult {
+        val tab = activeTab ?: return SaveResult.NoSpringboard
+        val springboard = tab.springboard ?: return SaveResult.NoSpringboard
+        return writeSpringboardTo(targetPath, springboard, rewriteTabSource = true)
+    }
+
+    private fun writeSpringboardTo(
+        targetPath: String,
+        springboard: com.strangeparticle.springboard.app.domain.model.Springboard,
+        rewriteTabSource: Boolean,
+    ): SaveResult {
+        val json = SpringboardJsonWriter.toJson(springboard)
+        val ok = try {
+            fileContentService.writeFileContents(targetPath, json)
+        } catch (e: Exception) {
+            return SaveResult.WriteFailed(targetPath, e.message ?: "unknown error")
+        }
+        return if (ok) {
+            updateActiveTab { current ->
+                current.copy(
+                    isDirty = false,
+                    source = if (rewriteTabSource) targetPath else current.source,
+                )
+            }
+            SaveResult.Success(targetPath)
+        } else {
+            SaveResult.WriteFailed(targetPath, "writeFileContents returned false")
+        }
+    }
+
+    private fun isNonSaveableInPlaceSource(source: String): Boolean {
+        val lowered = source.lowercase()
+        return lowered.startsWith("http://") ||
+            lowered.startsWith("https://") ||
+            lowered.startsWith("s3://")
     }
 
     val canCreateNewTab: Boolean
@@ -359,6 +451,7 @@ class SpringboardViewModel(
                 multiSelectSet = emptySet(),
                 hoveredActivatorPreview = null,
                 isLoading = false,
+                isDirty = false,
             )
         }
 

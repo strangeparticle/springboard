@@ -6,6 +6,7 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -23,9 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.strangeparticle.springboard.app.ui.TestTags
 
 object TabIndicatorDefaults {
     val Height = 28.dp
@@ -37,6 +43,8 @@ object TabIndicatorDefaults {
 fun TabIndicator(
     label: String,
     isActive: Boolean,
+    statusIcon: TabStatusIcon?,
+    tabId: String,
     onSelect: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,6 +82,27 @@ fun TabIndicator(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+        if (statusIcon != null) {
+            Spacer(modifier = Modifier.width(4.dp))
+            val (imageVector: ImageVector, tag, contentDescription) = when (statusIcon) {
+                TabStatusIcon.Dirty -> Triple(
+                    Icons.Outlined.Circle,
+                    TestTags.tabDirtyIndicator(tabId),
+                    "Tab has unsaved changes",
+                )
+                TabStatusIcon.NonSaveable -> Triple(
+                    Icons.Default.Lock,
+                    TestTags.tabLockIndicator(tabId),
+                    "Tab source is read-only",
+                )
+            }
+            Icon(
+                imageVector = imageVector,
+                contentDescription = contentDescription,
+                tint = foreground,
+                modifier = Modifier.size(10.dp).testTag(tag),
+            )
+        }
         IconButton(
             onClick = onClose,
             modifier = Modifier.size(20.dp),

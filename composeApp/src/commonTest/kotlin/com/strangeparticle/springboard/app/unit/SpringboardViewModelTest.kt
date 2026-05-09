@@ -846,4 +846,47 @@ class SpringboardViewModelTest {
         }
         assertTrue(errorToasts.any { it.message.contains("network down") })
     }
+
+    // ---- isDirty + mark/clear (Task 3) ----
+
+    @Test
+    fun `markActiveTabDirty sets isDirty true on the active tab`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        vm.markActiveTabDirty()
+
+        assertEquals(true, vm.activeTab?.isDirty)
+    }
+
+    @Test
+    fun `clearActiveTabDirty sets isDirty false on the active tab`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+        vm.markActiveTabDirty()
+
+        vm.clearActiveTabDirty()
+
+        assertEquals(false, vm.activeTab?.isDirty)
+    }
+
+    @Test
+    fun `loadConfig clears any pre-existing dirty flag on the active tab`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test1.json")
+        vm.markActiveTabDirty()
+        assertEquals(true, vm.activeTab?.isDirty)
+
+        // Loading a new config should reset dirty (just-loaded matches disk).
+        vm.loadConfig(validJson, "/test2.json")
+
+        assertEquals(false, vm.activeTab?.isDirty)
+    }
+
+    @Test
+    fun `freshly-created empty tab is not dirty`() {
+        val vm = createViewModel()
+
+        assertEquals(false, vm.activeTab?.isDirty)
+    }
 }

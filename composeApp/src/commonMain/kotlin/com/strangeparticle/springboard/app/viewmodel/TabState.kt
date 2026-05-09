@@ -16,6 +16,7 @@ data class TabState(
     val hoveredActivatorPreview: String?,
     val gridZoomSelection: GridZoomSelection,
     val isLoading: Boolean,
+    val isDirty: Boolean = false,
 ) {
     val isEmpty: Boolean get() = springboard == null
 
@@ -34,6 +35,7 @@ data class TabState(
             hoveredActivatorPreview = null,
             gridZoomSelection = GridZoomSelection.default(),
             isLoading = false,
+            isDirty = false,
         )
     }
 }

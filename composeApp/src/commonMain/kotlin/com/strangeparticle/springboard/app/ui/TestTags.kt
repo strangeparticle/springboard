@@ -26,6 +26,12 @@ object TestTags {
     const val TAB_NEW_BUTTON = "tabNewButton"
 
     fun tabIndicator(tabId: String) = "tabIndicator_$tabId"
+    fun tabDirtyIndicator(tabId: String) = "tabDirtyIndicator_$tabId"
+    fun tabLockIndicator(tabId: String) = "tabLockIndicator_$tabId"
+
+    const val CLOSE_DIRTY_TAB_DIALOG = "closeDirtyTabDialog"
+    const val CLOSE_DIRTY_TAB_CONFIRM_BUTTON = "closeDirtyTabConfirmButton"
+    const val CLOSE_DIRTY_TAB_CANCEL_BUTTON = "closeDirtyTabCancelButton"
 
     fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
     fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"

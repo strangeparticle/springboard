@@ -14,7 +14,9 @@ import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen
 import com.strangeparticle.springboard.app.ui.activatorpreview.ActivatorPreview
 import com.strangeparticle.springboard.app.ui.statusbar.StatusBar
+import com.strangeparticle.springboard.app.ui.tabs.CloseDirtyTabConfirmDialog
 import com.strangeparticle.springboard.app.ui.tabs.TabBar
+import com.strangeparticle.springboard.app.ui.tabs.requestTabClose
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.delay
@@ -31,6 +33,7 @@ fun MainScreen(
 ) {
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
+    var pendingCloseTabId by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
     val openFromNetwork: (() -> Unit)? = if (networkContentService != null) {
@@ -136,9 +139,29 @@ fun MainScreen(
             activeTabId = viewModel.activeTabId,
             canCreateNewTab = viewModel.canCreateNewTab,
             onSelect = { viewModel.selectTab(it) },
-            onClose = { viewModel.closeTab(it) },
+            onClose = { tabId ->
+                requestTabClose(tabId, viewModel) { pendingCloseTabId = it }
+            },
             onCreate = { viewModel.createTab() },
             onOpenSettings = onOpenSettings,
         )
+    }
+
+    val closingTabId = pendingCloseTabId
+    if (closingTabId != null) {
+        val tab = viewModel.tabs.firstOrNull { it.tabId == closingTabId }
+        if (tab == null) {
+            // Tab vanished while the dialog was queued — clear the pending state.
+            pendingCloseTabId = null
+        } else {
+            CloseDirtyTabConfirmDialog(
+                tabLabel = tab.label,
+                onCancel = { pendingCloseTabId = null },
+                onCloseAnyway = {
+                    viewModel.closeTab(closingTabId)
+                    pendingCloseTabId = null
+                },
+            )
+        }
     }
 }

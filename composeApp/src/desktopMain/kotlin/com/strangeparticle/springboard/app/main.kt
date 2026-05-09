@@ -122,6 +122,8 @@ fun main(args: Array<String>) {
         ) {
             SpringboardMenuBar(
                 hasActiveSpringboard = viewModel.springboard != null,
+                canSaveActiveTabInPlace = viewModel.canSaveActiveTabInPlace,
+                isActiveTabDirty = viewModel.activeTab?.isDirty == true,
                 canCreateNewTab = viewModel.canCreateNewTab,
                 onOpenInCurrentTab = {
                     val path = openFileDialog(null)
@@ -159,6 +161,19 @@ fun main(args: Array<String>) {
                 },
                 onPreviousTab = { viewModel.selectPreviousTab() },
                 onNextTab = { viewModel.selectNextTab() },
+                onSave = {
+                    when (val result = viewModel.saveActiveTab()) {
+                        is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
+                            ToastBroadcaster.info("Saved to ${result.path}")
+                        is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
+                            ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
+                        com.strangeparticle.springboard.app.viewmodel.SaveResult.NotSupportedForSource ->
+                            ToastBroadcaster.error("Save is not supported for this source. Use Save a Local Copy As… instead.")
+                        com.strangeparticle.springboard.app.viewmodel.SaveResult.NoSpringboard -> {
+                            // Menu item should be disabled in this state — defensive no-op.
+                        }
+                    }
+                },
                 onSaveLocalCopyAs = {
                     val springboard = viewModel.springboard
                     if (springboard == null) {
@@ -167,11 +182,16 @@ fun main(args: Array<String>) {
                     val suggestedName = springboard.name.replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"
                     val path = saveLocalCopyAsFileDialog(suggestedName)
                     if (path != null) {
-                        val success = writeFileContents(path, springboard.jsonSource)
-                        if (success) {
-                            ToastBroadcaster.info("Saved to $path")
-                        } else {
-                            ToastBroadcaster.error("Failed to save to $path")
+                        when (val result = viewModel.saveActiveTabAs(path)) {
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
+                                ToastBroadcaster.info("Saved to ${result.path}")
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
+                                ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
+                            com.strangeparticle.springboard.app.viewmodel.SaveResult.NotSupportedForSource ->
+                                ToastBroadcaster.error("Save As is not supported for this tab.")
+                            com.strangeparticle.springboard.app.viewmodel.SaveResult.NoSpringboard -> {
+                                // No-op; menu only fires when there's a springboard.
+                            }
                         }
                     }
                 },

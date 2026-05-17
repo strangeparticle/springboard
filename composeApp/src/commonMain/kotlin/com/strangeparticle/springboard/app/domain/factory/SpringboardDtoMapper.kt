@@ -18,7 +18,7 @@ import com.strangeparticle.springboard.app.domain.model.UrlTemplateActivator
  * Maps a domain [Springboard] back to a [SpringboardDto] suitable for serialization.
  * Inverse of [SpringboardFactory.fromDto]. Used by both [SpringboardJsonWriter] (to
  * emit on-disk JSON) and the AI editing snapshot machinery (to embed a tab's
- * springboard inside an `AppStateSnapshot`).
+ * springboard inside an `SpringboardAppSnapshot`).
  *
  * Lives in `domain.factory` rather than the AI feature package because the mapping
  * is purely between domain and DTO — it doesn't know anything about AI, snapshots,

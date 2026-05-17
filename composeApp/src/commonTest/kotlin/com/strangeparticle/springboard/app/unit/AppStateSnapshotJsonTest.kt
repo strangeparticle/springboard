@@ -1,7 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.ai.core.AppStateSnapshot
-import com.strangeparticle.springboard.app.ai.core.AppStateSnapshotJson
+import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -12,10 +11,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Tests for [AppStateSnapshotJson] — the compact-JSON serializer used to feed
- * [AppStateSnapshot] to the model.
+ * Tests for [SpringboardAppSnapshot] — the compact-JSON serializer used to feed
+ * app snapshots to the model.
  */
-internal class AppStateSnapshotJsonTest {
+internal class SpringboardAppSnapshotJsonTest {
 
     private fun createViewModel() = SpringboardViewModel(
         settingsManager = createSettingsManagerForTest(),
@@ -27,9 +26,9 @@ internal class AppStateSnapshotJsonTest {
     fun `encode produces no whitespace and no newlines`() {
         val vm = createViewModel()
         vm.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test.json")
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
-        val encoded = AppStateSnapshotJson.toCompactJson(snapshot)
+        val encoded = snapshot.toCompactJson()
 
         assertTrue(!encoded.contains("\n"), "Expected no newlines in compact form; got: $encoded")
         // Compact JSON has no spaces between separators (no `, ` after commas, no `: ` after colons),
@@ -45,10 +44,10 @@ internal class AppStateSnapshotJsonTest {
     fun `decode accepts compact form`() {
         val vm = createViewModel()
         vm.loadConfig(TestFixtureJson.URL_ONLY, "/test.json")
-        val snapshot = AppStateSnapshot.capture(vm)
-        val compact = AppStateSnapshotJson.toCompactJson(snapshot)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
+        val compact = snapshot.toCompactJson()
 
-        val decoded = AppStateSnapshotJson.fromJson(compact)
+        val decoded = SpringboardAppSnapshot.fromJson(compact)
 
         assertEquals(snapshot, decoded)
     }
@@ -71,7 +70,7 @@ internal class AppStateSnapshotJsonTest {
             }
         """.trimIndent()
 
-        val decoded = AppStateSnapshotJson.fromJson(pretty)
+        val decoded = SpringboardAppSnapshot.fromJson(pretty)
 
         assertEquals(1, decoded.tabs.size)
         assertEquals("tab-1", decoded.tabs[0].tabId)
@@ -84,11 +83,11 @@ internal class AppStateSnapshotJsonTest {
     fun `roundTrip via encode-decode-encode is bitwise stable`() {
         val vm = createViewModel()
         vm.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test.json")
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
-        val first = AppStateSnapshotJson.toCompactJson(snapshot)
-        val decoded = AppStateSnapshotJson.fromJson(first)
-        val second = AppStateSnapshotJson.toCompactJson(decoded)
+        val first = snapshot.toCompactJson()
+        val decoded = SpringboardAppSnapshot.fromJson(first)
+        val second = decoded.toCompactJson()
 
         assertEquals(first, second)
     }

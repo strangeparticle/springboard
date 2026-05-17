@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.ai.core.AppStateSnapshot
+import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -13,11 +13,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Tests for [AppStateSnapshot.capture] — the per-turn snapshot the AI session
+ * Tests for [SpringboardAppSnapshot.capture] — the per-turn snapshot the AI session
  * manager sends back to the model so it sees the exact tab/state landscape after
  * any mutation.
  */
-internal class AppStateSnapshotTest {
+internal class SpringboardAppSnapshotTest {
 
     private fun createViewModel() = SpringboardViewModel(
         settingsManager = createSettingsManagerForTest(),
@@ -33,7 +33,7 @@ internal class AppStateSnapshotTest {
         vm.loadConfig(TestFixtureJson.URL_ONLY, "/tab2.json")
         vm.createTab() // empty tab waiting for an open
 
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
         assertEquals(3, snapshot.tabs.size)
         assertEquals(listOf("/tab1.json", "/tab2.json", null), snapshot.tabs.map { it.source })
@@ -48,7 +48,7 @@ internal class AppStateSnapshotTest {
         val secondTabId = vm.activeTabId
         assertTrue(firstTabId != secondTabId)
 
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
         assertEquals(secondTabId, snapshot.activeTabId)
     }
@@ -57,7 +57,7 @@ internal class AppStateSnapshotTest {
     fun `capture sets springboard to null for an empty tab`() {
         val vm = createViewModel() // viewmodel constructor seeds one empty tab
 
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
         assertEquals(1, snapshot.tabs.size)
         assertNull(snapshot.tabs[0].springboard)
@@ -69,7 +69,7 @@ internal class AppStateSnapshotTest {
         val vm = createViewModel()
         vm.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/tab1.json")
 
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
         val dto = snapshot.tabs.first().springboard
 
         assertNotNull(dto)
@@ -84,18 +84,8 @@ internal class AppStateSnapshotTest {
         vm.loadConfig(TestFixtureJson.URL_ONLY, "/tab1.json")
         vm.markActiveTabDirty()
 
-        val snapshot = AppStateSnapshot.capture(vm)
+        val snapshot = SpringboardAppSnapshot.capture(vm)
 
         assertEquals(true, snapshot.tabs.first().isDirty)
-    }
-
-    @Test
-    fun `capture lastError is null by default`() {
-        val vm = createViewModel()
-        vm.loadConfig(TestFixtureJson.URL_ONLY, "/tab1.json")
-
-        val snapshot = AppStateSnapshot.capture(vm)
-
-        assertNull(snapshot.lastError)
     }
 }

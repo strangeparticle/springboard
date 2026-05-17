@@ -1,12 +1,12 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.springboard.app.ai.core.AiClient
-import com.strangeparticle.springboard.app.ai.core.AiException
-import com.strangeparticle.springboard.app.ai.core.AiModelInfo
-import com.strangeparticle.springboard.app.ai.core.AiRequest
-import com.strangeparticle.springboard.app.ai.core.AiResponse
-import com.strangeparticle.springboard.app.ai.core.AiStopReason
-import com.strangeparticle.springboard.app.ai.core.AiToolCall
+import com.strangeparticle.editio.client.AiClientException
+import com.strangeparticle.editio.client.AiClientRequest
+import com.strangeparticle.editio.client.AiClientResponse
+import com.strangeparticle.editio.client.AiClientStopReason
+import com.strangeparticle.editio.client.AiClient
+import com.strangeparticle.editio.client.AiClientModelInfo
+import com.strangeparticle.editio.toolcall.ToolCall
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 
@@ -18,7 +18,7 @@ import kotlinx.serialization.json.buildJsonObject
  * Two ways to script behavior, in priority order:
  *
  * 1. **Per-request handler.** Set [sendAiRequestHandler] to a function that takes the
- *    [AiRequest] and returns the [AiResponse]. Useful for tests that need to
+ *    [AiClientRequest] and returns the [AiClientResponse]. Useful for tests that need to
  *    inspect the request to decide what to send back (e.g. agent-loop iterations
  *    where the second request looks different from the first).
  * 2. **Response queue.** Push responses to [responseQueue] in order; each
@@ -32,27 +32,27 @@ import kotlinx.serialization.json.buildJsonObject
 internal class AiClientInMemoryFake : AiClient {
 
     /** Calls received in order. Inspect after the test to assert request shape. */
-    val recordedRequests: MutableList<AiRequest> = mutableListOf()
+    val recordedRequests: MutableList<AiClientRequest> = mutableListOf()
 
     /** Calls to [listModels] received in order. */
     val recordedListModelsCalls: MutableList<String> = mutableListOf()
 
     /** Optional override that decides what to return based on the actual request. */
-    var sendAiRequestHandler: ((AiRequest) -> AiResponse)? = null
+    var sendAiRequestHandler: ((AiClientRequest) -> AiClientResponse)? = null
 
     /** Linear queue of responses. `sendAiRequest()` pops the head. */
-    val responseQueue: ArrayDeque<AiResponse> = ArrayDeque()
+    val responseQueue: ArrayDeque<AiClientResponse> = ArrayDeque()
 
     /** What [listModels] returns (for any apiKey). Override per-test. */
-    var modelsResponse: List<AiModelInfo> = emptyList()
+    var modelsResponse: List<AiClientModelInfo> = emptyList()
 
     /** When set, [sendAiRequest] throws this instead of returning a response. */
-    var sendAiRequestException: AiException? = null
+    var sendAiRequestException: AiClientException? = null
 
     /** When set, [listModels] throws this instead of returning [modelsResponse]. */
-    var listModelsException: AiException? = null
+    var listModelsException: AiClientException? = null
 
-    override suspend fun sendAiRequest(request: AiRequest): AiResponse {
+    override suspend fun sendAiRequest(request: AiClientRequest): AiClientResponse {
         recordedRequests += request
         sendAiRequestException?.let { throw it }
         sendAiRequestHandler?.let { return it(request) }
@@ -65,7 +65,7 @@ internal class AiClientInMemoryFake : AiClient {
         return responseQueue.removeFirst()
     }
 
-    override suspend fun listModels(apiKey: String): List<AiModelInfo> {
+    override suspend fun listModels(apiKey: String): List<AiClientModelInfo> {
         recordedListModelsCalls += apiKey
         listModelsException?.let { throw it }
         return modelsResponse
@@ -74,11 +74,11 @@ internal class AiClientInMemoryFake : AiClient {
     // -- Convenience builders ----------------------------------------------------
 
     /** Build a text-only response (model returned prose, no tool calls, finished naturally). */
-    fun textOnly(text: String, raw: JsonObject = buildJsonObject {}): AiResponse =
-        AiResponse(
+    fun textOnly(text: String, raw: JsonObject = buildJsonObject {}): AiClientResponse =
+        AiClientResponse(
             text = text,
             toolCalls = emptyList(),
-            stopReason = AiStopReason.Stop,
+            stopReason = AiClientStopReason.Stop,
             raw = raw,
         )
 
@@ -89,22 +89,22 @@ internal class AiClientInMemoryFake : AiClient {
         arguments: JsonObject,
         text: String? = null,
         raw: JsonObject = buildJsonObject {},
-    ): AiResponse = AiResponse(
+    ): AiClientResponse = AiClientResponse(
         text = text,
-        toolCalls = listOf(AiToolCall(toolCallId, toolName, arguments)),
-        stopReason = AiStopReason.ToolUse,
+        toolCalls = listOf(ToolCall(toolCallId, toolName, arguments.toString())),
+        stopReason = AiClientStopReason.ToolUse,
         raw = raw,
     )
 
     /** Build a multi-tool-call response (model proposes several tool invocations in one turn). */
     fun multipleToolCalls(
-        calls: List<AiToolCall>,
+        calls: List<ToolCall>,
         text: String? = null,
         raw: JsonObject = buildJsonObject {},
-    ): AiResponse = AiResponse(
+    ): AiClientResponse = AiClientResponse(
         text = text,
         toolCalls = calls,
-        stopReason = AiStopReason.ToolUse,
+        stopReason = AiClientStopReason.ToolUse,
         raw = raw,
     )
 }

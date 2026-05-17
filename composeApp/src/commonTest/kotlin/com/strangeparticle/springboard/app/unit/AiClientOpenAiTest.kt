@@ -1,10 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.ai.core.AiErrorClass
-import com.strangeparticle.springboard.app.ai.core.AiException
-import com.strangeparticle.springboard.app.ai.core.AiRequest
-import com.strangeparticle.springboard.app.ai.core.AiStopReason
-import com.strangeparticle.springboard.app.ai.providers.openai.AiClientOpenAi
+import com.strangeparticle.editio.client.AiClientErrorType
+import com.strangeparticle.editio.client.AiClientException
+import com.strangeparticle.editio.client.AiClientRequest
+import com.strangeparticle.editio.client.AiClientStopReason
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -19,13 +18,13 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
- * Tests for [AiClientOpenAi]. Wires the client to a Ktor [MockEngine] so we can
+ * Tests for [com.strangeparticle.editio.client.provider.openai.AiClientOpenAi]. Wires the client to a Ktor [MockEngine] so we can
  * assert on the request shape (URL, headers, body) and inject the responses we
  * want.
  */
 internal class AiClientOpenAiTest {
 
-    private fun emptyRequest() = AiRequest(
+    private fun emptyRequest() = AiClientRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
         history = emptyList(),
@@ -54,7 +53,10 @@ internal class AiClientOpenAiTest {
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
             )
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
         sut.sendAiRequest(emptyRequest())
 
@@ -71,13 +73,16 @@ internal class AiClientOpenAiTest {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
         val response = sut.sendAiRequest(emptyRequest())
 
         assertEquals("hello", response.text)
         assertTrue(response.toolCalls.isEmpty())
-        assertEquals(AiStopReason.Stop, response.stopReason)
+        assertEquals(AiClientStopReason.Stop, response.stopReason)
     }
 
     @Test
@@ -89,10 +94,13 @@ internal class AiClientOpenAiTest {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiErrorClass.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(AiClientErrorType.InvalidApiKey, ex.classified)
         assertEquals("Invalid API key", ex.rawProviderMessage)
     }
 
@@ -101,10 +109,13 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             respond("""{"error":{"message":"slow down"}}""", HttpStatusCode.TooManyRequests)
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiErrorClass.RateLimit, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(AiClientErrorType.RateLimit, ex.classified)
     }
 
     @Test
@@ -112,10 +123,13 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             respond("internal", HttpStatusCode.InternalServerError)
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiErrorClass.ProviderUnavailable, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(AiClientErrorType.ProviderUnavailable, ex.classified)
     }
 
     @Test
@@ -123,10 +137,13 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             throw RuntimeException("connection refused")
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiErrorClass.Network, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(AiClientErrorType.Network, ex.classified)
     }
 
     @Test
@@ -134,10 +151,13 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             error("sendAiRequest should never call the engine when api key is missing")
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { null })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { null })
 
-        val ex = assertFailsWith<AiException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiErrorClass.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(AiClientErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
@@ -159,7 +179,10 @@ internal class AiClientOpenAiTest {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-not-used-for-listModels" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-not-used-for-listModels" })
 
         val models = sut.listModels("sk-list-test")
 
@@ -173,10 +196,13 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             error("should not reach engine when api key is blank")
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { null })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { null })
 
-        val ex = assertFailsWith<AiException> { sut.listModels("") }
-        assertEquals(AiErrorClass.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.listModels("") }
+        assertEquals(AiClientErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
@@ -188,10 +214,13 @@ internal class AiClientOpenAiTest {
                 headersOf(HttpHeaders.ContentType, "application/json"),
             )
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiException> { sut.listModels("sk-test") }
-        assertEquals(AiErrorClass.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<AiClientException> { sut.listModels("sk-test") }
+        assertEquals(AiClientErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
@@ -201,7 +230,10 @@ internal class AiClientOpenAiTest {
             // a CancellationException, which should bubble up uncaught.
             throw kotlinx.coroutines.CancellationException("turn cancelled by user")
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
         // The expectation is the CancellationException — NOT an AiException.
         assertFailsWith<kotlinx.coroutines.CancellationException> {
@@ -214,7 +246,10 @@ internal class AiClientOpenAiTest {
         val client = HttpClient(MockEngine {
             throw kotlinx.coroutines.CancellationException("settings dialog cancelled fetch")
         })
-        val sut = AiClientOpenAi(client, apiKeyProvider = { "sk-test" })
+        val sut =
+            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.AiClientOpenAi(
+                client,
+                apiKeyProvider = { "sk-test" })
 
         assertFailsWith<kotlinx.coroutines.CancellationException> {
             sut.listModels("sk-test")

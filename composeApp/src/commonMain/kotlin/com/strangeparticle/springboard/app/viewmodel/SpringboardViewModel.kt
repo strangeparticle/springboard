@@ -56,10 +56,17 @@ class SpringboardViewModel(
         get() = _tabs.firstOrNull { it.tabId == activeTabId }
 
     private fun updateActiveTab(transform: (TabState) -> TabState) {
-        val index = _tabs.indexOfFirst { it.tabId == activeTabId }
+        updateTabById(activeTabId, transform)
+    }
+
+    private fun updateTabById(tabId: String, transform: (TabState) -> TabState) {
+        val index = _tabs.indexOfFirst { it.tabId == tabId }
         if (index < 0) return
         _tabs[index] = transform(_tabs[index])
     }
+
+    /** Returns the [TabState] for [tabId], or null if no tab with that id exists. */
+    fun findTab(tabId: String): TabState? = _tabs.firstOrNull { it.tabId == tabId }
 
     /**
      * Marks the active tab dirty (in-memory springboard differs from its source).
@@ -69,9 +76,24 @@ class SpringboardViewModel(
         updateActiveTab { it.copy(isDirty = true) }
     }
 
+    /** Marks [tabId] dirty. Used by AI tools that target a specific (possibly inactive) tab. */
+    fun markTabDirty(tabId: String) {
+        updateTabById(tabId) { it.copy(isDirty = true) }
+    }
+
     /** Clears the active tab's dirty flag (e.g. after a successful save). */
     fun clearActiveTabDirty() {
         updateActiveTab { it.copy(isDirty = false) }
+    }
+
+    /**
+     * Replaces the springboard held by [tabId] with [newSpringboard]. Used by AI
+     * tools after a pure-function mutator has produced a validated new springboard.
+     * Does not flip the dirty flag — callers do that separately so they can keep
+     * dirty-marking and state-changed signaling clean and explicit.
+     */
+    fun replaceTabSpringboard(tabId: String, newSpringboard: com.strangeparticle.springboard.app.domain.model.Springboard) {
+        updateTabById(tabId) { it.copy(springboard = newSpringboard) }
     }
 
     /**
@@ -96,13 +118,20 @@ class SpringboardViewModel(
      * Use [saveActiveTabAs] for "save to a new location" flows. Network-sourced tabs
      * (HTTP, `s3://`) cannot be saved in place — those return [SaveResult.NotSupportedForSource].
      */
-    fun saveActiveTab(): SaveResult {
-        val tab = activeTab ?: return SaveResult.NoSpringboard
+    /**
+     * Re-serializes the springboard in [tabId] and writes it to that tab's existing
+     * local-file source path. Clears dirty on success. Works for any tab, not only
+     * the active one — no active-tab switch required.
+     */
+    fun saveTab(tabId: String): SaveResult {
+        val tab = findTab(tabId) ?: return SaveResult.NoSpringboard
         val springboard = tab.springboard ?: return SaveResult.NoSpringboard
         val source = tab.source ?: return SaveResult.NotSupportedForSource
         if (isNonSaveableInPlaceSource(source)) return SaveResult.NotSupportedForSource
-        return writeSpringboardTo(source, springboard, rewriteTabSource = false)
+        return writeSpringboardTo(source, springboard, rewriteTabSource = false, tabId = tabId)
     }
+
+    fun saveActiveTab(): SaveResult = saveTab(activeTabId)
 
     /**
      * Re-serializes the active tab's springboard via [SpringboardJsonWriter] and writes
@@ -115,13 +144,14 @@ class SpringboardViewModel(
     fun saveActiveTabAs(targetPath: String): SaveResult {
         val tab = activeTab ?: return SaveResult.NoSpringboard
         val springboard = tab.springboard ?: return SaveResult.NoSpringboard
-        return writeSpringboardTo(targetPath, springboard, rewriteTabSource = true)
+        return writeSpringboardTo(targetPath, springboard, rewriteTabSource = true, tabId = activeTabId)
     }
 
     private fun writeSpringboardTo(
         targetPath: String,
         springboard: com.strangeparticle.springboard.app.domain.model.Springboard,
         rewriteTabSource: Boolean,
+        tabId: String,
     ): SaveResult {
         val json = SpringboardJsonWriter.toJson(springboard)
         val ok = try {
@@ -130,7 +160,7 @@ class SpringboardViewModel(
             return SaveResult.WriteFailed(targetPath, e.message ?: "unknown error")
         }
         return if (ok) {
-            updateActiveTab { current ->
+            updateTabById(tabId) { current ->
                 current.copy(
                     isDirty = false,
                     source = if (rewriteTabSource) targetPath else current.source,
@@ -411,6 +441,85 @@ class SpringboardViewModel(
             loadConfig(contents, source)
         } catch (e: Exception) {
             activeTabToast.error("Failed to reload: ${e.message}")
+        }
+    }
+
+    /**
+     * Outcome of [loadConfigFromSource]. Carries the loaded tab id on success and a
+     * structured error code/message on failure so AI tool callers can surface the
+     * problem in their tool result.
+     */
+    sealed class LoadResult {
+        data class Success(val tabId: String) : LoadResult()
+        data class Failure(val code: String, val message: String) : LoadResult()
+    }
+
+    /**
+     * Load a springboard from [source] (file path or URL) via the configured
+     * [SpringboardContentLoader]. When [inNewTab] is true, creates a new tab first
+     * and loads into it; otherwise loads into the currently active tab (replacing
+     * any existing springboard there). Used by AI tab-management tools.
+     */
+    suspend fun loadConfigFromSource(source: String, inNewTab: Boolean): LoadResult {
+        val loader = contentLoader
+            ?: return LoadResult.Failure(
+                code = "loader_not_configured",
+                message = "Cannot load: SpringboardViewModel was constructed without a SpringboardContentLoader.",
+            )
+
+        if (inNewTab) {
+            val newTabId = createTab()
+                ?: return LoadResult.Failure(
+                    code = "tab_limit_reached",
+                    message = "Cannot create a new tab — tab limit reached.",
+                )
+            val result = loadIntoActive(loader, source, newTabId)
+            if (result is LoadResult.Failure) closeTab(newTabId)
+            return result
+        }
+        return loadIntoActive(loader, source, activeTabId)
+    }
+
+    private suspend fun loadIntoActive(
+        loader: SpringboardContentLoader,
+        source: String,
+        targetTabId: String,
+    ): LoadResult {
+        return try {
+            val contents = loader.loadContent(source)
+            val springboardConfig = SpringboardFactory.fromJson(contents, source)
+            val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
+            // Write directly to targetTabId — applySpringboard targets the active tab and
+            // would corrupt a different tab if the user switches while the load is in flight.
+            updateTabById(targetTabId) { current ->
+                current.copy(
+                    springboard = springboardConfig,
+                    source = source,
+                    label = deriveTabLabel(springboardConfig.name),
+                    selectedEnvironmentId = initialEnvironmentId,
+                    selectedAppId = null,
+                    selectedResourceId = null,
+                    multiSelectSet = emptySet(),
+                    hoveredActivatorPreview = null,
+                    isLoading = false,
+                    isDirty = false,
+                )
+            }
+            val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
+            if (hasUnsafeActivators) {
+                tabToastState(targetTabId).warning(
+                    "This Springboard contains activators that execute CLI commands or process template expressions. Be sure you trust it before using."
+                )
+            }
+            tabToastState(targetTabId).info("Springboard loaded: ${springboardConfig.name}")
+            if (targetTabId == activeTabId) requestFocusAppDropdown()
+            onTabsChanged()
+            LoadResult.Success(targetTabId)
+        } catch (e: Exception) {
+            LoadResult.Failure(
+                code = "load_failed",
+                message = "Failed to load '$source': ${e.message ?: "unknown error"}",
+            )
         }
     }
 

@@ -55,14 +55,26 @@ fun SettingsScreen(
             // Grouped settings
             for (group in viewModel.groupedSettings) {
                 SettingsGroupSection(
-                    group = group,
+                    group = group.copy(settings = group.settings.filterNot { it.key.isAiSetting() }),
                     viewModel = viewModel,
                     currentTabSources = currentTabSources,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
+                if (group.name == "General") {
+                    AiSettingsSection(viewModel = viewModel)
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
             }
         }
     }
+}
+
+private fun SettingsKey.isAiSetting(): Boolean = when (this) {
+    SettingsKey.AI_PROVIDER -> true
+    SettingsKey.AI_OPENAI_API_KEY -> true
+    SettingsKey.AI_ANTHROPIC_API_KEY -> true
+    SettingsKey.AI_MODEL -> true
+    else -> false
 }
 
 @Composable
@@ -387,4 +399,3 @@ private fun SettingsDropdown(
         }
     }
 }
-

@@ -24,6 +24,9 @@ fun FrameWindowScope.SpringboardMenuBar(
     onReload: () -> Unit,
     onOpenSettings: () -> Unit,
     onShowActiveSettings: () -> Unit,
+    onOpenAssistant: () -> Unit,
+    onCloseAssistant: () -> Unit,
+    onToggleAssistant: () -> Unit,
     onShowLicense: () -> Unit,
 ) {
     MenuBar {
@@ -102,6 +105,17 @@ fun FrameWindowScope.SpringboardMenuBar(
             }
             Item("Show Active Settings") {
                 onShowActiveSettings()
+            }
+        }
+        Menu("Assistant") {
+            Item("Open Assistant", shortcut = KeyShortcut(Key.A, meta = true, shift = true)) {
+                onOpenAssistant()
+            }
+            Item("Close Assistant") {
+                onCloseAssistant()
+            }
+            Item("Toggle Assistant") {
+                onToggleAssistant()
             }
         }
         Menu("Help") {

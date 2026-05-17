@@ -8,6 +8,8 @@ import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
+import com.strangeparticle.springboard.app.ui.editio.AiChatPane
+import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
 import com.strangeparticle.springboard.app.ui.toast.ToastOverlay
@@ -15,12 +17,14 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 
 @Composable
-fun SpringboardApp(
+internal fun SpringboardApp(
     viewModel: SpringboardViewModel,
     settingsViewModel: SettingsViewModel,
     showSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     showActiveSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
+    showAssistant: MutableState<Boolean> = remember { mutableStateOf(false) },
     activeSettingsOpenedFromSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
+    aiChatPaneState: AiChatPaneState = AiChatPaneState.notConfigured(),
     onOpenSettings: () -> Unit = { showSettings.value = true },
     onOpenActiveSettingsFromSettings: () -> Unit = {
         activeSettingsOpenedFromSettings.value = true
@@ -57,6 +61,9 @@ fun SpringboardApp(
                             }
                         }
                         true
+                    } else if (event.type == KeyEventType.KeyDown && event.isMetaPressed && event.isShiftPressed && event.key == Key.A) {
+                        showAssistant.value = !showAssistant.value
+                        true
                     } else if (event.type == KeyEventType.KeyDown && event.isCtrlPressed && event.isShiftPressed) {
                         when (event.key) {
                             Key.LeftBracket -> { viewModel.selectPreviousTab(); true }
@@ -88,7 +95,20 @@ fun SpringboardApp(
                     fileContentService = fileContentService,
                     networkContentService = networkContentService,
                     showFileOpen = showFileOpen,
+                    isAssistantConfigured = aiChatPaneState.isConfigured,
+                    onToggleAssistant = { showAssistant.value = !showAssistant.value },
                 )
+            }
+
+            if (!showSettings.value && showAssistant.value) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    AiChatPane(
+                        state = aiChatPaneState,
+                        onClose = { showAssistant.value = false },
+                        onOpenSettings = onOpenSettings,
+                    )
+                }
             }
 
             ToastOverlay(

@@ -76,6 +76,7 @@ fun main(args: Array<String>) {
         }
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
+        val showAssistant = remember { mutableStateOf(false) }
         val showLicenseDialog = remember { mutableStateOf(false) }
         val showNetworkDialog = remember { mutableStateOf(false) }
         val networkOpenIntoNewTab = remember { mutableStateOf(false) }
@@ -203,6 +204,9 @@ fun main(args: Array<String>) {
                 },
                 onOpenSettings = openSettingsScreen,
                 onShowActiveSettings = openActiveSettingsFromMain,
+                onOpenAssistant = { showAssistant.value = true },
+                onCloseAssistant = { showAssistant.value = false },
+                onToggleAssistant = { showAssistant.value = !showAssistant.value },
                 onShowLicense = {
                     showLicenseDialog.value = true
                 },
@@ -242,6 +246,7 @@ fun main(args: Array<String>) {
                 settingsViewModel = settingsViewModel,
                 showSettings = showSettings,
                 showActiveSettings = showActiveSettings,
+                showAssistant = showAssistant,
                 onOpenSettings = openSettingsScreen,
                 onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
                 onCloseActiveSettings = closeActiveSettings,

@@ -3,6 +3,8 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
 import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
 import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.client.AiClientErrorType
+import com.strangeparticle.editio.client.AiClientException
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
@@ -320,6 +322,24 @@ internal class AiSessionManagerTest {
 
         releaseTool.complete(Unit)
         firstJob.join()
+    }
+
+    @Test
+    fun `provider error appends chat error and allows next submit`() = runTest {
+        val aiClient = AiClientInMemoryFake().apply {
+            sendAiRequestException = AiClientException(AiClientErrorType.Network, "network unavailable")
+        }
+        val manager = createManager(aiClient)
+
+        manager.submit("First").join()
+
+        assertEquals(ChatMessagePart.ChatError("network unavailable"), manager.transcriptParts.last())
+
+        aiClient.sendAiRequestException = null
+        aiClient.responseQueue += aiClient.textOnly("recovered")
+        manager.submit("Second").join()
+
+        assertEquals(ChatMessagePart.AssistantText("recovered"), manager.transcriptParts.last())
     }
 
     @Test

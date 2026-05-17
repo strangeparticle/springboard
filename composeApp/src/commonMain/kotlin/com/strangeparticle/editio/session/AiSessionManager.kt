@@ -10,6 +10,7 @@ import com.strangeparticle.editio.toolcall.ToolCallDispatcher
 import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.editio.toolcall.ToolCallRegistry
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,10 +51,16 @@ internal class AiSessionManager(
         mutableTranscriptParts += ChatMessagePart.UserText(userText)
 
         val job = coroutineScope.launch {
-            appendSnapshotIfChanged()
-            mutableHistory += AiClientMessageForUser(userText)
+            try {
+                appendSnapshotIfChanged()
+                mutableHistory += AiClientMessageForUser(userText)
 
-            runRequestLoop()
+                runRequestLoop()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                mutableTranscriptParts += ChatMessagePart.ChatError(e.message ?: "AI request failed")
+            }
         }
         currentRequestJob = job
         return job

@@ -1,8 +1,12 @@
 package com.strangeparticle.springboard.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.platform.NetworkContentService
@@ -30,6 +34,8 @@ fun MainScreen(
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
+    isAssistantConfigured: Boolean = false,
+    onToggleAssistant: () -> Unit = {},
 ) {
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
@@ -145,6 +151,15 @@ fun MainScreen(
             onCreate = { viewModel.createTab() },
             onOpenSettings = onOpenSettings,
         )
+        TextButton(
+            onClick = onToggleAssistant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(if (isAssistantConfigured) 1f else 0.65f)
+                .testTag(TestTags.ASSISTANT_TOGGLE_BUTTON),
+        ) {
+            Text(if (isAssistantConfigured) "Assistant" else "Assistant (configure AI)")
+        }
     }
 
     val closingTabId = pendingCloseTabId

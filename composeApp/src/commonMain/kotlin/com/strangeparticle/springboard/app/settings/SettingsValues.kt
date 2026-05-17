@@ -22,6 +22,10 @@ data class SettingsValues(
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
     val activeBrand: String? = null,
     val hideAppAfterActivation: Boolean? = null,
+    val aiProvider: String? = null,
+    val aiOpenaiApiKey: String? = null,
+    val aiAnthropicApiKey: String? = null,
+    val aiModel: String? = null,
 ) {
     fun isSet(key: SettingsKey): Boolean = get(key) != null
 
@@ -34,6 +38,10 @@ data class SettingsValues(
         SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> resetKeyNavAfterGridNavActivation
         SettingsKey.ACTIVE_BRAND -> activeBrand
         SettingsKey.HIDE_APP_AFTER_ACTIVATION -> hideAppAfterActivation
+        SettingsKey.AI_PROVIDER -> aiProvider
+        SettingsKey.AI_OPENAI_API_KEY -> aiOpenaiApiKey
+        SettingsKey.AI_ANTHROPIC_API_KEY -> aiAnthropicApiKey
+        SettingsKey.AI_MODEL -> aiModel
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -47,6 +55,10 @@ data class SettingsValues(
             SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> copy(resetKeyNavAfterGridNavActivation = value as Boolean?)
             SettingsKey.ACTIVE_BRAND -> copy(activeBrand = value as String?)
             SettingsKey.HIDE_APP_AFTER_ACTIVATION -> copy(hideAppAfterActivation = value as Boolean?)
+            SettingsKey.AI_PROVIDER -> copy(aiProvider = value as String?)
+            SettingsKey.AI_OPENAI_API_KEY -> copy(aiOpenaiApiKey = value as String?)
+            SettingsKey.AI_ANTHROPIC_API_KEY -> copy(aiAnthropicApiKey = value as String?)
+            SettingsKey.AI_MODEL -> copy(aiModel = value as String?)
         }
     }
 
@@ -60,6 +72,10 @@ data class SettingsValues(
             "resetKeyNavAfterGridNavActivation",
             "activeBrand",
             "hideAppAfterActivation",
+            "aiProvider",
+            "aiOpenaiApiKey",
+            "aiAnthropicApiKey",
+            "aiModel",
         )
     }
 }

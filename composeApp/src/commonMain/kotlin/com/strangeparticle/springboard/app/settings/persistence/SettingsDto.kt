@@ -15,6 +15,10 @@ data class SettingsDto(
     val resetKeyNavAfterKeyNavActivation: Boolean? = null,
     val resetKeyNavAfterGridNavActivation: Boolean? = null,
     val activeBrand: String? = null,
+    val aiProvider: String? = null,
+    val aiOpenaiApiKey: String? = null,
+    val aiAnthropicApiKey: String? = null,
+    val aiModel: String? = null,
 ) {
     fun toSettingsValues(): SettingsValues {
         var values = SettingsValues()
@@ -42,6 +46,21 @@ data class SettingsDto(
                 values = values.withSetting(SettingsKey.ACTIVE_BRAND, activeBrand)
             }
         }
+        if (aiProvider != null) {
+            val declaration = SettingsRegistry.require(SettingsKey.AI_PROVIDER).defaultValue as StringFromDropDown
+            if (declaration.isAllowed(aiProvider)) {
+                values = values.withSetting(SettingsKey.AI_PROVIDER, aiProvider)
+            }
+        }
+        if (aiOpenaiApiKey != null) {
+            values = values.withSetting(SettingsKey.AI_OPENAI_API_KEY, aiOpenaiApiKey)
+        }
+        if (aiAnthropicApiKey != null) {
+            values = values.withSetting(SettingsKey.AI_ANTHROPIC_API_KEY, aiAnthropicApiKey)
+        }
+        if (aiModel != null) {
+            values = values.withSetting(SettingsKey.AI_MODEL, aiModel)
+        }
         return values
     }
 
@@ -55,6 +74,10 @@ data class SettingsDto(
                 resetKeyNavAfterKeyNavActivation = values.resetKeyNavAfterKeyNavActivation,
                 resetKeyNavAfterGridNavActivation = values.resetKeyNavAfterGridNavActivation,
                 activeBrand = values.activeBrand,
+                aiProvider = values.aiProvider,
+                aiOpenaiApiKey = values.aiOpenaiApiKey,
+                aiAnthropicApiKey = values.aiAnthropicApiKey,
+                aiModel = values.aiModel,
             )
         }
     }

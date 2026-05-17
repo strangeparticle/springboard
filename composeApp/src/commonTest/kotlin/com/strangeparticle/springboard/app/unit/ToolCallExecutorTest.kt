@@ -10,6 +10,7 @@ import com.strangeparticle.editio.toolcall.requestSchema
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,7 +23,9 @@ internal class ToolCallExecutorTest {
 
     private data class TestToolCallHandlerResponse(
         val message: String,
-    ) : ToolCallHandlerResponse
+    ) : ToolCallHandlerResponse {
+        override fun toProviderMessageContent(json: Json): String = message
+    }
 
     @Serializable
     private data class TestToolCallHandlerRequest(val display_message: String)

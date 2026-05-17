@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.settings
 
+import com.strangeparticle.springboard.app.settings.ai.AiProvider
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 
 /**
@@ -99,6 +100,45 @@ object SettingsRegistry {
                 displayName = "Hide Springboard app after activation",
                 description = "When enabled, the app hides itself after activating a cell, column, or row.",
                 runtimeEnvironments = listOf(RuntimeEnvironment.DesktopOsx),
+            )
+        )
+        register(
+            SettingItem.General(
+                key = SettingsKey.AI_PROVIDER,
+                type = StringFromDropDown::class,
+                defaultValue = StringFromDropDown(
+                    defaultDropDownOptionId = AiProvider.None.id,
+                    dropDownOptions = AiProvider.entries.map { DropDownOption(it.id, it.displayName) },
+                ),
+                displayName = "AI Provider",
+                description = "Which AI provider the assistant uses. Select None to disable AI editing.",
+            )
+        )
+        register(
+            SettingItem.General(
+                key = SettingsKey.AI_OPENAI_API_KEY,
+                type = String::class,
+                defaultValue = "",
+                displayName = "OpenAI API Key",
+                description = "Used when the AI provider is OpenAI. The OPENAI_API_KEY environment variable overrides this when set.",
+            )
+        )
+        register(
+            SettingItem.General(
+                key = SettingsKey.AI_ANTHROPIC_API_KEY,
+                type = String::class,
+                defaultValue = "",
+                displayName = "Anthropic API Key",
+                description = "Used when the AI provider is Anthropic. The ANTHROPIC_API_KEY environment variable overrides this when set.",
+            )
+        )
+        register(
+            SettingItem.General(
+                key = SettingsKey.AI_MODEL,
+                type = String::class,
+                defaultValue = "",
+                displayName = "AI Model",
+                description = "The model id for the selected provider (e.g. gpt-5, claude-sonnet-4-6).",
             )
         )
     }

@@ -20,5 +20,6 @@ enum class SettingsKey {
     AI_OPENAI_API_KEY,
     AI_ANTHROPIC_API_KEY,
     AI_MODEL,
+    SHOW_FULL_CHAT_TRANSCRIPT,
     ;
 }

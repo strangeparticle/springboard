@@ -1,18 +1,21 @@
 package com.strangeparticle.springboard.app.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
+import com.strangeparticle.springboard.app.ui.editio.AiChatPane
+import com.strangeparticle.springboard.app.ui.editio.AiChatPaneDefaults
+import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
+import com.strangeparticle.springboard.app.ui.editio.ChatPaneResizeHandle
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen
@@ -27,7 +30,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(
+internal fun MainScreen(
     viewModel: SpringboardViewModel,
     isShiftHeld: Boolean,
     onOpenSettings: () -> Unit,
@@ -36,6 +39,10 @@ fun MainScreen(
     showFileOpen: Boolean = true,
     isAssistantConfigured: Boolean = false,
     onToggleAssistant: () -> Unit = {},
+    showAssistant: Boolean = false,
+    aiChatPaneState: AiChatPaneState = AiChatPaneState.notConfigured(),
+    onCloseAssistant: () -> Unit = {},
+    onOpenAiSettings: () -> Unit = onOpenSettings,
 ) {
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
@@ -149,17 +156,39 @@ fun MainScreen(
                 requestTabClose(tabId, viewModel) { pendingCloseTabId = it }
             },
             onCreate = { viewModel.createTab() },
+        )
+
+        if (showAssistant) {
+            var chatPaneHeightDp by rememberSaveable {
+                mutableStateOf(AiChatPaneDefaults.DefaultHeight.value)
+            }
+            val density = LocalDensity.current
+            ChatPaneResizeHandle(
+                onDragDelta = { deltaPx ->
+                    // Drag DOWN (positive deltaPx) shrinks the pane (pane grows upward from
+                    // its bottom edge, which is pinned to the BottomBar below).
+                    val deltaDp = with(density) { deltaPx.toDp() }
+                    val proposed = (chatPaneHeightDp.dp - deltaDp).coerceIn(
+                        AiChatPaneDefaults.MinHeight,
+                        AiChatPaneDefaults.MaxHeight,
+                    )
+                    chatPaneHeightDp = proposed.value
+                },
+            )
+            AiChatPane(
+                state = aiChatPaneState,
+                onClose = onCloseAssistant,
+                onOpenSettings = onOpenAiSettings,
+                height = chatPaneHeightDp.dp,
+            )
+        }
+
+        AppBottomBar(
+            isAssistantConfigured = isAssistantConfigured,
+            isAssistantOpen = showAssistant,
+            onToggleAssistant = onToggleAssistant,
             onOpenSettings = onOpenSettings,
         )
-        TextButton(
-            onClick = onToggleAssistant,
-            modifier = Modifier
-                .fillMaxWidth()
-                .alpha(if (isAssistantConfigured) 1f else 0.65f)
-                .testTag(TestTags.ASSISTANT_TOGGLE_BUTTON),
-        ) {
-            Text(if (isAssistantConfigured) "Assistant" else "Assistant (configure AI)")
-        }
     }
 
     val closingTabId = pendingCloseTabId

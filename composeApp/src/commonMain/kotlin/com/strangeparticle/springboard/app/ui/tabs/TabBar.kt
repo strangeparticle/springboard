@@ -3,7 +3,6 @@ package com.strangeparticle.springboard.app.ui.tabs
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,13 +26,33 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.ui.TestTags
-import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.MAX_OPEN_TABS
 import com.strangeparticle.springboard.app.viewmodel.TabState
 
+data class TabBarColors(
+    val container: Color,
+    val activeTab: Color,
+    val inactiveTab: Color,
+)
+
+object TabBarDefaults {
+    @Composable
+    fun colors(): TabBarColors = TabBarColors(
+        container = MaterialTheme.colorScheme.surface,
+        activeTab = MaterialTheme.colorScheme.surface,
+        inactiveTab = MaterialTheme.colorScheme.surfaceContainerHigh,
+    )
+}
+
+/**
+ * Tabs and the new-tab button. The AI-assistant toggle and settings gear live in
+ * [com.strangeparticle.springboard.app.ui.AppBottomBar] (rendered below the chat pane).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabBar(
@@ -43,17 +62,16 @@ fun TabBar(
     onSelect: (String) -> Unit,
     onClose: (String) -> Unit,
     onCreate: () -> Unit,
-    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val currentUiBrand = LocalUiBrand.current
     val scrollState = rememberScrollState()
+    val colors = TabBarDefaults.colors()
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(32.dp)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .height(CommonUiConstants.TabBarHeight)
+            .background(colors.container)
             .padding(horizontal = 4.dp)
             .testTag(TestTags.TAB_BAR),
         verticalAlignment = Alignment.CenterVertically,
@@ -103,26 +121,6 @@ fun TabBar(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        TooltipBox(
-            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = { PlainTooltip { Text("Settings") } },
-            state = rememberTooltipState(),
-        ) {
-            IconButton(
-                onClick = onOpenSettings,
-                modifier = Modifier.size(24.dp).testTag(TestTags.SETTINGS_GEAR_ICON),
-            ) {
-                Icon(
-                    imageVector = currentUiBrand.vectorImages.settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }

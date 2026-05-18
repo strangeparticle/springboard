@@ -45,23 +45,25 @@ private fun ToolCallRenderer(
     onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
 ) {
     val toolCall = part.toolCall
-    Text("Tool: ${toolCall.toolName}", fontSize = 13.sp)
-    Spacer(Modifier.height(4.dp))
     when (val state = part.state) {
-        ToolCallState.Pending -> AssistChip(onClick = {}, label = { Text("Pending") })
-        ToolCallState.ApprovalRequested -> Row {
-            Button(
-                onClick = { onApprovalDecision(toolCall.toolCallId, true) },
-                modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
-            ) { Text("Apply") }
-            Spacer(Modifier.width(8.dp))
-            OutlinedButton(
-                onClick = { onApprovalDecision(toolCall.toolCallId, false) },
-                modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
-            ) { Text("Cancel") }
+        ToolCallState.Pending -> AssistChip(onClick = {}, label = { Text("Working") })
+        ToolCallState.ApprovalRequested -> {
+            Text("Approval requested", fontSize = 13.sp)
+            Spacer(Modifier.height(4.dp))
+            Row {
+                Button(
+                    onClick = { onApprovalDecision(toolCall.toolCallId, true) },
+                    modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
+                ) { Text("Apply") }
+                Spacer(Modifier.width(8.dp))
+                OutlinedButton(
+                    onClick = { onApprovalDecision(toolCall.toolCallId, false) },
+                    modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
+                ) { Text("Cancel") }
+            }
         }
         is ToolCallState.ApprovalResponded -> Text(if (state.approved) "Approval granted" else "Approval denied")
-        is ToolCallState.OutputAvailable -> Text(state.output, fontSize = 12.sp)
+        is ToolCallState.OutputAvailable -> Unit
         is ToolCallState.OutputError -> Text(state.message, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
         ToolCallState.OutputDenied -> Text("Denied", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
     }

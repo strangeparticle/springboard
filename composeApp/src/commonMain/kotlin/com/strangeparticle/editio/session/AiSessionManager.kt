@@ -32,6 +32,7 @@ internal class AiSessionManager(
      * (repeating until under the budget). Estimation uses `text.length / 4`.
      */
     private val maxHistoryTokens: Int = DEFAULT_MAX_HISTORY_TOKENS,
+    private val onTranscriptChanged: () -> Unit = {},
 ) {
     private val mutableTranscriptParts = mutableListOf<ChatMessagePart>()
     private val mutableHistory = mutableListOf<AiClientMessage>()
@@ -48,7 +49,7 @@ internal class AiSessionManager(
 
     fun submit(userText: String): Job {
         check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
-        mutableTranscriptParts += ChatMessagePart.UserText(userText)
+        appendTranscriptPart(ChatMessagePart.UserText(userText))
 
         val job = coroutineScope.launch {
             try {
@@ -59,7 +60,7 @@ internal class AiSessionManager(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                mutableTranscriptParts += ChatMessagePart.ChatError(e.message ?: "AI request failed")
+                appendTranscriptPart(ChatMessagePart.ChatError(e.message ?: "AI request failed"))
             }
         }
         currentRequestJob = job
@@ -107,8 +108,11 @@ internal class AiSessionManager(
 
             if (response.toolCalls.isEmpty()) {
                 response.text?.let { text ->
-                    mutableTranscriptParts += ChatMessagePart.AssistantText(text)
+                    // History first so the debug-mode pane list (derived from history)
+                    // includes the assistant message when appendTranscriptPart fires
+                    // its onTranscriptChanged callback.
                     mutableHistory += AiClientMessageForAssistant(text = text)
+                    appendTranscriptPart(ChatMessagePart.AssistantText(text))
                 }
                 return
             }
@@ -117,6 +121,10 @@ internal class AiSessionManager(
                 text = response.text,
                 toolCalls = response.toolCalls,
             )
+            // Notify the UI so the debug-mode pane list (which is derived from history)
+            // sees the assistant message immediately, instead of only after the first
+            // tool-call transcript part lands further down.
+            onTranscriptChanged()
 
             val context = toolCallExecutionContextFactory.createToolCallExecutionContext(
                 onStateChanged = { stateChangedSinceLastSnapshotSent = true },
@@ -128,7 +136,7 @@ internal class AiSessionManager(
             )
             for (toolCall in response.toolCalls) {
                 val transcriptIndex = mutableTranscriptParts.size
-                mutableTranscriptParts += ChatMessagePart.ToolCall(toolCall, ToolCallState.Pending)
+                appendTranscriptPart(ChatMessagePart.ToolCall(toolCall, ToolCallState.Pending))
 
                 val result = toolCallDispatcher.execute(
                     toolCallId = toolCall.toolCallId,
@@ -143,12 +151,26 @@ internal class AiSessionManager(
                 )
                 pendingApprovals.remove(toolCall.toolCallId)
                 val approvalDecision = approvalDecisions.remove(toolCall.toolCallId)
-                mutableTranscriptParts[transcriptIndex] = ChatMessagePart.ToolCall(
+                if (result.endsTurn) {
+                    setTranscriptPart(transcriptIndex, ChatMessagePart.AssistantText(result.toTranscriptOutput(content)))
+                    return
+                }
+                setTranscriptPart(transcriptIndex, ChatMessagePart.ToolCall(
                     toolCall = toolCall,
-                    state = result.toToolCallState(content, approvalDecision),
-                )
+                    state = result.toToolCallState(content, result.toTranscriptOutput(content), approvalDecision),
+                ))
             }
         }
+    }
+
+    private fun appendTranscriptPart(part: ChatMessagePart) {
+        mutableTranscriptParts += part
+        onTranscriptChanged()
+    }
+
+    private fun setTranscriptPart(index: Int, part: ChatMessagePart) {
+        mutableTranscriptParts[index] = part
+        onTranscriptChanged()
     }
 
     private fun transitionToolCallStateTo(toolCallId: String, newState: ToolCallState) {
@@ -157,7 +179,7 @@ internal class AiSessionManager(
         }
         if (index < 0) return
         val existing = mutableTranscriptParts[index] as ChatMessagePart.ToolCall
-        mutableTranscriptParts[index] = existing.copy(state = newState)
+        setTranscriptPart(index, existing.copy(state = newState))
     }
 
     private fun appendSnapshotIfChanged() {
@@ -166,13 +188,15 @@ internal class AiSessionManager(
         }
         mutableHistory += AiClientMessageForSystemState(snapshotProvider.getSnapshotJson())
         stateChangedSinceLastSnapshotSent = false
+        // Debug-mode pane list reads from history; let the UI re-derive now.
+        onTranscriptChanged()
     }
 
-    private fun Any.toToolCallState(content: String, approvalDecision: Boolean?): ToolCallState =
+    private fun Any.toToolCallState(content: String, transcriptOutput: String, approvalDecision: Boolean?): ToolCallState =
         when {
             approvalDecision == false -> ToolCallState.OutputDenied
-            this is ToolCallExecutionResult && !success -> ToolCallState.OutputError(message ?: content)
-            else -> ToolCallState.OutputAvailable(content)
+            this is ToolCallExecutionResult && !success -> ToolCallState.OutputError(message ?: transcriptOutput)
+            else -> ToolCallState.OutputAvailable(transcriptOutput)
         }
 
     /**

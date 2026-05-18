@@ -18,6 +18,7 @@ import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -95,6 +96,27 @@ internal class ToolCallRegistryTest {
         assertTrue(executed, "executeToolCallHandler() should have been called")
         assertIs<SpringboardToolCallHandlerResponse>(result)
         assertTrue(result.success, "valid call should produce a success result")
+    }
+
+    @Test
+    fun `successful state-changing tool omits state from provider and transcript output`() = runTest {
+        val registry = ToolCallRegistry()
+        registry.register(HelloToolCallHandler())
+
+        val result = ToolCallDispatcher(registry).execute(
+            toolCallId = "call-1",
+            providerToolId = "hello",
+            argumentsAsJsonString = """{"display_message":"hi"}""",
+            context = createContext(),
+        )
+
+        assertIs<SpringboardToolCallHandlerResponse>(result)
+        assertTrue(result.success)
+        val providerMessageContent = result.toProviderMessageContent(Json)
+        assertEquals("""{"success":true}""", providerMessageContent)
+        assertEquals("Applied.", result.toTranscriptOutput(providerMessageContent))
+        assertFalse(providerMessageContent.contains("state"))
+        assertFalse(result.toTranscriptOutput(providerMessageContent).contains("state"))
     }
 
     @Test

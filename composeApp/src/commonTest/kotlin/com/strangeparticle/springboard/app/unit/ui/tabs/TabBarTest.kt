@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.unit.ui.tabs
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -11,10 +12,12 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.ui.tabs.TabBar
+import com.strangeparticle.springboard.app.ui.tabs.TabBarDefaults
 import com.strangeparticle.springboard.app.viewmodel.MAX_OPEN_TABS
 import com.strangeparticle.springboard.app.viewmodel.TabState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 @OptIn(ExperimentalTestApi::class)
 class TabBarTest {
@@ -27,15 +30,14 @@ class TabBarTest {
         val tabs = makeTabs(3)
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
-            TabBar(
-                tabs = tabs,
-                activeTabId = tabs.first().tabId,
-                canCreateNewTab = true,
-                onSelect = {},
-                onClose = {},
-                onCreate = {},
-                onOpenSettings = {},
-            )
+                TabBar(
+                    tabs = tabs,
+                    activeTabId = tabs.first().tabId,
+                    canCreateNewTab = true,
+                    onSelect = {},
+                    onClose = {},
+                    onCreate = {},
+                )
             }
         }
         onNodeWithText("Label 1").assertExists()
@@ -48,15 +50,14 @@ class TabBarTest {
         val tabs = makeTabs(MAX_OPEN_TABS)
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
-            TabBar(
-                tabs = tabs,
-                activeTabId = tabs.first().tabId,
-                canCreateNewTab = false,
-                onSelect = {},
-                onClose = {},
-                onCreate = {},
-                onOpenSettings = {},
-            )
+                TabBar(
+                    tabs = tabs,
+                    activeTabId = tabs.first().tabId,
+                    canCreateNewTab = false,
+                    onSelect = {},
+                    onClose = {},
+                    onCreate = {},
+                )
             }
         }
         onNodeWithTag(TestTags.TAB_NEW_BUTTON).assertIsNotEnabled()
@@ -67,15 +68,14 @@ class TabBarTest {
         val tabs = makeTabs(1)
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
-            TabBar(
-                tabs = tabs,
-                activeTabId = tabs.first().tabId,
-                canCreateNewTab = true,
-                onSelect = {},
-                onClose = {},
-                onCreate = {},
-                onOpenSettings = {},
-            )
+                TabBar(
+                    tabs = tabs,
+                    activeTabId = tabs.first().tabId,
+                    canCreateNewTab = true,
+                    onSelect = {},
+                    onClose = {},
+                    onCreate = {},
+                )
             }
         }
         onNodeWithTag(TestTags.TAB_NEW_BUTTON).assertIsEnabled()
@@ -87,15 +87,14 @@ class TabBarTest {
         val tabs = makeTabs(1)
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
-            TabBar(
-                tabs = tabs,
-                activeTabId = tabs.first().tabId,
-                canCreateNewTab = true,
-                onSelect = {},
-                onClose = {},
-                onCreate = { createCount += 1 },
-                onOpenSettings = {},
-            )
+                TabBar(
+                    tabs = tabs,
+                    activeTabId = tabs.first().tabId,
+                    canCreateNewTab = true,
+                    onSelect = {},
+                    onClose = {},
+                    onCreate = { createCount += 1 },
+                )
             }
         }
         onNodeWithTag(TestTags.TAB_NEW_BUTTON).performClick()
@@ -103,23 +102,14 @@ class TabBarTest {
     }
 
     @Test
-    fun settingsGearIsAccessible() = runComposeUiTest {
-        var settingsCount = 0
-        val tabs = makeTabs(1)
+    fun containerColorMatchesActiveTabSurface() = runComposeUiTest {
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
-            TabBar(
-                tabs = tabs,
-                activeTabId = tabs.first().tabId,
-                canCreateNewTab = true,
-                onSelect = {},
-                onClose = {},
-                onCreate = {},
-                onOpenSettings = { settingsCount += 1 },
-            )
+                val colors = TabBarDefaults.colors()
+                assertEquals(MaterialTheme.colorScheme.surface, colors.container)
+                assertEquals(MaterialTheme.colorScheme.surface, colors.activeTab)
+                assertNotEquals(colors.container, colors.inactiveTab)
             }
         }
-        onNodeWithTag(TestTags.SETTINGS_GEAR_ICON).performClick()
-        assertEquals(1, settingsCount)
     }
 }

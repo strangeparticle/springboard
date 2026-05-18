@@ -68,14 +68,17 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `grouped settings on wasm has only general group`() {
+    fun `grouped settings on wasm has no desktop group`() {
         val vm = createViewModel(target = RuntimeEnvironment.WASM)
         val groups = vm.groupedSettings
-        assertEquals(1, groups.size)
-        assertEquals("General", groups.first().name)
+        val groupNames = groups.map { it.name }
+        assertTrue("General" in groupNames)
+        assertFalse("Desktop macOS" in groupNames, "WASM should not show the Desktop group")
 
-        for (item in groups.first().settings) {
-            assertFalse(item is SettingItem.Desktop, "${item.key} should not appear on WASM")
+        for (group in groups) {
+            for (item in group.settings) {
+                assertFalse(item is SettingItem.Desktop, "${item.key} should not appear on WASM")
+            }
         }
     }
 

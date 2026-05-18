@@ -19,6 +19,7 @@ data class SettingsDto(
     val aiOpenaiApiKey: String? = null,
     val aiAnthropicApiKey: String? = null,
     val aiModel: String? = null,
+    val showFullChatTranscript: Boolean? = null,
 ) {
     fun toSettingsValues(): SettingsValues {
         var values = SettingsValues()
@@ -61,6 +62,9 @@ data class SettingsDto(
         if (aiModel != null) {
             values = values.withSetting(SettingsKey.AI_MODEL, aiModel)
         }
+        if (showFullChatTranscript != null) {
+            values = values.withSetting(SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT, showFullChatTranscript)
+        }
         return values
     }
 
@@ -78,6 +82,7 @@ data class SettingsDto(
                 aiOpenaiApiKey = values.aiOpenaiApiKey,
                 aiAnthropicApiKey = values.aiAnthropicApiKey,
                 aiModel = values.aiModel,
+                showFullChatTranscript = values.showFullChatTranscript,
             )
         }
     }

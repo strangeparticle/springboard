@@ -39,7 +39,8 @@ fun calculateWindowWidth(springboard: Springboard, zoomPercent: Int = 100): Int 
 fun calculateWindowHeight(springboard: Springboard, zoomPercent: Int = 100): Int {
     val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
     val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
-    val tabBarHeightDp = 32
+    val tabBarHeightDp = CommonUiConstants.TabBarHeight.value.toInt()
+    val bottomBarHeightDp = CommonUiConstants.BottomBarHeight.value.toInt()
     val gridContentHeight = estimateGridContentHeightDp(springboard) * zoomPercent / 100
 
     return navbarHeightDp +
@@ -47,6 +48,7 @@ fun calculateWindowHeight(springboard: Springboard, zoomPercent: Int = 100): Int
         ActivatorPreviewHeightDp +
         statusBarHeightDp +
         tabBarHeightDp +
+        bottomBarHeightDp +
         WindowVerticalBufferDp
 }
 

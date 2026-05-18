@@ -21,6 +21,8 @@ class GridContentSizeEstimationTest {
         assertEquals(1000, availableWidth)
         val expectedChromeHeight = CommonUiConstants.NavbarHeight.value.toInt() +
             CommonUiConstants.StatusBarHeight.value.toInt() +
+            CommonUiConstants.TabBarHeight.value.toInt() +
+            CommonUiConstants.BottomBarHeight.value.toInt() +
             ActivatorPreviewHeightDp
         assertEquals(800 - expectedChromeHeight, availableHeight)
     }

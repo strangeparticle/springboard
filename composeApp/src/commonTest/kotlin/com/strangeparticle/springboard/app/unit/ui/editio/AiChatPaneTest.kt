@@ -1,22 +1,30 @@
 package com.strangeparticle.springboard.app.unit.ui.editio
 
-import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
 import com.strangeparticle.editio.toolcall.ToolCall
+import com.strangeparticle.springboard.app.editio.help.AiAssistantFullHelpText
+import com.strangeparticle.springboard.app.editio.help.AiAssistantTerseHelpText
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.ui.editio.AiChatPane
+import com.strangeparticle.springboard.app.ui.editio.AiChatPaneDefaults
 import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
+import com.strangeparticle.springboard.app.ui.editio.AiChatScrollbackPane
+import com.strangeparticle.springboard.app.ui.editio.CommandAttribution
 import com.strangeparticle.springboard.app.ui.editio.ChatMessagePartRenderer
+import com.strangeparticle.springboard.app.ui.editio.LocalCommandResponseStyle
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 internal class AiChatPaneTest {
@@ -54,10 +62,53 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithText("Tool: save_springboard").assertExists()
+        onNodeWithText("Approval requested").assertExists()
         onNodeWithTag(TestTags.AI_APPROVAL_APPLY_BUTTON).performClick()
 
         assertEquals(listOf(true), decisions)
+    }
+
+    @Test
+    fun `successful tool calls are not shown in chat transcript`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                ChatMessagePartRenderer(
+                    part = ChatMessagePart.ToolCall(
+                        ToolCall("call-group", "add_app_group", "{}"),
+                        ToolCallState.OutputAvailable("Applied."),
+                    ),
+                    onApprovalDecision = { _, _ -> },
+                )
+            }
+        }
+
+        onNodeWithText("Tool: add_app_group").assertDoesNotExist()
+        onNodeWithText("Applied.").assertDoesNotExist()
+    }
+
+    @Test
+    fun `provider error after tool call does not show tool success`() = runComposeUiTest {
+        val state = configuredState(
+            transcriptParts = listOf(
+                ChatMessagePart.UserText("Group these apps"),
+                ChatMessagePart.ToolCall(
+                    ToolCall("call-group", "add_app_group", "{}"),
+                    ToolCallState.OutputAvailable("Applied."),
+                ),
+                ChatMessagePart.ChatError("OpenAI request failed with HTTP 429: Request too large"),
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithText("You: Group these apps").assertExists()
+        onNodeWithText("Error: OpenAI request failed with HTTP 429: Request too large").assertExists()
+        onNodeWithText("Tool: add_app_group").assertDoesNotExist()
+        onNodeWithText("Applied.").assertDoesNotExist()
     }
 
     @Test
@@ -82,5 +133,401 @@ internal class AiChatPaneTest {
         onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
 
         assertEquals(listOf("Add Chrome"), sentMessages)
+    }
+
+    @Test
+    fun `enter sends while shift enter inserts a newline`() = runComposeUiTest {
+        val sentMessages = mutableListOf<String>()
+        val state = configuredState(onSubmit = { sentMessages += it })
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        val input = onNodeWithTag(TestTags.AI_CHAT_INPUT)
+        input.performTextInput("line one")
+        input.performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Enter)
+            keyUp(Key.ShiftLeft)
+        }
+        input.performTextInput("line two")
+        input.assertTextEquals("line one\nline two")
+        assertEquals(emptyList(), sentMessages)
+
+        input.performKeyInput { pressKey(Key.Enter) }
+
+        assertEquals(listOf("line one\nline two"), sentMessages)
+    }
+
+    @Test
+    fun `escape stops when running`() = runComposeUiTest {
+        var stopCount = 0
+        val state = configuredState(isRunning = true, onStop = { stopCount += 1 })
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performClick()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput { pressKey(Key.Escape) }
+
+        assertEquals(1, stopCount)
+    }
+
+    @Test
+    fun `chat pane defaults to default height and fixed three line input`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_PANE).assertHeightIsEqualTo(270.dp)
+        onNodeWithTag(TestTags.AI_CHAT_HISTORY).assertExists()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertHeightIsEqualTo(64.dp)
+    }
+
+    @Test
+    fun `chat pane renders at the explicit height passed in`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(),
+                    onClose = {},
+                    onOpenSettings = {},
+                    height = 360.dp,
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_PANE).assertHeightIsEqualTo(360.dp)
+    }
+
+    @Test
+    fun `input field left edge aligns with scrollback panes`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        val scrollbackLeft = onNodeWithTag(TestTags.aiChatScrollbackPane(0)).getUnclippedBoundsInRoot().left
+        val inputLeft = onNodeWithTag(TestTags.AI_CHAT_INPUT_SECTION).getUnclippedBoundsInRoot().left
+
+        assertEquals(scrollbackLeft.value, inputLeft.value, absoluteTolerance = 0.5f)
+    }
+
+    @Test
+    fun `input section uses lighter background than pane body`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                val colors = AiChatPaneDefaults.colors()
+                assertEquals(MaterialTheme.colorScheme.surfaceContainerLow, colors.pane)
+                assertEquals(MaterialTheme.colorScheme.surfaceContainer, colors.inputSection)
+                assertNotEquals(colors.pane, colors.inputSection)
+            }
+        }
+    }
+
+    @Test
+    fun `scrollback panes use distinct surfaces and outline`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                val colors = AiChatPaneDefaults.colors()
+                assertEquals(MaterialTheme.colorScheme.surfaceContainerLow, colors.pane)
+                assertEquals(MaterialTheme.colorScheme.surfaceContainerHigh, colors.interactionScrollbackPane)
+                assertEquals(MaterialTheme.colorScheme.surfaceContainer, colors.helpScrollbackPane)
+                assertEquals(MaterialTheme.colorScheme.outlineVariant, colors.scrollbackPaneOutline)
+                assertNotEquals(colors.pane, colors.interactionScrollbackPane)
+                assertNotEquals(colors.pane, colors.helpScrollbackPane)
+            }
+        }
+    }
+
+    @Test
+    fun `scrollback text uses compact line height`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                val textStyle = AiChatPaneDefaults.scrollbackTextStyle()
+                assertEquals(13.sp, textStyle.fontSize)
+                assertEquals(17.sp, textStyle.lineHeight)
+            }
+        }
+    }
+
+    @Test
+    fun `startup terse help renders as a scrollback pane with command text`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.aiChatScrollbackPane(0)).assertExists()
+        onNodeWithText("/help_terse").assertExists()
+        onNodeWithText("You: /help_terse").assertDoesNotExist()
+        onNodeWithText(AiAssistantTerseHelpText.text.lines().first(), substring = true).assertExists()
+        onNodeWithTag(TestTags.aiChatScrollbackPaneCopyButton(0)).assertExists()
+    }
+
+    @Test
+    fun `chat header uses AI editing assistant title and secondary provider text`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithText("AI Editing Assistant").assertExists()
+        onNodeWithText("OpenAI: gpt-5").assertExists()
+        onNodeWithText("OpenAI · gpt-5").assertDoesNotExist()
+        onNodeWithText("Assistant · OpenAI gpt-5").assertDoesNotExist()
+    }
+
+    @Test
+    fun `send and stop buttons are compact`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).assertHeightIsEqualTo(32.dp)
+        onNodeWithTag(TestTags.AI_CHAT_STOP_BUTTON).assertHeightIsEqualTo(32.dp)
+    }
+
+    @Test
+    fun `copy transcript button copies full transcript text`() = runComposeUiTest {
+        var copiedText = ""
+        val state = configuredState(
+            transcriptParts = listOf(
+                ChatMessagePart.UserText("Add Chrome"),
+                ChatMessagePart.AssistantText("I can do that."),
+                ChatMessagePart.ChatError("network unavailable"),
+                ChatMessagePart.ToolCall(
+                    ToolCall("call-save", "save_springboard", "{}"),
+                    ToolCallState.OutputAvailable("saved"),
+                ),
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = state,
+                    onClose = {},
+                    onOpenSettings = {},
+                    onCopyTranscript = { copiedText = it },
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON).performClick()
+
+        assertEquals(
+            "You: Add Chrome\n\nAssistant: I can do that.\nError: network unavailable",
+            copiedText,
+        )
+    }
+
+    @Test
+    fun `user-facing help is rendered when transcript is empty`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_USER_HELP).assertExists()
+        onNodeWithText(AiAssistantTerseHelpText.text.lines().first(), substring = true).assertExists()
+    }
+
+    @Test
+    fun `help command renders below empty-chat summary`() = runComposeUiTest {
+        val state = configuredState(
+            scrollbackPanes = listOf(
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help_terse",
+                    commandAttribution = CommandAttribution.System,
+                    responseText = AiAssistantTerseHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help",
+                    commandAttribution = CommandAttribution.User,
+                    responseText = AiAssistantFullHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+            ),
+        )
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.aiChatScrollbackPane(0)).assertExists()
+        onNodeWithTag(TestTags.aiChatScrollbackPane(1)).assertExists()
+        onNodeWithText("You: /help").assertExists()
+        onNodeWithText(AiAssistantFullHelpText.title, substring = true).assertExists()
+    }
+
+    @Test
+    fun `copy transcript includes local help command output`() = runComposeUiTest {
+        var copiedText = ""
+        val state = configuredState(
+            scrollbackPanes = listOf(
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help_terse",
+                    commandAttribution = CommandAttribution.System,
+                    responseText = AiAssistantTerseHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help",
+                    commandAttribution = CommandAttribution.User,
+                    responseText = AiAssistantFullHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+            ),
+        )
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = state,
+                    onClose = {},
+                    onOpenSettings = {},
+                    onCopyTranscript = { copiedText = it },
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON).performClick()
+
+        assertTrue(copiedText.contains("/help_terse"))
+        assertTrue(copiedText.contains("You: /help"))
+        assertTrue(copiedText.contains(AiAssistantFullHelpText.title))
+    }
+
+    @Test
+    fun `pane copy button copies only that scrollback pane`() = runComposeUiTest {
+        var copiedText = ""
+        val state = configuredState(
+            scrollbackPanes = listOf(
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help_terse",
+                    commandAttribution = CommandAttribution.System,
+                    responseText = AiAssistantTerseHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+                AiChatScrollbackPane.Interaction(
+                    requestText = "Add Chrome",
+                    responseParts = listOf(ChatMessagePart.AssistantText("Added Chrome.")),
+                ),
+            ),
+        )
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = state,
+                    onClose = {},
+                    onOpenSettings = {},
+                    onCopyTranscript = { copiedText = it },
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.aiChatScrollbackPaneCopyButton(1), useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+        waitForIdle()
+
+        assertEquals("You: Add Chrome\n\nAssistant: Added Chrome.", copiedText)
+    }
+
+    @Test
+    fun `interaction pane renders user request once transcript has a user part`() = runComposeUiTest {
+        val state = configuredState(
+            transcriptParts = listOf(ChatMessagePart.UserText("Add a logs URL for fretnaut in prod")),
+        )
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithText("You: Add a logs URL for fretnaut in prod").assertExists()
+    }
+
+    @Test
+    fun `close button is compact`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_CLOSE_BUTTON).assertHeightIsEqualTo(28.dp).assertWidthIsEqualTo(28.dp)
+    }
+
+    @Test
+    fun `chat input border changes when focused`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        val input = onNodeWithTag(TestTags.AI_CHAT_INPUT)
+        val unfocusedPixels = input.captureToImage().toPixelMap()
+
+        input.performClick()
+
+        val focusedPixels = input.captureToImage().toPixelMap()
+        assertNotEquals(pixelSignature(unfocusedPixels), pixelSignature(focusedPixels))
+    }
+
+    private fun pixelSignature(pixelMap: androidx.compose.ui.graphics.PixelMap): Int {
+        var signature = 0
+        for (x in 0 until pixelMap.width) {
+            for (y in 0 until pixelMap.height) {
+                signature = 31 * signature + pixelMap[x, y].hashCode()
+            }
+        }
+        return signature
+    }
+
+    private fun configuredState(
+        isRunning: Boolean = false,
+        transcriptParts: List<ChatMessagePart> = emptyList(),
+        scrollbackPanes: List<AiChatScrollbackPane>? = null,
+        onSubmit: (String) -> Unit = {},
+        onStop: () -> Unit = {},
+    ): AiChatPaneState = if (scrollbackPanes == null) {
+        AiChatPaneState.configured(
+            providerLabel = "OpenAI",
+            modelLabel = "gpt-5",
+            transcriptParts = transcriptParts,
+            isRunning = isRunning,
+            onSubmit = onSubmit,
+            onStop = onStop,
+            onApprovalDecision = { _, _ -> },
+        )
+    } else {
+        AiChatPaneState.configured(
+            providerLabel = "OpenAI",
+            modelLabel = "gpt-5",
+            transcriptParts = transcriptParts,
+            scrollbackPanes = scrollbackPanes,
+            isRunning = isRunning,
+            onSubmit = onSubmit,
+            onStop = onStop,
+            onApprovalDecision = { _, _ -> },
+        )
     }
 }

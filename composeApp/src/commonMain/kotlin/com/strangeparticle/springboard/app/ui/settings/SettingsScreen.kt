@@ -24,17 +24,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.strangeparticle.editio.client.AiClientModelInfo
 import com.strangeparticle.springboard.app.settings.*
+import com.strangeparticle.springboard.app.settings.ai.AiProvider
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
 @Composable
-fun SettingsScreen(
+internal fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onShowActiveSettings: () -> Unit,
     currentTabSources: List<String> = emptyList(),
+    aiEnvironmentVariables: Map<String, String> = emptyMap(),
+    aiFetchModels: suspend (AiProvider, String) -> List<AiClientModelInfo> = { _, _ -> emptyList() },
+    showAiSettingsFirst: Boolean = false,
 ) {
     Column(modifier = Modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN)) {
         // Header bar
@@ -52,6 +57,15 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
+            if (showAiSettingsFirst) {
+                AiSettingsSection(
+                    viewModel = viewModel,
+                    environmentVariables = aiEnvironmentVariables,
+                    fetchModels = aiFetchModels,
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
             // Grouped settings
             for (group in viewModel.groupedSettings) {
                 SettingsGroupSection(
@@ -60,8 +74,12 @@ fun SettingsScreen(
                     currentTabSources = currentTabSources,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
-                if (group.name == "General") {
-                    AiSettingsSection(viewModel = viewModel)
+                if (!showAiSettingsFirst && group.name == "General") {
+                    AiSettingsSection(
+                        viewModel = viewModel,
+                        environmentVariables = aiEnvironmentVariables,
+                        fetchModels = aiFetchModels,
+                    )
                     Spacer(modifier = Modifier.height(20.dp))
                 }
             }

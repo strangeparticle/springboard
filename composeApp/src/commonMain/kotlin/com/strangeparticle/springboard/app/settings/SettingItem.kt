@@ -39,4 +39,16 @@ sealed class SettingItem(
         description: String,
         val runtimeEnvironments: List<RuntimeEnvironment>,
     ) : SettingItem(key, type, defaultValue, displayName, description)
+
+    /**
+     * A setting intended for developers / debugging. Shown in its own "Developer Tools"
+     * group so it does not get conflated with the day-to-day user-facing settings.
+     */
+    class DeveloperTools(
+        key: SettingsKey,
+        type: KClass<*>,
+        defaultValue: Any?,
+        displayName: String,
+        description: String,
+    ) : SettingItem(key, type, defaultValue, displayName, description)
 }

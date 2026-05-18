@@ -26,6 +26,7 @@ data class SettingsValues(
     val aiOpenaiApiKey: String? = null,
     val aiAnthropicApiKey: String? = null,
     val aiModel: String? = null,
+    val showFullChatTranscript: Boolean? = null,
 ) {
     fun isSet(key: SettingsKey): Boolean = get(key) != null
 
@@ -42,6 +43,7 @@ data class SettingsValues(
         SettingsKey.AI_OPENAI_API_KEY -> aiOpenaiApiKey
         SettingsKey.AI_ANTHROPIC_API_KEY -> aiAnthropicApiKey
         SettingsKey.AI_MODEL -> aiModel
+        SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT -> showFullChatTranscript
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -59,6 +61,7 @@ data class SettingsValues(
             SettingsKey.AI_OPENAI_API_KEY -> copy(aiOpenaiApiKey = value as String?)
             SettingsKey.AI_ANTHROPIC_API_KEY -> copy(aiAnthropicApiKey = value as String?)
             SettingsKey.AI_MODEL -> copy(aiModel = value as String?)
+            SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT -> copy(showFullChatTranscript = value as Boolean?)
         }
     }
 
@@ -76,6 +79,7 @@ data class SettingsValues(
             "aiOpenaiApiKey",
             "aiAnthropicApiKey",
             "aiModel",
+            "showFullChatTranscript",
         )
     }
 }

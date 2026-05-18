@@ -7,6 +7,7 @@ internal data class AiChatPaneState(
     val providerLabel: String,
     val modelLabel: String,
     val transcriptParts: List<ChatMessagePart>,
+    val scrollbackPanes: List<AiChatScrollbackPane>,
     val isRunning: Boolean,
     val onSubmit: (String) -> Unit,
     val onStop: () -> Unit,
@@ -18,6 +19,7 @@ internal data class AiChatPaneState(
             providerLabel = "Not configured",
             modelLabel = "",
             transcriptParts = emptyList(),
+            scrollbackPanes = emptyList(),
             isRunning = false,
             onSubmit = {},
             onStop = {},
@@ -28,6 +30,7 @@ internal data class AiChatPaneState(
             providerLabel: String,
             modelLabel: String,
             transcriptParts: List<ChatMessagePart>,
+            scrollbackPanes: List<AiChatScrollbackPane> = buildScrollbackPanesFromTranscript(transcriptParts),
             isRunning: Boolean = false,
             onSubmit: (String) -> Unit,
             onStop: () -> Unit,
@@ -37,10 +40,44 @@ internal data class AiChatPaneState(
             providerLabel = providerLabel,
             modelLabel = modelLabel,
             transcriptParts = transcriptParts,
+            scrollbackPanes = scrollbackPanes,
             isRunning = isRunning,
             onSubmit = onSubmit,
             onStop = onStop,
             onApprovalDecision = onApprovalDecision,
         )
+
+        private fun buildScrollbackPanesFromTranscript(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane> {
+            val panes = mutableListOf<AiChatScrollbackPane>()
+            var currentStartIndex: Int? = null
+            var currentRequestText: String? = null
+            val currentResponseParts = mutableListOf<ChatMessagePart>()
+
+            fun flush() {
+                val requestText = currentRequestText ?: return
+                panes += AiChatScrollbackPane.Interaction(
+                    requestText = requestText,
+                    responseParts = currentResponseParts.toList(),
+                    transcriptStartIndex = currentStartIndex,
+                )
+                currentStartIndex = null
+                currentRequestText = null
+                currentResponseParts.clear()
+            }
+
+            transcriptParts.forEachIndexed { index, part ->
+                if (part is ChatMessagePart.UserText) {
+                    flush()
+                    currentStartIndex = index
+                    currentRequestText = part.text
+                } else if (currentRequestText != null) {
+                    currentResponseParts += part
+                }
+            }
+            flush()
+            return panes.ifEmpty {
+                if (transcriptParts.isEmpty()) listOf(initialTerseHelpScrollbackPane()) else emptyList()
+            }
+        }
     }
 }

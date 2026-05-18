@@ -92,7 +92,14 @@ const val ActivatorPreviewHeightDp = 19
 fun computeAvailableGridArea(viewportWidthDp: Int, viewportHeightDp: Int): Pair<Int, Int> {
     val navbarHeightDp = CommonUiConstants.NavbarHeight.value.toInt()
     val statusBarHeightDp = CommonUiConstants.StatusBarHeight.value.toInt()
-    val availableHeight = viewportHeightDp - navbarHeightDp - statusBarHeightDp - ActivatorPreviewHeightDp
+    val tabBarHeightDp = CommonUiConstants.TabBarHeight.value.toInt()
+    val bottomBarHeightDp = CommonUiConstants.BottomBarHeight.value.toInt()
+    val availableHeight = viewportHeightDp -
+        navbarHeightDp -
+        statusBarHeightDp -
+        ActivatorPreviewHeightDp -
+        tabBarHeightDp -
+        bottomBarHeightDp
     return viewportWidthDp to availableHeight
 }
 

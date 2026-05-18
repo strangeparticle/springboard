@@ -66,6 +66,55 @@ indicate how far startup progressed:
 
 A clean startup reaches `[Springboard] application ready`.
 
+### Debugging the AI chat back-and-forth
+
+There are two complementary tools for inspecting what flows between the app and an AI provider.
+
+**1. In-app debug transcript (no rebuild required)**
+
+Open Settings → Developer Tools → **Show Full Chat Transcript (for Debug)**. With it enabled, the
+AI chat pane replaces its normal scrollback with the raw provider-side message log: user/assistant
+turns plus the state snapshots and tool-result payloads that the user-facing view normally hides.
+Turn it off to return to the standard view.
+
+This shows the conversation as the session manager sees it. It does **not** show the wire-level
+request/response bytes — for those, use the ktor logging below.
+
+**2. Ktor request/response logging (rebuild required)**
+
+The AI providers all share the single `HttpClient` constructed in
+`composeApp/src/desktopMain/kotlin/com/strangeparticle/springboard/app/main.kt` (search for
+`aiHttpClient`). To dump every HTTP request body, response status, and response body to stdout,
+install the ktor `Logging` plugin on that client.
+
+Step 1 — add the dependency in `gradle/libs.versions.toml`:
+
+```toml
+ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+```
+
+…and reference it from `composeApp/build.gradle.kts` under the `desktopMain` source set:
+
+```kotlin
+implementation(libs.ktor.client.logging)
+```
+
+Step 2 — install the plugin in `main.kt` where `aiHttpClient` is built:
+
+```kotlin
+val aiHttpClient = HttpClient(CIO) {
+    install(Logging) {
+        level = LogLevel.BODY   // ALL also includes headers; INFO is request/response lines only
+    }
+}
+```
+
+Step 3 — `./gradlew :composeApp:run` and watch stdout while you interact with the chat pane.
+
+These changes are intentionally **not** committed. They are a local debugging aid because the
+captured bodies routinely contain API keys (in headers) and full prompt contents. Revert before
+sharing logs or pushing branches.
+
 ---
 
 ## Experimental WASM Target

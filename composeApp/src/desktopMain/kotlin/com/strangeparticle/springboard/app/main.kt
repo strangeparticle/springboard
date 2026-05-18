@@ -11,9 +11,13 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.strangeparticle.editio.client.AiClient
+import com.strangeparticle.editio.client.provider.anthropic.AiClientAnthropic
+import com.strangeparticle.editio.client.provider.openai.AiClientOpenAi
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.*
+import com.strangeparticle.springboard.app.settings.ai.AiProvider
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
@@ -22,7 +26,12 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderDesktopImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import com.strangeparticle.springboard.app.viewmodel.TabRestorer
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.launch
+import java.awt.KeyboardFocusManager
+import java.awt.Toolkit
+import java.awt.event.KeyEvent
 import java.io.File
 private enum class ActiveSettingsOpenedFrom {
     SETTINGS_SCREEN,
@@ -54,6 +63,28 @@ fun main(args: Array<String>) {
 
     val networkContentService = NetworkContentServiceDesktopImpl()
     val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
+
+    // Shared Ktor client for any AI provider call (settings model fetch today; session chat tomorrow).
+    val aiHttpClient = HttpClient(CIO)
+    // Snapshot env vars once; the settings UI uses these to render the env-var-override label.
+    val envVars: Map<String, String> = System.getenv()
+
+    /**
+     * Build a provider-specific [AiClient] using the API key the user supplied. The settings
+     * UI calls this to populate its model dropdown; the session manager will call it the same
+     * way once chat is wired up.
+     */
+    fun aiClientFor(provider: AiProvider, apiKey: String): AiClient? = when (provider) {
+        AiProvider.OpenAi -> AiClientOpenAi(httpClient = aiHttpClient, apiKeyProvider = { apiKey })
+        AiProvider.Anthropic -> AiClientAnthropic(httpClient = aiHttpClient, apiKeyProvider = { apiKey })
+        AiProvider.None -> null
+    }
+
+    val aiFetchModels: suspend (AiProvider, String) -> List<com.strangeparticle.editio.client.AiClientModelInfo> =
+        { provider, apiKey ->
+            val client = aiClientFor(provider, apiKey)
+            if (client == null) emptyList() else client.listModels(apiKey)
+        }
 
     val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
 
@@ -157,6 +188,8 @@ fun main(args: Array<String>) {
                     networkOpenIntoNewTab.value = true
                     showNetworkDialog.value = true
                 },
+                onCopy = { sendMenuShortcut(KeyEvent.VK_C) },
+                onPaste = { sendMenuShortcut(KeyEvent.VK_V) },
                 onCloseCurrentTab = {
                     viewModel.closeTab(viewModel.activeTabId)
                 },
@@ -251,6 +284,9 @@ fun main(args: Array<String>) {
                 onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
                 onCloseActiveSettings = closeActiveSettings,
                 networkContentService = networkContentService,
+                aiEnvironmentVariables = envVars,
+                aiFetchModels = aiFetchModels,
+                aiClientFactory = ::aiClientFor,
             )
 
             // Grow the window to fit the largest springboard across all tabs (never shrink).
@@ -274,4 +310,12 @@ fun main(args: Array<String>) {
             }
         }
     }
+}
+
+private fun sendMenuShortcut(keyCode: Int) {
+    val focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().focusOwner ?: return
+    val modifiers = Toolkit.getDefaultToolkit().menuShortcutKeyMaskEx
+    val timestamp = System.currentTimeMillis()
+    focusOwner.dispatchEvent(KeyEvent(focusOwner, KeyEvent.KEY_PRESSED, timestamp, modifiers, keyCode, KeyEvent.CHAR_UNDEFINED))
+    focusOwner.dispatchEvent(KeyEvent(focusOwner, KeyEvent.KEY_RELEASED, timestamp, modifiers, keyCode, KeyEvent.CHAR_UNDEFINED))
 }

@@ -141,6 +141,15 @@ object SettingsRegistry {
                 description = "The model id for the selected provider (e.g. gpt-5, claude-sonnet-4-6).",
             )
         )
+        register(
+            SettingItem.DeveloperTools(
+                key = SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT,
+                type = Boolean::class,
+                defaultValue = false,
+                displayName = "Show Full Chat Transcript (for Debug)",
+                description = "Display the raw provider-side message log in the AI chat pane, including injected app-state snapshots and tool-result payloads that the normal view hides.",
+            )
+        )
     }
 
     private fun MutableMap<SettingsKey, SettingItem>.register(item: SettingItem) {
@@ -168,6 +177,7 @@ object SettingsRegistry {
             when (item) {
                 is SettingItem.General -> true
                 is SettingItem.Desktop -> environment in item.runtimeEnvironments
+                is SettingItem.DeveloperTools -> true
             }
         }
 

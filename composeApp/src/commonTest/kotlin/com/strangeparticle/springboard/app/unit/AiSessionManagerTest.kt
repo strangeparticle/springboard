@@ -147,6 +147,25 @@ internal class AiSessionManagerTest {
     }
 
     @Test
+    fun `tool result uses transcript output for visible chat state`() = runTest {
+        val registry = ToolCallRegistry().apply { register(TranscriptOutputToolCallHandler()) }
+        val aiClient = AiClientInMemoryFake().apply {
+            responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "transcript_output_tool", "{}")))
+            responseQueue += textOnly("finished")
+        }
+        val manager = createManager(aiClient, toolCallRegistry = registry)
+
+        manager.submit("Run tool").join()
+
+        val toolPart = manager.transcriptParts.filterIsInstance<ChatMessagePart.ToolCall>().single()
+        val state = assertIs<ToolCallState.OutputAvailable>(toolPart.state)
+        assertEquals("Applied.", state.output)
+
+        val toolResult = manager.history.filterIsInstance<ToolCallProviderClientMessage>().single()
+        assertEquals("{\"success\":true}", toolResult.content)
+    }
+
+    @Test
     fun `tool call response triggers follow-up provider request and stops after text response`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
         val aiClient = AiClientInMemoryFake().apply {
@@ -159,6 +178,34 @@ internal class AiSessionManagerTest {
 
         assertEquals(2, aiClient.recordedRequests.size)
         assertEquals(ChatMessagePart.AssistantText("finished"), manager.transcriptParts.last())
+    }
+
+    @Test
+    fun `terminal message tool response does not trigger follow-up provider request`() = runTest {
+        val registry = ToolCallRegistry().apply { register(TerminalMessageToolCallHandler()) }
+        var requestCount = 0
+        val aiClient = AiClientInMemoryFake().apply {
+            sendAiRequestHandler = {
+                requestCount += 1
+                if (requestCount == 1) {
+                    multipleToolCalls(listOf(ToolCall("call-1", "terminal_message_tool", "{}")))
+                } else {
+                    throw AiClientException(AiClientErrorType.RateLimit, "rate limited")
+                }
+            }
+        }
+        val manager = createManager(aiClient, toolCallRegistry = registry)
+
+        manager.submit("Explain").join()
+
+        assertEquals(1, aiClient.recordedRequests.size)
+        assertEquals(
+            listOf(
+                ChatMessagePart.UserText("Explain"),
+                ChatMessagePart.AssistantText("Here is the answer."),
+            ),
+            manager.transcriptParts,
+        )
     }
 
     @Test
@@ -206,13 +253,19 @@ internal class AiSessionManagerTest {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
-        val manager = createManager(aiClient, toolCallRegistry = registry)
+        var transcriptChangeCount = 0
+        val manager = createManager(
+            aiClient,
+            toolCallRegistry = registry,
+            onTranscriptChanged = { transcriptChangeCount += 1 },
+        )
 
         val job = manager.submit("Save it")
         runCurrent()
 
         val part = assertIs<ChatMessagePart.ToolCall>(manager.transcriptParts.last())
         assertEquals(ToolCallState.ApprovalRequested, part.state)
+        assertTrue(transcriptChangeCount > 0, "approval request must notify the UI to recompose")
 
         manager.onApprovalDecision("call-save", approved = true)
         job.join()
@@ -544,6 +597,7 @@ internal class AiSessionManagerTest {
         },
         toolCallRegistry: ToolCallRegistry = ToolCallRegistry(),
         maxHistoryTokens: Int = AiSessionManager.DEFAULT_MAX_HISTORY_TOKENS,
+        onTranscriptChanged: () -> Unit = {},
     ): AiSessionManager = AiSessionManager(
         aiClient = aiClient,
         toolCallRegistry = toolCallRegistry,
@@ -559,6 +613,7 @@ internal class AiSessionManagerTest {
         modelIdProvider = { "test-model" },
         coroutineScope = this,
         maxHistoryTokens = maxHistoryTokens,
+        onTranscriptChanged = onTranscriptChanged,
     )
 
     private class TestToolCallExecutionContext(
@@ -582,6 +637,38 @@ internal class AiSessionManagerTest {
             executionOrder += toolCallId
             releaseTool?.await()
             return ToolCallExecutionResult(success = true, message = "handled $toolCallId")
+        }
+    }
+
+    private class TerminalMessageToolCallHandler : ToolCallHandler {
+        override val providerToolId = "terminal_message_tool"
+        override val description = "Return a final user-facing message."
+        override val schema: JsonObject = buildJsonObject {}
+
+        override suspend fun executeToolCallHandler(
+            toolCallId: String,
+            argumentsAsJsonString: String,
+            context: ToolCallExecutionContext,
+        ): ToolCallHandlerResponse = object : ToolCallHandlerResponse {
+            override val endsTurn: Boolean = true
+            override fun toProviderMessageContent(json: kotlinx.serialization.json.Json): String =
+                "{\"success\":true,\"message\":\"Here is the answer.\"}"
+            override fun toTranscriptOutput(providerMessageContent: String): String = "Here is the answer."
+        }
+    }
+
+    private class TranscriptOutputToolCallHandler : ToolCallHandler {
+        override val providerToolId = "transcript_output_tool"
+        override val description = "Return different provider and transcript output."
+        override val schema: JsonObject = buildJsonObject {}
+
+        override suspend fun executeToolCallHandler(
+            toolCallId: String,
+            argumentsAsJsonString: String,
+            context: ToolCallExecutionContext,
+        ): ToolCallHandlerResponse = object : ToolCallHandlerResponse {
+            override fun toProviderMessageContent(json: kotlinx.serialization.json.Json): String = "{\"success\":true}"
+            override fun toTranscriptOutput(providerMessageContent: String): String = "Applied."
         }
     }
 

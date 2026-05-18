@@ -32,12 +32,14 @@ class SettingsViewModel(
     val groupedSettings by derivedStateOf {
         settingsVersion // read to establish dependency
         val applicable = settingsManager.applicableSettings()
-        val general = applicable.filter { it !is SettingItem.Desktop }
+        val general = applicable.filter { it is SettingItem.General }
         val desktopOsx = applicable.filter { item ->
             item is SettingItem.Desktop && RuntimeEnvironment.DesktopOsx in item.runtimeEnvironments
         }
+        val developerTools = applicable.filter { it is SettingItem.DeveloperTools }
         buildList {
             if (general.isNotEmpty()) add(SettingsGroup("General", general))
+            if (developerTools.isNotEmpty()) add(SettingsGroup("Developer Tools", developerTools))
             if (desktopOsx.isNotEmpty()) add(SettingsGroup("Desktop macOS", desktopOsx))
         }
     }

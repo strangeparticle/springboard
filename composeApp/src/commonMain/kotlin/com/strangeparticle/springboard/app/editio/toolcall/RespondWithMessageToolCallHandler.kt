@@ -12,7 +12,12 @@ internal class RespondWithMessageToolCallHandler : ToolCallHandler {
     override val description = "Return a prose response to the user without mutating state."
     override val schema = requestSchema(RespondWithMessageToolCallHandlerRequest.serializer())
     suspend fun executeToolCallHandler(args: RespondWithMessageToolCallHandlerRequest, context: SpringboardToolCallExecutionContext): SpringboardToolCallHandlerResponse =
-        successStatusResult()
+        SpringboardToolCallHandlerResponse(
+            success = true,
+            message = args.display_message,
+            endsTurn = true,
+            transcriptOutput = args.display_message,
+        )
     override suspend fun executeToolCallHandler(toolCallId: String, argumentsAsJsonString: String, context: ToolCallExecutionContext): ToolCallHandlerResponse {
         val args = decodeToolCallHandlerRequest(argumentsAsJsonString, RespondWithMessageToolCallHandlerRequest.serializer())
         val springboardContext = context.getSpringboardToolCallExecutionContextOrThrow()

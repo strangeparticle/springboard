@@ -16,6 +16,8 @@ fun FrameWindowScope.SpringboardMenuBar(
     onOpenInNewTab: () -> Unit,
     onOpenFromNetworkInCurrentTab: () -> Unit,
     onOpenFromNetworkInNewTab: () -> Unit,
+    onCopy: () -> Unit,
+    onPaste: () -> Unit,
     onCloseCurrentTab: () -> Unit,
     onPreviousTab: () -> Unit,
     onNextTab: () -> Unit,
@@ -97,6 +99,14 @@ fun FrameWindowScope.SpringboardMenuBar(
             // ── Close ───────────────────────────────────────────
             Item("Close Tab", shortcut = KeyShortcut(Key.W, meta = true)) {
                 onCloseCurrentTab()
+            }
+        }
+        Menu("Edit") {
+            Item("Copy", shortcut = KeyShortcut(Key.C, meta = true)) {
+                onCopy()
+            }
+            Item("Paste", shortcut = KeyShortcut(Key.V, meta = true)) {
+                onPaste()
             }
         }
         Menu("Settings") {

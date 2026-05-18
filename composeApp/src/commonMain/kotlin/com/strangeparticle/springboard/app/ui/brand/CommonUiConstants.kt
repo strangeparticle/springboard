@@ -6,6 +6,8 @@ import androidx.compose.ui.unit.dp
 object CommonUiConstants {
     val NavbarHeight = 56.dp
     val StatusBarHeight = 32.dp
+    val TabBarHeight = 32.dp
+    val BottomBarHeight = 32.dp
     val GridColumnWidth = 46.dp
     val GridRowHeight = GridColumnWidth * 0.8f
     val ResourceLabelWidth = 200.dp

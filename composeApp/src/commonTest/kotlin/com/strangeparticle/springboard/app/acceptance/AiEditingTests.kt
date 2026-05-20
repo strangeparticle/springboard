@@ -13,8 +13,11 @@ import com.strangeparticle.editio.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.editio.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.editio.SystemPromptBuilder
+import com.strangeparticle.springboard.app.editio.toolcall.AddAppToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.AddEnvironmentToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddResourceToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddUrlActivatorToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.RemoveActivatorToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.SaveSpringboardToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
@@ -112,6 +115,38 @@ internal class AiEditingTests {
     }
 
     @Test
+    fun `fake provider can create and populate a new springboard`() = runTest {
+        val fixture = createFixture()
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-create", "create_springboard", args()))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall("call-app", "add_app", args("tab_id" to "tab-2", "id" to "metrics", "name" to "Metrics")),
+                ToolCall("call-resource", "add_resource", args("tab_id" to "tab-2", "id" to "dashboard", "name" to "Dashboard")),
+                ToolCall("call-env", "add_environment", args("tab_id" to "tab-2", "id" to "prod", "name" to "Production")),
+                ToolCall("call-activator", "add_url_activator", args("tab_id" to "tab-2", "app_id" to "metrics", "resource_id" to "dashboard", "environment_id" to "prod", "url" to "https://metrics.example.com")),
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Created a new springboard.")
+
+        fixture.manager.submit("Create a new springboard for metrics").join()
+
+        val activeTab = fixture.viewModel.activeTab
+        assertNotNull(activeTab)
+        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertNull(activeTab.source)
+        assertTrue(activeTab.isDirty)
+        assertEquals("", activeTab.springboard?.jsonSource)
+        val springboard = activeTab.springboard
+        assertNotNull(springboard)
+        assertTrue(springboard.apps.any { it.id == "metrics" })
+        assertTrue(springboard.resources.any { it.id == "dashboard" })
+        assertTrue(springboard.environments.any { it.id == "prod" })
+        assertTrue(springboard.activators.any { it.appId == "metrics" && it.resourceId == "dashboard" && it.environmentId == "prod" })
+    }
+
+    @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
         fixture.aiClient.sendAiRequestException = AiClientException(AiClientErrorType.Network, "network unavailable")
@@ -138,8 +173,11 @@ internal class AiEditingTests {
         viewModel.loadConfig(TestFixtureJson.URL_ONLY, source)
         val aiClient = AiClientInMemoryFake()
         val registry = ToolCallRegistry().apply {
+            register(AddAppToolCallHandler())
+            register(AddEnvironmentToolCallHandler())
             register(AddResourceToolCallHandler())
             register(AddUrlActivatorToolCallHandler())
+            register(CreateSpringboardToolCallHandler())
             register(RemoveActivatorToolCallHandler())
         }
         val manager = AiSessionManager(

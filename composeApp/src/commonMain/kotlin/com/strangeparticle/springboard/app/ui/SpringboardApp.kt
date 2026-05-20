@@ -397,6 +397,7 @@ private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegi
     register(AddUrlActivatorToolCallHandler())
     register(AddUrlTemplateActivatorToolCallHandler())
     register(CloseTabToolCallHandler())
+    register(CreateSpringboardToolCallHandler())
     register(CreateTabToolCallHandler())
     register(MoveActivatorToolCallHandler())
     register(OpenFromUrlToolCallHandler())

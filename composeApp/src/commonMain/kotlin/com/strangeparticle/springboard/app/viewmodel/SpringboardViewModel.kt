@@ -65,6 +65,29 @@ class SpringboardViewModel(
         _tabs[index] = transform(_tabs[index])
     }
 
+    private fun installSpringboardInTab(
+        tabId: String,
+        springboardConfig: Springboard,
+        tabSource: String?,
+        isDirty: Boolean,
+    ) {
+        val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
+        updateTabById(tabId) { current ->
+            current.copy(
+                springboard = springboardConfig,
+                source = tabSource,
+                label = deriveTabLabel(springboardConfig.name),
+                selectedEnvironmentId = initialEnvironmentId,
+                selectedAppId = null,
+                selectedResourceId = null,
+                multiSelectSet = emptySet(),
+                hoveredActivatorPreview = null,
+                isLoading = false,
+                isDirty = isDirty,
+            )
+        }
+    }
+
     /** Returns the [TabState] for [tabId], or null if no tab with that id exists. */
     fun findTab(tabId: String): TabState? = _tabs.firstOrNull { it.tabId == tabId }
 
@@ -189,6 +212,34 @@ class SpringboardViewModel(
         activeTabId = newTab.tabId
         onTabsChanged()
         return newTab.tabId
+    }
+
+    fun createUnsavedSpringboardTab(): LoadResult {
+        val newTabId = createTab()
+            ?: return LoadResult.Failure(
+                code = "tab_limit_reached",
+                message = "Cannot create a new tab — tab limit reached.",
+            )
+        val springboardConfig = SpringboardFactory.createEmpty(nextUntitledSpringboardName())
+        installSpringboardInTab(
+            tabId = newTabId,
+            springboardConfig = springboardConfig,
+            tabSource = null,
+            isDirty = true,
+        )
+        activeTabToast.info("Springboard created: ${springboardConfig.name}")
+        requestFocusAppDropdown()
+        onTabsChanged()
+        return LoadResult.Success(newTabId)
+    }
+
+    private fun nextUntitledSpringboardName(): String {
+        val existingNames = _tabs.mapNotNull { it.springboard?.name }.toSet()
+        var index = 1
+        while ("Untitled-$index" in existingNames) {
+            index++
+        }
+        return "Untitled-$index"
     }
 
     fun selectTab(tabId: String) {
@@ -488,23 +539,9 @@ class SpringboardViewModel(
         return try {
             val contents = loader.loadContent(source)
             val springboardConfig = SpringboardFactory.fromJson(contents, source)
-            val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
             // Write directly to targetTabId — applySpringboard targets the active tab and
             // would corrupt a different tab if the user switches while the load is in flight.
-            updateTabById(targetTabId) { current ->
-                current.copy(
-                    springboard = springboardConfig,
-                    source = source,
-                    label = deriveTabLabel(springboardConfig.name),
-                    selectedEnvironmentId = initialEnvironmentId,
-                    selectedAppId = null,
-                    selectedResourceId = null,
-                    multiSelectSet = emptySet(),
-                    hoveredActivatorPreview = null,
-                    isLoading = false,
-                    isDirty = false,
-                )
-            }
+            installSpringboardInTab(targetTabId, springboardConfig, tabSource = source, isDirty = false)
             val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
             if (hasUnsafeActivators) {
                 tabToastState(targetTabId).warning(
@@ -547,22 +584,7 @@ class SpringboardViewModel(
     }
 
     private fun applySpringboard(springboardConfig: Springboard, source: String) {
-        val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
-
-        updateActiveTab { current ->
-            current.copy(
-                springboard = springboardConfig,
-                source = source,
-                label = deriveTabLabel(springboardConfig.name),
-                selectedEnvironmentId = initialEnvironmentId,
-                selectedAppId = null,
-                selectedResourceId = null,
-                multiSelectSet = emptySet(),
-                hoveredActivatorPreview = null,
-                isLoading = false,
-                isDirty = false,
-            )
-        }
+        installSpringboardInTab(activeTabId, springboardConfig, tabSource = source, isDirty = false)
 
         val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
         if (hasUnsafeActivators) {

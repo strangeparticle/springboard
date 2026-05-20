@@ -11,8 +11,10 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
+import com.strangeparticle.springboard.app.viewmodel.SaveResult
 
 class SpringboardViewModelTabsTest {
 
@@ -190,5 +192,66 @@ class SpringboardViewModelTabsTest {
         assertEquals("/tmp/x.json", entry.source)
         assertEquals(entry.tabId, persisted.activeTabId)
         assertEquals(viewModel.activeTabId, persisted.activeTabId)
+    }
+
+    @Test
+    fun createUnsavedSpringboardTabCreatesDirtySourceLessUntitledSpringboard() {
+        val viewModel = createViewModel()
+
+        val result = viewModel.createUnsavedSpringboardTab()
+
+        assertTrue(result is SpringboardViewModel.LoadResult.Success)
+        val activeTab = viewModel.activeTab
+        assertNotNull(activeTab)
+        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertEquals("Untitled-1", activeTab.label)
+        assertNull(activeTab.source)
+        assertTrue(activeTab.isDirty)
+        assertNull(activeTab.selectedEnvironmentId)
+        assertNull(activeTab.selectedAppId)
+        assertNull(activeTab.selectedResourceId)
+        assertTrue(activeTab.multiSelectSet.isEmpty())
+        assertNull(activeTab.hoveredActivatorPreview)
+        assertEquals("", activeTab.springboard?.source)
+        assertEquals("", activeTab.springboard?.jsonSource)
+    }
+
+    @Test
+    fun createUnsavedSpringboardTabUsesNextUntitledNameFromOpenSpringboards() {
+        val viewModel = createViewModel()
+
+        viewModel.createUnsavedSpringboardTab()
+        viewModel.createUnsavedSpringboardTab()
+
+        assertEquals("Untitled-2", viewModel.activeTab?.springboard?.name)
+    }
+
+    @Test
+    fun createUnsavedSpringboardTabIgnoresEmptyTabsWhenGeneratingName() {
+        val viewModel = createViewModel()
+
+        viewModel.createTab()
+        viewModel.createUnsavedSpringboardTab()
+
+        assertEquals("Untitled-1", viewModel.activeTab?.springboard?.name)
+    }
+
+    @Test
+    fun sourceLessUnsavedSpringboardCannotSaveInPlaceButCanSaveAs() {
+        val fileService = PlatformFileContentServiceInMemoryFake()
+        val viewModel = SpringboardViewModel(
+            settingsManager = createSettingsManagerForTest(),
+            persistenceService = PersistenceServiceInMemoryFake(),
+            fileContentService = fileService,
+        )
+        viewModel.createUnsavedSpringboardTab()
+
+        assertEquals(SaveResult.NotSupportedForSource, viewModel.saveActiveTab())
+
+        val saveAsResult = viewModel.saveActiveTabAs("/tmp/untitled.json")
+        assertEquals(SaveResult.Success("/tmp/untitled.json"), saveAsResult)
+        assertEquals("/tmp/untitled.json", viewModel.activeTab?.source)
+        assertEquals(false, viewModel.activeTab?.isDirty)
+        assertTrue(fileService.writtenFiles.containsKey("/tmp/untitled.json"))
     }
 }

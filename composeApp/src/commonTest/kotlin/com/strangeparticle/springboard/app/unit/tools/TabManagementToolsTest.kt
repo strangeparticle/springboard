@@ -2,6 +2,8 @@ package com.strangeparticle.springboard.app.unit.tools
 
 import com.strangeparticle.springboard.app.editio.toolcall.CloseTabToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.CloseTabToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.CreateTabToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.CreateTabToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.OpenFromUrlToolCallHandlerRequest
@@ -58,6 +60,56 @@ internal class TabManagementToolsTest {
         assertNotNull(activeTab)
         assertNull(activeTab.springboard, "newly created tab has no springboard yet")
         assertEquals(1, ctx.stateChangedCount)
+    }
+
+    @Test
+    fun `create_springboard creates a dirty source-less springboard in a new active tab`() = runTest {
+        val (ctx, _) = newContext()
+        val initialCount = ctx.viewModel.tabs.size
+
+        val result = CreateSpringboardToolCallHandler().executeToolCallHandler(
+            CreateSpringboardToolCallHandlerRequest(display_message = "new"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        assertEquals(initialCount + 1, ctx.viewModel.tabs.size)
+        val activeTab = ctx.viewModel.activeTab
+        assertNotNull(activeTab)
+        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertNull(activeTab.source)
+        assertTrue(activeTab.isDirty)
+        assertEquals("", activeTab.springboard?.jsonSource)
+        assertEquals(1, ctx.stateChangedCount)
+    }
+
+    @Test
+    fun `create_springboard uses the next untitled name`() = runTest {
+        val (ctx, _) = newContext()
+        ctx.viewModel.createUnsavedSpringboardTab()
+
+        val result = CreateSpringboardToolCallHandler().executeToolCallHandler(
+            CreateSpringboardToolCallHandlerRequest(display_message = "new"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        assertEquals("Untitled-2", ctx.viewModel.activeTab?.springboard?.name)
+    }
+
+    @Test
+    fun `create_springboard reports tab limit reached`() = runTest {
+        val (ctx, _) = newContext()
+        repeat(com.strangeparticle.springboard.app.viewmodel.MAX_OPEN_TABS - 1) { ctx.viewModel.createTab() }
+
+        val result = CreateSpringboardToolCallHandler().executeToolCallHandler(
+            CreateSpringboardToolCallHandlerRequest(display_message = "new"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("tab_limit_reached", result.code)
+        assertEquals(0, ctx.stateChangedCount)
     }
 
     // ── open_local_file ─────────────────────────────────────────────────

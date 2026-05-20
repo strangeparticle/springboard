@@ -12,6 +12,20 @@ internal val json = Json {
 
 object SpringboardFactory {
 
+    fun createEmpty(name: String): Springboard = Springboard(
+        name = name,
+        environments = emptyList(),
+        apps = emptyList(),
+        resources = emptyList(),
+        activators = emptyList(),
+        guidanceData = emptyList(),
+        indexes = buildIndexes(emptyList()),
+        source = "",
+        lastLoadTime = currentTimeMillis(),
+        jsonSource = "",
+        appGroups = emptyList(),
+    )
+
     fun fromJson(jsonString: String, source: String): Springboard {
         val dto = json.decodeFromString<SpringboardDto>(jsonString)
         return fromDto(dto, source, jsonSource = jsonString)

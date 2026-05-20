@@ -157,6 +157,28 @@ internal class SaveSpringboardToolCallHandlerTest {
     }
 
     @Test
+    fun `save refuses for source-less springboard without prompting for confirmation`() = runTest {
+        val vm = SpringboardViewModel(
+            settingsManager = createSettingsManagerForTest(),
+            persistenceService = PersistenceServiceInMemoryFake(),
+            platformActivationService = PlatformActivationServiceInMemoryFake(),
+        )
+        vm.createUnsavedSpringboardTab()
+        val tabId = vm.activeTabId
+        val ctx = SpringboardToolCallExecutionContextInMemoryFake(viewModel = vm)
+
+        val result = SaveSpringboardToolCallHandler().executeToolCallHandler(
+            toolCallId = "call-sourceless",
+            args = SaveSpringboardToolCallHandlerRequest(tab_id = tabId, display_message = "x"),
+            context = ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("not_supported_for_source", result.code)
+        assertTrue(ctx.pendingApprovals.isEmpty())
+    }
+
+    @Test
     fun `save targeting non-active tab writes file without changing active tab`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = SpringboardViewModel(

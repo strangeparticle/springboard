@@ -43,6 +43,26 @@ class SpringboardFactoryTest {
     }
 
     @Test
+    fun `createEmpty creates a domain springboard without source json`() {
+        val springboard = SpringboardFactory.createEmpty("Untitled-1")
+
+        assertEquals("Untitled-1", springboard.name)
+        assertTrue(springboard.appGroups.isEmpty())
+        assertTrue(springboard.apps.isEmpty())
+        assertTrue(springboard.resources.isEmpty())
+        assertTrue(springboard.environments.isEmpty())
+        assertTrue(springboard.activators.isEmpty())
+        assertTrue(springboard.guidanceData.isEmpty())
+        assertTrue(springboard.indexes.activatorByCoordinate.isEmpty())
+        assertTrue(springboard.indexes.activatableResourcesByApp.isEmpty())
+        assertTrue(springboard.indexes.activatableAppsByResource.isEmpty())
+        assertTrue(springboard.indexes.activatableResourcesByEnvApp.isEmpty())
+        assertEquals("", springboard.source)
+        assertEquals("", springboard.jsonSource)
+        assertTrue(springboard.lastLoadTime >= 0)
+    }
+
+    @Test
     fun `activator types are parsed correctly`() {
         val sb = SpringboardFactory.fromJson(validJson, "/test")
         val urlActivator = sb.activators.filterIsInstance<UrlActivator>()

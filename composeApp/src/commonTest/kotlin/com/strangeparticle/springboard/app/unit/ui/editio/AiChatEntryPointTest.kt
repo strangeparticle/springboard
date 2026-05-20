@@ -8,6 +8,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import com.strangeparticle.editio.client.AiClient
@@ -191,9 +192,10 @@ internal class AiChatEntryPointTest {
         onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("/help")
         onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
 
-        onNodeWithText("/help_terse").assertExists()
         onNodeWithText("You: /help").assertExists()
         onNodeWithText(AiAssistantFullHelpText.title, substring = true).assertExists()
+        onNodeWithTag(TestTags.AI_CHAT_HISTORY).performScrollToIndex(0)
+        onNodeWithText("/help_terse").assertExists()
         assertEquals(0, aiClient.requestCount)
     }
 

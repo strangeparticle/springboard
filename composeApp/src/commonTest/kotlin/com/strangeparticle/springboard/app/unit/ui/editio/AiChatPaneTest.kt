@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit.ui.editio
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.*
@@ -371,10 +372,11 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithTag(TestTags.aiChatScrollbackPane(0)).assertExists()
         onNodeWithTag(TestTags.aiChatScrollbackPane(1)).assertExists()
         onNodeWithText("You: /help").assertExists()
         onNodeWithText(AiAssistantFullHelpText.title, substring = true).assertExists()
+        onNodeWithTag(TestTags.AI_CHAT_HISTORY).performScrollToIndex(0)
+        onNodeWithTag(TestTags.aiChatScrollbackPane(0)).assertExists()
     }
 
     @Test
@@ -492,6 +494,77 @@ internal class AiChatPaneTest {
         assertNotEquals(pixelSignature(unfocusedPixels), pixelSignature(focusedPixels))
     }
 
+    @Test
+    fun `chat history scrolls to bottom when a new pane is appended`() = runComposeUiTest {
+        val scrollbackPanes = mutableStateOf(numberedScrollbackPanes(12))
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(scrollbackPanes = scrollbackPanes.value),
+                    onClose = {},
+                    onOpenSettings = {},
+                    height = 220.dp,
+                )
+            }
+        }
+
+        onNodeWithText("You: Request 11").assertIsDisplayed()
+
+        scrollbackPanes.value = numberedScrollbackPanes(13)
+        waitForIdle()
+
+        onNodeWithText("You: Request 12").assertIsDisplayed()
+    }
+
+    @Test
+    fun `chat history scrolls to bottom on initial render`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(scrollbackPanes = numberedScrollbackPanes(12)),
+                    onClose = {},
+                    onOpenSettings = {},
+                    height = 220.dp,
+                )
+            }
+        }
+
+        onNodeWithText("You: Request 11").assertIsDisplayed()
+    }
+
+    @Test
+    fun `chat history scrolls to bottom when latest pane content grows after user scrolled up`() = runComposeUiTest {
+        val initialPanes = numberedScrollbackPanes(12)
+        val scrollbackPanes = mutableStateOf(initialPanes)
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(scrollbackPanes = scrollbackPanes.value),
+                    onClose = {},
+                    onOpenSettings = {},
+                    height = 220.dp,
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_HISTORY).performScrollToIndex(0)
+        onNodeWithText("You: Request 0").assertIsDisplayed()
+
+        scrollbackPanes.value = initialPanes.dropLast(1) + AiChatScrollbackPane.Interaction(
+            requestText = "Request 11",
+            responseParts = listOf(
+                ChatMessagePart.AssistantText(
+                    (1..20).joinToString("\n") { line -> "Expanded assistant response line $line" },
+                ),
+            ),
+        )
+        waitForIdle()
+
+        onNodeWithText("Expanded assistant response line 20", substring = true).assertIsDisplayed()
+    }
+
     private fun pixelSignature(pixelMap: androidx.compose.ui.graphics.PixelMap): Int {
         var signature = 0
         for (x in 0 until pixelMap.width) {
@@ -500,6 +573,13 @@ internal class AiChatPaneTest {
             }
         }
         return signature
+    }
+
+    private fun numberedScrollbackPanes(count: Int): List<AiChatScrollbackPane> = (0 until count).map { index ->
+        AiChatScrollbackPane.Interaction(
+            requestText = "Request $index",
+            responseParts = listOf(ChatMessagePart.AssistantText("Assistant response $index")),
+        )
     }
 
     private fun configuredState(

@@ -16,10 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -32,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +107,12 @@ internal fun AiChatPane(
     val inputBorderColor = if (isInputFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
     val inputBorderWidth = if (isInputFocused) 2.dp else 1.dp
     val colors = AiChatPaneDefaults.colors()
+    val historyListState = rememberLazyListState()
+    LaunchedEffect(state.scrollbackPanes.size, state.scrollbackPanes.lastOrNull()) {
+        if (state.scrollbackPanes.isNotEmpty()) {
+            historyListState.scrollToItem(state.scrollbackPanes.size)
+        }
+    }
     fun sendInput() {
         val text = inputValue.text.trim()
         if (text.isNotEmpty() && !state.isRunning) {
@@ -236,20 +244,23 @@ internal fun AiChatPane(
                         return@Column
                     }
 
-                    Column(
+                    LazyColumn(
+                        state = historyListState,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
                             .testTag(TestTags.AI_CHAT_HISTORY),
                     ) {
-                        state.scrollbackPanes.forEachIndexed { index, pane ->
+                        itemsIndexed(state.scrollbackPanes) { index, pane ->
                             AiChatScrollbackPaneRenderer(
                                 index = index,
                                 pane = pane,
                                 onApprovalDecision = state.onApprovalDecision,
                                 onCopyToClipboard = onCopyTranscript,
                             )
+                        }
+                        item(key = "chat-bottom-anchor") {
+                            Spacer(Modifier.height(1.dp))
                         }
                     }
                     Surface(

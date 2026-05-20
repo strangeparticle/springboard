@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.dp
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
@@ -101,6 +102,7 @@ internal class AiChatDebugPaneTest {
                     ),
                     onClose = {},
                     onOpenSettings = {},
+                    height = 800.dp,
                 )
             }
         }
@@ -108,9 +110,8 @@ internal class AiChatDebugPaneTest {
         onNodeWithText("Your message").assertExists()
         onNodeWithText("Application state sent to model").assertExists()
         onNodeWithText("Assistant reply").assertExists()
-        onNodeWithText("Tool result returned to model — id=call-1").assertExists()
-        // Tool-call name + arguments are visible inside the assistant pane.
         onNodeWithText("Tool call: save_springboard").assertExists()
+        onNodeWithText("Tool result returned to model — id=call-1").assertExists()
 
         // One copy button per pane.
         onAllNodesWithContentDescription("Copy scrollback pane").assertCountEquals(panes.size)

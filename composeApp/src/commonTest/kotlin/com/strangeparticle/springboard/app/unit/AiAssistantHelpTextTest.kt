@@ -28,4 +28,13 @@ internal class AiAssistantHelpTextTest {
         assertContains(AiAssistantSystemPromptText.text, "Editing rules:")
         assertContains(AiAssistantSystemPromptText.text, "Communication rules:")
     }
+
+    @Test
+    fun `system prompt forbids restating grid-visible state after successful edits`() {
+        // Regression for issue #3: the assistant used to reply with a verbose summary
+        // of the resulting state after every mutation, which duplicates what the grid
+        // already shows. The Communication rules must instruct a one-line ack instead.
+        assertContains(AiAssistantSystemPromptText.text, "one-line acknowledgement")
+        assertContains(AiAssistantSystemPromptText.text, "Do not restate the resulting names, ids, order")
+    }
 }

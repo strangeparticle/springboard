@@ -23,7 +23,7 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "my-config",
                 isActive = true,
-                statusIcon = null,
+                statusIcons = emptyList(),
                 tabId = "tab-1",
                 onSelect = {},
                 onClose = {},
@@ -38,7 +38,7 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "tab-x",
                 isActive = false,
-                statusIcon = null,
+                statusIcons = emptyList(),
                 tabId = "tab-1",
                 onSelect = {},
                 onClose = {},
@@ -54,7 +54,7 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "my-tab",
                 isActive = false,
-                statusIcon = null,
+                statusIcons = emptyList(),
                 tabId = "tab-1",
                 onSelect = { selectCount += 1 },
                 onClose = {},
@@ -71,7 +71,7 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "my-tab",
                 isActive = true,
-                statusIcon = null,
+                statusIcons = emptyList(),
                 tabId = "tab-1",
                 onSelect = {},
                 onClose = { closeCount += 1 },
@@ -87,14 +87,13 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "my-tab",
                 isActive = false,
-                statusIcon = TabStatusIcon.Dirty,
+                statusIcons = listOf(TabStatusIcon.Dirty),
                 tabId = "tab-7",
                 onSelect = {},
                 onClose = {},
             )
         }
         onNodeWithTag(TestTags.tabDirtyIndicator("tab-7"), useUnmergedTree = true).assertExists()
-        // The lock indicator is mutually exclusive — should not be present.
         onNodeWithTag(TestTags.tabLockIndicator("tab-7")).assertDoesNotExist()
     }
 
@@ -104,7 +103,7 @@ class TabIndicatorTest {
             TabIndicator(
                 label = "my-tab",
                 isActive = false,
-                statusIcon = TabStatusIcon.NonSaveable,
+                statusIcons = listOf(TabStatusIcon.NonSaveable),
                 tabId = "tab-9",
                 onSelect = {},
                 onClose = {},
@@ -115,12 +114,28 @@ class TabIndicatorTest {
     }
 
     @Test
+    fun rendersDirtyAndNonSaveableIconsTogether() = runComposeUiTest {
+        setContent {
+            TabIndicator(
+                label = "my-tab",
+                isActive = false,
+                statusIcons = listOf(TabStatusIcon.NonSaveable, TabStatusIcon.Dirty),
+                tabId = "tab-11",
+                onSelect = {},
+                onClose = {},
+            )
+        }
+        onNodeWithTag(TestTags.tabLockIndicator("tab-11"), useUnmergedTree = true).assertExists()
+        onNodeWithTag(TestTags.tabDirtyIndicator("tab-11"), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun rendersNeitherIndicatorWhenStatusIsNull() = runComposeUiTest {
         setContent {
             TabIndicator(
                 label = "my-tab",
                 isActive = false,
-                statusIcon = null,
+                statusIcons = emptyList(),
                 tabId = "tab-3",
                 onSelect = {},
                 onClose = {},

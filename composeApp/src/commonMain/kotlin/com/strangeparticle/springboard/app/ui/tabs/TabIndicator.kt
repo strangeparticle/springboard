@@ -43,7 +43,7 @@ object TabIndicatorDefaults {
 fun TabIndicator(
     label: String,
     isActive: Boolean,
-    statusIcon: TabStatusIcon?,
+    statusIcons: List<TabStatusIcon>,
     tabId: String,
     onSelect: () -> Unit,
     onClose: () -> Unit,
@@ -82,26 +82,29 @@ fun TabIndicator(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        if (statusIcon != null) {
+        if (statusIcons.isNotEmpty()) {
             Spacer(modifier = Modifier.width(4.dp))
-            val (imageVector: ImageVector, tag, contentDescription) = when (statusIcon) {
-                TabStatusIcon.Dirty -> Triple(
-                    Icons.Outlined.Circle,
-                    TestTags.tabDirtyIndicator(tabId),
-                    "Tab has unsaved changes",
-                )
-                TabStatusIcon.NonSaveable -> Triple(
-                    Icons.Default.Lock,
-                    TestTags.tabLockIndicator(tabId),
-                    "Tab source is read-only",
+            statusIcons.forEachIndexed { index, statusIcon ->
+                if (index > 0) Spacer(modifier = Modifier.width(2.dp))
+                val (imageVector: ImageVector, tag, contentDescription) = when (statusIcon) {
+                    TabStatusIcon.Dirty -> Triple(
+                        Icons.Outlined.Circle,
+                        TestTags.tabDirtyIndicator(tabId),
+                        "Tab has unsaved changes",
+                    )
+                    TabStatusIcon.NonSaveable -> Triple(
+                        Icons.Default.Lock,
+                        TestTags.tabLockIndicator(tabId),
+                        "Tab source is read-only",
+                    )
+                }
+                Icon(
+                    imageVector = imageVector,
+                    contentDescription = contentDescription,
+                    tint = foreground,
+                    modifier = Modifier.size(10.dp).testTag(tag),
                 )
             }
-            Icon(
-                imageVector = imageVector,
-                contentDescription = contentDescription,
-                tint = foreground,
-                modifier = Modifier.size(10.dp).testTag(tag),
-            )
         }
         IconButton(
             onClick = onClose,

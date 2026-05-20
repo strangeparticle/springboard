@@ -87,7 +87,7 @@ fun TabBar(
                 TabIndicator(
                     label = tab.label,
                     isActive = tab.tabId == activeTabId,
-                    statusIcon = tabStatusIconFor(tab),
+                    statusIcons = tabStatusIconsFor(tab),
                     tabId = tab.tabId,
                     onSelect = { onSelect(tab.tabId) },
                     onClose = { onClose(tab.tabId) },

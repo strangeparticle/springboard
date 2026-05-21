@@ -276,13 +276,13 @@ internal class AiChatEntryPointTest {
         waitUntil { aiClient.recordedRequests.size == 1 && aiClient.remainingResponseCount == 1 }
         waitUntil { onAllNodesWithText("First response", substring = true).fetchSemanticsNodes().isNotEmpty() }
         waitForIdle()
-        onNodeWithText("You: First message").assertExists()
+        onNodeWithText("First message").assertExists()
         onNodeWithText("First response", substring = true).assertExists()
 
         components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-new")
         waitForIdle()
 
-        onNodeWithText("You: First message").assertExists()
+        onNodeWithText("First message").assertExists()
         onNodeWithText("First response", substring = true).assertExists()
 
         onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Second message")

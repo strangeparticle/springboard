@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.unit.ui.editio
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.*
@@ -106,10 +107,93 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithText("You: Group these apps").assertExists()
+        onNodeWithText("Group these apps").assertExists()
         onNodeWithText("Error: OpenAI request failed with HTTP 429: Request too large").assertExists()
         onNodeWithText("Tool: add_app_group").assertDoesNotExist()
         onNodeWithText("Applied.").assertDoesNotExist()
+    }
+
+    @Test
+    fun `interaction messages expose distinct visual roles`() = runComposeUiTest {
+        val state = configuredState(
+            transcriptParts = listOf(
+                ChatMessagePart.UserText("Add Chrome"),
+                ChatMessagePart.AssistantText("I can do that."),
+                ChatMessagePart.ToolCall(
+                    ToolCall("call-save", "save_springboard", "{}"),
+                    ToolCallState.ApprovalRequested,
+                ),
+                ChatMessagePart.ChatError("network unavailable"),
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {}, height = 420.dp)
+            }
+        }
+
+        val pane = onNodeWithTag(TestTags.aiChatScrollbackPane(0)).getUnclippedBoundsInRoot()
+        val user = onNodeWithTag(TestTags.AI_CHAT_USER_MESSAGE, useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val assistant = onNodeWithTag(TestTags.AI_CHAT_ASSISTANT_MESSAGE, useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        val error = onNodeWithTag(TestTags.AI_CHAT_ERROR_MESSAGE, useUnmergedTree = true).getUnclippedBoundsInRoot()
+
+        onNodeWithTag(TestTags.AI_CHAT_TOOL_ACTIVITY, useUnmergedTree = true).assertExists()
+        onNodeWithText("You").assertDoesNotExist()
+        onNodeWithText("Assistant").assertDoesNotExist()
+        onNodeWithText("Tool").assertDoesNotExist()
+        onNodeWithText("Error").assertDoesNotExist()
+        onNodeWithText("You: Add Chrome").assertDoesNotExist()
+        onNodeWithText("Add Chrome").assertExists()
+        onNodeWithText("Error: network unavailable").assertExists()
+
+        assertTrue(user.right > pane.right - 72.dp, "user message should sit on the right side of its pane")
+        assertTrue(assistant.left < pane.left + 72.dp, "assistant message should sit on the left side of its pane")
+        assertTrue(error.top > user.bottom + 8.dp, "response/error should have breathing room below the user message")
+    }
+
+    @Test
+    fun `user message bubble uses filled button primary color`() = runComposeUiTest {
+        var expectedBubbleColor = Color.Unspecified
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                expectedBubbleColor = MaterialTheme.colorScheme.primary
+                ChatMessagePartRenderer(
+                    part = ChatMessagePart.UserText("      "),
+                    onApprovalDecision = { _, _ -> },
+                )
+            }
+        }
+
+        val pixels = onNodeWithTag(TestTags.AI_CHAT_USER_MESSAGE, useUnmergedTree = true).captureToImage().toPixelMap()
+
+        assertEquals(expectedBubbleColor, pixels[pixels.width / 2, pixels.height / 2])
+    }
+
+    @Test
+    fun `local commands expose command visual role`() = runComposeUiTest {
+        val state = configuredState(
+            scrollbackPanes = listOf(
+                AiChatScrollbackPane.LocalCommand(
+                    commandText = "/help",
+                    commandAttribution = CommandAttribution.User,
+                    responseText = AiAssistantFullHelpText.text,
+                    style = LocalCommandResponseStyle.Help,
+                ),
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_COMMAND_MESSAGE, useUnmergedTree = true).assertExists()
+        onNodeWithText("Command").assertDoesNotExist()
+        onNodeWithText("You: /help").assertExists()
     }
 
     @Test
@@ -463,7 +547,7 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithText("You: Add a logs URL for fretnaut in prod").assertExists()
+        onNodeWithText("Add a logs URL for fretnaut in prod").assertExists()
     }
 
     @Test
@@ -509,12 +593,12 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithText("You: Request 11").assertIsDisplayed()
+        onNodeWithText("Request 11").assertIsDisplayed()
 
         scrollbackPanes.value = numberedScrollbackPanes(13)
         waitForIdle()
 
-        onNodeWithText("You: Request 12").assertIsDisplayed()
+        onNodeWithText("Request 12").assertIsDisplayed()
     }
 
     @Test
@@ -530,7 +614,7 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithText("You: Request 11").assertIsDisplayed()
+        onNodeWithText("Request 11").assertIsDisplayed()
     }
 
     @Test
@@ -550,7 +634,7 @@ internal class AiChatPaneTest {
         }
 
         onNodeWithTag(TestTags.AI_CHAT_HISTORY).performScrollToIndex(0)
-        onNodeWithText("You: Request 0").assertIsDisplayed()
+        onNodeWithText("Request 0").assertIsDisplayed()
 
         scrollbackPanes.value = initialPanes.dropLast(1) + AiChatScrollbackPane.Interaction(
             requestText = "Request 11",

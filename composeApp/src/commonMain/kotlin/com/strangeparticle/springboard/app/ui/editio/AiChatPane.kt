@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -370,21 +371,26 @@ private fun LocalCommandPaneContent(
             CommandAttribution.User -> "You: ${pane.commandText}"
         },
         style = textStyle.copy(fontFamily = FontFamily.Monospace),
-        color = Color(0xFFFF9800),
-        modifier = Modifier.padding(vertical = 1.dp),
+        color = Color(0xFFE07800),
+        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
     )
-    Spacer(Modifier.height(2.dp))
-    Text(
-        text = pane.responseText,
-        style = textStyle,
-        color = when (pane.style) {
-            LocalCommandResponseStyle.Help -> MaterialTheme.colorScheme.onSurfaceVariant
-            LocalCommandResponseStyle.Error -> MaterialTheme.colorScheme.error
-        },
-        modifier = Modifier
-            .padding(vertical = 1.dp)
-            .then(if (pane.style == LocalCommandResponseStyle.Help) Modifier.testTag(TestTags.AI_CHAT_USER_HELP) else Modifier),
-    )
+    Surface(
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_COMMAND_MESSAGE),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            Text(
+                text = pane.responseText,
+                style = textStyle,
+                color = when (pane.style) {
+                    LocalCommandResponseStyle.Help -> MaterialTheme.colorScheme.onSurfaceVariant
+                    LocalCommandResponseStyle.Error -> MaterialTheme.colorScheme.error
+                },
+                modifier = if (pane.style == LocalCommandResponseStyle.Help) Modifier.testTag(TestTags.AI_CHAT_USER_HELP) else Modifier,
+            )
+        }
+    }
 }
 
 @Composable
@@ -393,12 +399,22 @@ private fun InteractionPaneContent(
     onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
     textStyle: TextStyle,
 ) {
-    Text(
-        text = "You: ${pane.requestText}",
-        style = textStyle,
-        color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(vertical = 2.dp),
-    )
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Surface(
+            modifier = Modifier.widthIn(max = 560.dp).testTag(TestTags.AI_CHAT_USER_MESSAGE),
+            color = MaterialTheme.colorScheme.primary,
+            shape = MaterialTheme.shapes.small,
+        ) {
+            Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(
+                    text = pane.requestText,
+                    style = textStyle,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+    }
+    Spacer(Modifier.height(12.dp))
     pane.responseParts.forEach { part ->
         ChatMessagePartRenderer(part = part, onApprovalDecision = onApprovalDecision)
     }

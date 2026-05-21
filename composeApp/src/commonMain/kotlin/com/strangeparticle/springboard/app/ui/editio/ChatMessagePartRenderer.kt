@@ -1,15 +1,20 @@
 package com.strangeparticle.springboard.app.ui.editio
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,16 +30,53 @@ internal fun ChatMessagePartRenderer(
     part: ChatMessagePart,
     onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
 ) {
-    Column(modifier = Modifier.padding(vertical = 4.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         when (part) {
-            is ChatMessagePart.UserText -> Text("You: ${part.text}", fontSize = 13.sp)
-            is ChatMessagePart.AssistantText -> Text("Assistant: ${part.text}", fontSize = 13.sp)
-            is ChatMessagePart.ChatError -> Text(
-                "Error: ${part.message}",
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 13.sp,
-            )
+            is ChatMessagePart.UserText -> UserTextRenderer(part.text)
+            is ChatMessagePart.AssistantText -> AssistantTextRenderer(part.text)
+            is ChatMessagePart.ChatError -> ErrorMessageRenderer(part.message)
             is ChatMessagePart.ToolCall -> ToolCallRenderer(part, onApprovalDecision)
+        }
+    }
+}
+
+@Composable
+private fun UserTextRenderer(text: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Surface(
+            color = MaterialTheme.colorScheme.primary,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.widthIn(max = 560.dp).testTag(TestTags.AI_CHAT_USER_MESSAGE),
+        ) {
+            Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
+                Text(text, color = MaterialTheme.colorScheme.onPrimary, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AssistantTextRenderer(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.widthIn(max = 620.dp).testTag(TestTags.AI_CHAT_ASSISTANT_MESSAGE),
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
+            Text(text, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun ErrorMessageRenderer(message: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_ERROR_MESSAGE),
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
+            Text("Error: $message", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
         }
     }
 }
@@ -46,25 +88,46 @@ private fun ToolCallRenderer(
 ) {
     val toolCall = part.toolCall
     when (val state = part.state) {
-        ToolCallState.Pending -> AssistChip(onClick = {}, label = { Text("Working") })
+        ToolCallState.Pending -> ToolActivitySurface {
+            AssistChip(onClick = {}, label = { Text("Working") })
+        }
         ToolCallState.ApprovalRequested -> {
-            Text("Approval requested", fontSize = 13.sp)
-            Spacer(Modifier.height(4.dp))
-            Row {
-                Button(
-                    onClick = { onApprovalDecision(toolCall.toolCallId, true) },
-                    modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
-                ) { Text("Apply") }
-                Spacer(Modifier.width(8.dp))
-                OutlinedButton(
-                    onClick = { onApprovalDecision(toolCall.toolCallId, false) },
-                    modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
-                ) { Text("Cancel") }
+            ToolActivitySurface {
+                Text("Approval requested", color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                Spacer(Modifier.height(4.dp))
+                Row {
+                    Button(
+                        onClick = { onApprovalDecision(toolCall.toolCallId, true) },
+                        modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
+                    ) { Text("Apply") }
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = { onApprovalDecision(toolCall.toolCallId, false) },
+                        modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
+                    ) { Text("Cancel") }
+                }
             }
         }
-        is ToolCallState.ApprovalResponded -> Text(if (state.approved) "Approval granted" else "Approval denied")
+        is ToolCallState.ApprovalResponded -> ToolActivitySurface {
+            Text(if (state.approved) "Approval granted" else "Approval denied", fontSize = 13.sp)
+        }
         is ToolCallState.OutputAvailable -> Unit
-        is ToolCallState.OutputError -> Text(state.message, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
-        ToolCallState.OutputDenied -> Text("Denied", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+        is ToolCallState.OutputError -> ToolActivitySurface {
+            Text(state.message, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+        }
+        ToolCallState.OutputDenied -> ToolActivitySurface {
+            Text("Denied", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun ToolActivitySurface(content: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.widthIn(max = 620.dp).testTag(TestTags.AI_CHAT_TOOL_ACTIVITY),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), content = content)
     }
 }

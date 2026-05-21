@@ -10,6 +10,11 @@ import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
+import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
+import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
 import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
@@ -33,6 +38,57 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 internal class AiSessionManagerTest {
+
+    @Test
+    fun `submit records canonical user snapshot and assistant events`() = runTest {
+        val aiClient = AiClientInMemoryFake().apply {
+            responseQueue += textOnly("done")
+        }
+        val manager = createManager(aiClient, snapshotJson = "{\"tabs\":[]}")
+
+        manager.submit("Add Chrome").join()
+
+        assertEquals(
+            listOf(
+                StateSnapshotAddedAiChatEvent("{\"tabs\":[]}"),
+                UserSubmittedAiChatEvent("Add Chrome"),
+                AssistantRespondedAiChatEvent(text = "done", toolCalls = emptyList()),
+            ),
+            manager.events,
+        )
+    }
+
+    @Test
+    fun `tool call flow records canonical lifecycle events`() = runTest {
+        val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
+        val toolCall = ToolCall("call-1", "record_tool", "{}")
+        val aiClient = AiClientInMemoryFake().apply {
+            responseQueue += multipleToolCalls(listOf(toolCall))
+            responseQueue += textOnly("finished")
+        }
+        val manager = createManager(aiClient, toolCallRegistry = registry)
+
+        manager.submit("Run tool").join()
+
+        assertTrue(manager.events.contains(AssistantRespondedAiChatEvent(text = null, toolCalls = listOf(toolCall))))
+        assertTrue(manager.events.contains(ToolCallStartedAiChatEvent(toolCall)))
+        assertTrue(manager.events.any { it is ToolCallCompletedAiChatEvent && it.toolCallId == "call-1" })
+    }
+
+    @Test
+    fun `history token eviction does not delete canonical events`() = runTest {
+        val aiClient = AiClientInMemoryFake().apply {
+            responseQueue += textOnly("first")
+            responseQueue += textOnly("second")
+        }
+        val manager = createManager(aiClient, maxHistoryTokens = 50)
+
+        manager.submit("a".repeat(200)).join()
+        manager.submit("b".repeat(200)).join()
+
+        assertTrue(manager.events.filterIsInstance<UserSubmittedAiChatEvent>().any { it.text.startsWith("a") })
+        assertTrue(manager.events.filterIsInstance<AssistantRespondedAiChatEvent>().any { it.text == "first" })
+    }
 
     @Test
     fun `submit appends user transcript part`() = runTest {

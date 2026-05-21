@@ -6,15 +6,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import com.strangeparticle.editio.client.AiClient
 import com.strangeparticle.editio.client.AiClientModelInfo
-import com.strangeparticle.editio.conversation.AiClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
-import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
-import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
+import com.strangeparticle.editio.session.event.LocalCommandRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandResponseKind
+import com.strangeparticle.editio.session.event.LocalCommandSource
+import com.strangeparticle.editio.session.event.LocalCommandSubmittedAiChatEvent
 import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
 import com.strangeparticle.editio.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
@@ -31,10 +29,9 @@ import com.strangeparticle.springboard.app.settings.ai.AiProvider
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.editio.AiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
-import com.strangeparticle.springboard.app.ui.editio.AiChatScrollbackPane
-import com.strangeparticle.springboard.app.ui.editio.CommandAttribution
-import com.strangeparticle.springboard.app.ui.editio.LocalCommandResponseStyle
-import com.strangeparticle.springboard.app.ui.editio.initialTerseHelpScrollbackPane
+import com.strangeparticle.springboard.app.ui.editio.buildDebugScrollbackPanes
+import com.strangeparticle.springboard.app.ui.editio.buildSlimScrollbackPanes
+import com.strangeparticle.springboard.app.ui.editio.initialTerseHelpEvents
 import com.strangeparticle.springboard.app.ui.editio.parseAiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
@@ -185,15 +182,17 @@ private fun rememberAiChatPaneState(
     }
     var transcriptVersion by remember { mutableStateOf(0) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
-    var scrollbackPanes by remember(aiClient, modelId, viewModel) {
-        mutableStateOf(listOf<AiChatScrollbackPane>(initialTerseHelpScrollbackPane()))
+    // TODO: what's this change doing here?  Seems like this should be part of a different commit?
+    val latestModelId by rememberUpdatedState(modelId)
+    var chatEvents by remember(aiClient, viewModel) {
+        mutableStateOf(initialTerseHelpEvents())
     }
 
     if (provider == AiProvider.None || apiKey == null || modelId.isBlank() || aiClient == null) {
         return AiChatPaneState.notConfigured()
     }
 
-    val manager = remember(aiClient, modelId, viewModel) {
+    val manager = remember(aiClient, viewModel) {
         AiSessionManager(
             aiClient = aiClient,
             toolCallRegistry = createSpringboardToolCallRegistry(),
@@ -211,8 +210,10 @@ private fun rememberAiChatPaneState(
                 }
             },
             systemPromptProvider = { SystemPromptBuilder.build() },
-            modelIdProvider = { modelId },
+            modelIdProvider = { latestModelId },
             coroutineScope = coroutineScope,
+            eventsProvider = { chatEvents },
+            appendEvents = { events -> chatEvents = chatEvents + events },
             onTranscriptChanged = { transcriptVersion++ },
         )
     }
@@ -220,10 +221,9 @@ private fun rememberAiChatPaneState(
     val showFullChatTranscript =
         (settingsViewModel.getResolvedValue(SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT) as? Boolean) == true
     val effectiveScrollbackPanes = if (showFullChatTranscript) {
-        buildDebugScrollbackPanes(manager.history)
+        buildDebugScrollbackPanes(chatEvents)
     } else {
-        scrollbackPanes = syncAiTranscriptPanes(scrollbackPanes, manager.transcriptParts)
-        scrollbackPanes
+        buildSlimScrollbackPanes(chatEvents)
     }
 
     return AiChatPaneState.configured(
@@ -235,31 +235,29 @@ private fun rememberAiChatPaneState(
         onSubmit = { text ->
             when (val command = parseAiChatLocalCommand(text)) {
                 is AiChatLocalCommand.HelpTerse -> {
-                    scrollbackPanes = scrollbackPanes + AiChatScrollbackPane.LocalCommand(
-                        commandText = command.originalText,
-                        commandAttribution = CommandAttribution.User,
-                        responseText = AiAssistantTerseHelpText.text,
-                        style = LocalCommandResponseStyle.Help,
+                    chatEvents = chatEvents + listOf(
+                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
+                        LocalCommandRespondedAiChatEvent(command.originalText, AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
                     )
                     transcriptVersion++
                     return@configured
                 }
                 is AiChatLocalCommand.HelpFull -> {
-                    scrollbackPanes = scrollbackPanes + AiChatScrollbackPane.LocalCommand(
-                        commandText = command.originalText,
-                        commandAttribution = CommandAttribution.User,
-                        responseText = AiAssistantFullHelpText.text,
-                        style = LocalCommandResponseStyle.Help,
+                    chatEvents = chatEvents + listOf(
+                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
+                        LocalCommandRespondedAiChatEvent(command.originalText, AiAssistantFullHelpText.text, LocalCommandResponseKind.Help),
                     )
                     transcriptVersion++
                     return@configured
                 }
                 is AiChatLocalCommand.Unknown -> {
-                    scrollbackPanes = scrollbackPanes + AiChatScrollbackPane.LocalCommand(
-                        commandText = command.originalText,
-                        commandAttribution = CommandAttribution.User,
-                        responseText = "Unknown command: ${command.originalText}. Try /help.",
-                        style = LocalCommandResponseStyle.Error,
+                    chatEvents = chatEvents + listOf(
+                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
+                        LocalCommandRespondedAiChatEvent(
+                            command.originalText,
+                            "Unknown command: ${command.originalText}. Try /help.",
+                            LocalCommandResponseKind.Error,
+                        ),
                     )
                     transcriptVersion++
                     return@configured
@@ -285,87 +283,6 @@ private fun rememberAiChatPaneState(
             transcriptVersion++
         },
     )
-}
-
-private fun syncAiTranscriptPanes(
-    scrollbackPanes: List<AiChatScrollbackPane>,
-    transcriptParts: List<ChatMessagePart>,
-): List<AiChatScrollbackPane> {
-    val aiPanes = buildAiInteractionPanes(transcriptParts)
-    var synced = scrollbackPanes
-    for (aiPane in aiPanes) {
-        val existingIndex = synced.indexOfFirst {
-            it is AiChatScrollbackPane.Interaction && it.transcriptStartIndex == aiPane.transcriptStartIndex
-        }
-        synced = if (existingIndex >= 0) {
-            synced.toMutableList().also { it[existingIndex] = aiPane }
-        } else {
-            synced + aiPane
-        }
-    }
-    return synced.ifEmpty { listOf(initialTerseHelpScrollbackPane()) }
-}
-
-/**
- * Build the chat pane list from the provider-side history when the developer-tools
- * "Show Full Chat Transcript" setting is on. Each [AiClientMessage] becomes its own
- * pane so snapshots and raw tool-result payloads (which the normal user-facing
- * view hides) are visible and copy-pasteable individually.
- */
-private fun buildDebugScrollbackPanes(history: List<AiClientMessage>): List<AiChatScrollbackPane> =
-    history.mapIndexedNotNull { index, message ->
-        when (message) {
-            is AiClientMessageForUser -> AiChatScrollbackPane.DebugUserMessage(
-                text = message.text,
-                historyIndex = index,
-            )
-            is AiClientMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(
-                snapshotJson = message.snapshotJson,
-                historyIndex = index,
-            )
-            is AiClientMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(
-                text = message.text,
-                toolCalls = message.toolCalls,
-                historyIndex = index,
-            )
-            is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(
-                toolCallId = message.toolCallId,
-                content = message.content,
-                historyIndex = index,
-            )
-            else -> null
-        }
-    }
-
-private fun buildAiInteractionPanes(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane.Interaction> {
-    val panes = mutableListOf<AiChatScrollbackPane.Interaction>()
-    var startIndex: Int? = null
-    var requestText: String? = null
-    val responseParts = mutableListOf<ChatMessagePart>()
-
-    fun flush() {
-        val request = requestText ?: return
-        panes += AiChatScrollbackPane.Interaction(
-            requestText = request,
-            responseParts = responseParts.toList(),
-            transcriptStartIndex = startIndex,
-        )
-        startIndex = null
-        requestText = null
-        responseParts.clear()
-    }
-
-    transcriptParts.forEachIndexed { index, part ->
-        if (part is ChatMessagePart.UserText) {
-            flush()
-            startIndex = index
-            requestText = part.text
-        } else if (requestText != null) {
-            responseParts += part
-        }
-    }
-    flush()
-    return panes
 }
 
 private fun resolveAiApiKey(

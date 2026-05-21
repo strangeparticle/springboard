@@ -2,7 +2,28 @@ package com.strangeparticle.springboard.app.ui.editio
 
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
+import com.strangeparticle.editio.session.event.AiChatEvent
+import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
+import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandResponseKind
+import com.strangeparticle.editio.session.event.LocalCommandSource
+import com.strangeparticle.editio.session.event.LocalCommandSubmittedAiChatEvent
+import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolApprovalRequestedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolApprovalRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallDeniedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallFailedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
+import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
+import com.strangeparticle.editio.session.projection.buildProviderHistory
+import com.strangeparticle.editio.session.projection.buildTranscriptParts
+import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
+import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
+import com.strangeparticle.editio.conversation.AiClientMessageForUser
 import com.strangeparticle.editio.toolcall.ToolCall
+import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.editio.help.AiAssistantTerseHelpText
 
 internal sealed class AiChatScrollbackPane {
@@ -63,6 +84,99 @@ internal fun initialTerseHelpScrollbackPane(): AiChatScrollbackPane.LocalCommand
     responseText = AiAssistantTerseHelpText.text,
     style = LocalCommandResponseStyle.Help,
 )
+
+internal fun initialTerseHelpEvents(): List<AiChatEvent> = listOf(
+    LocalCommandSubmittedAiChatEvent("/help_terse", LocalCommandSource.System),
+    LocalCommandRespondedAiChatEvent("/help_terse", AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
+)
+
+internal fun buildSlimScrollbackPanes(events: List<AiChatEvent>): List<AiChatScrollbackPane> {
+    val panes = mutableListOf<AiChatScrollbackPane>()
+    val transcriptParts = buildTranscriptParts(events)
+    val aiPanes = buildAiInteractionPanes(transcriptParts)
+    var aiPaneIndex = 0
+    var pendingCommand: LocalCommandSubmittedAiChatEvent? = null
+
+    for (event in events) {
+        when (event) {
+            is LocalCommandSubmittedAiChatEvent -> pendingCommand = event
+            is LocalCommandRespondedAiChatEvent -> {
+                val submitted = pendingCommand?.takeIf { it.commandText == event.commandText }
+                panes += AiChatScrollbackPane.LocalCommand(
+                    commandText = event.commandText,
+                    commandAttribution = submitted?.source.toCommandAttribution(),
+                    responseText = event.responseText,
+                    style = event.kind.toLocalCommandResponseStyle(),
+                )
+                pendingCommand = null
+            }
+            is UserSubmittedAiChatEvent -> panes += aiPanes[aiPaneIndex++]
+            is AssistantErroredAiChatEvent,
+            is AssistantRespondedAiChatEvent,
+            is StateSnapshotAddedAiChatEvent,
+            is ToolCallCompletedAiChatEvent,
+            is ToolCallFailedAiChatEvent,
+            is ToolApprovalRequestedAiChatEvent,
+            is ToolApprovalRespondedAiChatEvent,
+            is ToolCallDeniedAiChatEvent,
+            is ToolCallStartedAiChatEvent -> Unit
+        }
+    }
+    return panes.ifEmpty { listOf(initialTerseHelpScrollbackPane()) }
+}
+
+internal fun buildDebugScrollbackPanes(events: List<AiChatEvent>): List<AiChatScrollbackPane> =
+    buildProviderHistory(events).mapIndexedNotNull { index, message ->
+        when (message) {
+            is AiClientMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, index)
+            is AiClientMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, index)
+            is AiClientMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, index)
+            is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, index)
+            else -> null
+        }
+    }
+
+internal fun buildAiInteractionPanes(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane.Interaction> {
+    val panes = mutableListOf<AiChatScrollbackPane.Interaction>()
+    var startIndex: Int? = null
+    var requestText: String? = null
+    val responseParts = mutableListOf<ChatMessagePart>()
+
+    fun flush() {
+        val request = requestText ?: return
+        panes += AiChatScrollbackPane.Interaction(
+            requestText = request,
+            responseParts = responseParts.toList(),
+            transcriptStartIndex = startIndex,
+        )
+        startIndex = null
+        requestText = null
+        responseParts.clear()
+    }
+
+    transcriptParts.forEachIndexed { index, part ->
+        if (part is ChatMessagePart.UserText) {
+            flush()
+            startIndex = index
+            requestText = part.text
+        } else if (requestText != null) {
+            responseParts += part
+        }
+    }
+    flush()
+    return panes
+}
+
+private fun LocalCommandSource?.toCommandAttribution(): CommandAttribution = when (this) {
+    LocalCommandSource.System -> CommandAttribution.System
+    LocalCommandSource.User,
+    null -> CommandAttribution.User
+}
+
+private fun LocalCommandResponseKind.toLocalCommandResponseStyle(): LocalCommandResponseStyle = when (this) {
+    LocalCommandResponseKind.Help -> LocalCommandResponseStyle.Help
+    LocalCommandResponseKind.Error -> LocalCommandResponseStyle.Error
+}
 
 /**
  * Plain-English title shown both at the top of each debug pane (UI) and as the

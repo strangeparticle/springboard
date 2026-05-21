@@ -6,8 +6,22 @@ import com.strangeparticle.editio.conversation.AiClientMessage
 import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
 import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
 import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.session.event.AiChatEvent
+import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
+import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolApprovalRequestedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolApprovalRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallDeniedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallFailedAiChatEvent
+import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
+import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
+import com.strangeparticle.editio.session.projection.buildProviderHistory
+import com.strangeparticle.editio.session.projection.buildTranscriptParts
 import com.strangeparticle.editio.toolcall.ToolCallDispatcher
 import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
+import com.strangeparticle.editio.toolcall.ToolCallHandlerResponse
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.editio.toolcall.ToolCallRegistry
 import kotlinx.coroutines.CancellationException
@@ -32,16 +46,21 @@ internal class AiSessionManager(
      * (repeating until under the budget). Estimation uses `text.length / 4`.
      */
     private val maxHistoryTokens: Int = DEFAULT_MAX_HISTORY_TOKENS,
+    // TODO: why is done?  function assigned to params can reduce readability
+    eventsProvider: (() -> List<AiChatEvent>)? = null,
+    appendEvents: ((List<AiChatEvent>) -> Unit)? = null,
     private val onTranscriptChanged: () -> Unit = {},
 ) {
-    private val mutableTranscriptParts = mutableListOf<ChatMessagePart>()
-    private val mutableHistory = mutableListOf<AiClientMessage>()
+    private val mutableEvents = mutableListOf<AiChatEvent>()
+    private val resolvedEventsProvider: () -> List<AiChatEvent> = eventsProvider ?: { mutableEvents.toList() }
+    private val resolvedAppendEvents: (List<AiChatEvent>) -> Unit = appendEvents ?: { mutableEvents += it }
     private val pendingApprovals = mutableMapOf<String, CompletableDeferred<Boolean>>()
     private val approvalDecisions = mutableMapOf<String, Boolean>()
     private val toolCallDispatcher = ToolCallDispatcher(toolCallRegistry)
 
-    val transcriptParts: List<ChatMessagePart> get() = mutableTranscriptParts.toList()
-    val history: List<AiClientMessage> get() = mutableHistory.toList()
+    val events: List<AiChatEvent> get() = resolvedEventsProvider()
+    val transcriptParts: List<ChatMessagePart> get() = buildTranscriptParts(events)
+    val history: List<AiClientMessage> get() = buildProviderHistory(events)
 
     private var currentRequestJob: Job? = null
     var stateChangedSinceLastSnapshotSent = true
@@ -49,18 +68,17 @@ internal class AiSessionManager(
 
     fun submit(userText: String): Job {
         check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
-        appendTranscriptPart(ChatMessagePart.UserText(userText))
 
         val job = coroutineScope.launch {
             try {
                 appendSnapshotIfChanged()
-                mutableHistory += AiClientMessageForUser(userText)
+                appendChatEvent(UserSubmittedAiChatEvent(userText))
 
                 runRequestLoop()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                appendTranscriptPart(ChatMessagePart.ChatError(e.message ?: "AI request failed"))
+                appendChatEvent(AssistantErroredAiChatEvent(e.message ?: "AI request failed"))
             }
         }
         currentRequestJob = job
@@ -75,7 +93,7 @@ internal class AiSessionManager(
     fun onApprovalDecision(toolCallId: String, approved: Boolean) {
         val deferred = pendingApprovals[toolCallId] ?: return
         approvalDecisions[toolCallId] = approved
-        transitionToolCallStateTo(toolCallId, ToolCallState.ApprovalResponded(approved))
+        appendChatEvent(ToolApprovalRespondedAiChatEvent(toolCallId, approved))
         deferred.complete(approved)
     }
 
@@ -87,7 +105,7 @@ internal class AiSessionManager(
     fun stop() {
         currentRequestJob?.cancel()
         for (toolCallId in pendingApprovals.keys) {
-            transitionToolCallStateTo(toolCallId, ToolCallState.OutputDenied)
+            appendChatEvent(ToolCallDeniedAiChatEvent(toolCallId))
         }
         pendingApprovals.clear()
         approvalDecisions.clear()
@@ -96,47 +114,38 @@ internal class AiSessionManager(
     private suspend fun runRequestLoop() {
         while (true) {
             appendSnapshotIfChanged()
-            evictHistoryIfNeeded()
+            val requestHistory = evictHistoryIfNeeded(history)
             val response = aiClient.sendAiRequest(
                 AiClientRequest(
                     modelId = modelIdProvider(),
                     systemPrompt = systemPromptProvider(),
-                    history = mutableHistory.toList(),
+                    history = requestHistory,
                     tools = toolCallRegistry.getDefinitions(),
                 )
             )
 
             if (response.toolCalls.isEmpty()) {
                 response.text?.let { text ->
-                    // History first so the debug-mode pane list (derived from history)
-                    // includes the assistant message when appendTranscriptPart fires
-                    // its onTranscriptChanged callback.
-                    mutableHistory += AiClientMessageForAssistant(text = text)
-                    appendTranscriptPart(ChatMessagePart.AssistantText(text))
+                    appendChatEvent(AssistantRespondedAiChatEvent(text = text, toolCalls = emptyList()))
                 }
                 return
             }
 
-            mutableHistory += AiClientMessageForAssistant(
+            appendChatEvent(AssistantRespondedAiChatEvent(
                 text = response.text,
                 toolCalls = response.toolCalls,
-            )
-            // Notify the UI so the debug-mode pane list (which is derived from history)
-            // sees the assistant message immediately, instead of only after the first
-            // tool-call transcript part lands further down.
-            onTranscriptChanged()
+            ))
 
             val context = toolCallExecutionContextFactory.createToolCallExecutionContext(
                 onStateChanged = { stateChangedSinceLastSnapshotSent = true },
                 awaitUserApproval = { toolCallId ->
-                    transitionToolCallStateTo(toolCallId, ToolCallState.ApprovalRequested)
+                    appendChatEvent(ToolApprovalRequestedAiChatEvent(toolCallId))
                     val deferred = pendingApprovals.getOrPut(toolCallId) { CompletableDeferred() }
                     deferred.await()
                 },
             )
             for (toolCall in response.toolCalls) {
-                val transcriptIndex = mutableTranscriptParts.size
-                appendTranscriptPart(ChatMessagePart.ToolCall(toolCall, ToolCallState.Pending))
+                appendChatEvent(ToolCallStartedAiChatEvent(toolCall))
 
                 val result = toolCallDispatcher.execute(
                     toolCallId = toolCall.toolCallId,
@@ -145,59 +154,58 @@ internal class AiSessionManager(
                     context = context,
                 )
                 val content = result.toProviderMessageContent()
-                mutableHistory += ToolCallProviderClientMessage(
-                    toolCallId = toolCall.toolCallId,
-                    content = content,
-                )
                 pendingApprovals.remove(toolCall.toolCallId)
                 val approvalDecision = approvalDecisions.remove(toolCall.toolCallId)
                 if (result.endsTurn) {
-                    setTranscriptPart(transcriptIndex, ChatMessagePart.AssistantText(result.toTranscriptOutput(content)))
+                    appendChatEvent(ToolCallCompletedAiChatEvent(
+                        toolCallId = toolCall.toolCallId,
+                        providerContent = content,
+                        transcriptOutput = result.toTranscriptOutput(content),
+                        endsTurn = true,
+                    ))
                     return
                 }
-                setTranscriptPart(transcriptIndex, ChatMessagePart.ToolCall(
-                    toolCall = toolCall,
-                    state = result.toToolCallState(content, result.toTranscriptOutput(content), approvalDecision),
-                ))
+                appendToolResultEvent(toolCall.toolCallId, result, content, approvalDecision)
             }
         }
     }
 
-    private fun appendTranscriptPart(part: ChatMessagePart) {
-        mutableTranscriptParts += part
-        onTranscriptChanged()
+    private fun appendToolResultEvent(
+        toolCallId: String,
+        result: ToolCallHandlerResponse,
+        content: String,
+        approvalDecision: Boolean?,
+    ) {
+        appendChatEvent(when {
+            approvalDecision == false -> ToolCallDeniedAiChatEvent(toolCallId)
+            result is ToolCallExecutionResult && !result.success -> ToolCallFailedAiChatEvent(
+                toolCallId,
+                providerContent = content,
+                message = result.message ?: result.toTranscriptOutput(content),
+            )
+            else -> ToolCallCompletedAiChatEvent(
+                toolCallId = toolCallId,
+                providerContent = content,
+                transcriptOutput = result.toTranscriptOutput(content),
+                endsTurn = false,
+            )
+        })
     }
 
-    private fun setTranscriptPart(index: Int, part: ChatMessagePart) {
-        mutableTranscriptParts[index] = part
-        onTranscriptChanged()
-    }
+    private fun appendChatEvent(event: AiChatEvent) = appendChatEvents(listOf(event))
 
-    private fun transitionToolCallStateTo(toolCallId: String, newState: ToolCallState) {
-        val index = mutableTranscriptParts.indexOfLast {
-            it is ChatMessagePart.ToolCall && it.toolCall.toolCallId == toolCallId
-        }
-        if (index < 0) return
-        val existing = mutableTranscriptParts[index] as ChatMessagePart.ToolCall
-        setTranscriptPart(index, existing.copy(state = newState))
+    private fun appendChatEvents(events: List<AiChatEvent>) {
+        resolvedAppendEvents(events)
+        onTranscriptChanged()
     }
 
     private fun appendSnapshotIfChanged() {
         if (!stateChangedSinceLastSnapshotSent) {
             return
         }
-        mutableHistory += AiClientMessageForSystemState(snapshotProvider.getSnapshotJson())
+        appendChatEvent(StateSnapshotAddedAiChatEvent(snapshotProvider.getSnapshotJson()))
         stateChangedSinceLastSnapshotSent = false
-        // Debug-mode pane list reads from history; let the UI re-derive now.
-        onTranscriptChanged()
     }
-
-    private fun Any.toToolCallState(content: String, transcriptOutput: String, approvalDecision: Boolean?): ToolCallState =
-        when {
-            approvalDecision == false -> ToolCallState.OutputDenied
-            this is ToolCallExecutionResult && !success -> ToolCallState.OutputError(message ?: transcriptOutput)
-            else -> ToolCallState.OutputAvailable(transcriptOutput)
-        }
 
     /**
      * Evict the oldest complete turn group while estimated history tokens exceed
@@ -205,15 +213,17 @@ internal class AiSessionManager(
      * least the current turn even if it's individually over budget — that's a
      * provider-side context-length problem, not a history-management problem).
      */
-    private fun evictHistoryIfNeeded() {
-        while (estimateHistoryTokens() > maxHistoryTokens) {
-            val boundaries = turnStartIndices()
-            if (boundaries.size <= 1) return
-            mutableHistory.subList(0, boundaries[1]).clear()
+    private fun evictHistoryIfNeeded(history: List<AiClientMessage>): List<AiClientMessage> {
+        val requestHistory = history.toMutableList()
+        while (estimateHistoryTokens(requestHistory) > maxHistoryTokens) {
+            val boundaries = turnStartIndices(requestHistory)
+            if (boundaries.size <= 1) return requestHistory
+            requestHistory.subList(0, boundaries[1]).clear()
         }
+        return requestHistory
     }
 
-    private fun estimateHistoryTokens(): Int = mutableHistory.sumOf(::estimateMessageTokens)
+    private fun estimateHistoryTokens(history: List<AiClientMessage>): Int = history.sumOf(::estimateMessageTokens)
 
     private fun estimateMessageTokens(message: AiClientMessage): Int = when (message) {
         is AiClientMessageForUser -> estimateTokens(message.text)
@@ -229,18 +239,18 @@ internal class AiSessionManager(
     private fun estimateTokens(text: String): Int = (text.length + 3) / 4
 
     /**
-     * Indices in [mutableHistory] where a turn group starts. A turn is anchored on
+     * Indices in history where a turn group starts. A turn is anchored on
      * a user message; if that user message is immediately preceded by a snapshot
      * injection (which is the typical "fresh-state" pattern), the snapshot is the
      * start of the turn (it belongs to the user message that follows). Snapshots
      * that appear mid-turn (between tool results and the follow-up assistant
      * response) are part of the surrounding turn, not their own turn.
      */
-    private fun turnStartIndices(): List<Int> {
+    private fun turnStartIndices(history: List<AiClientMessage>): List<Int> {
         val starts = mutableListOf<Int>()
-        for (i in mutableHistory.indices) {
-            if (mutableHistory[i] is AiClientMessageForUser) {
-                val candidate = if (i > 0 && mutableHistory[i - 1] is AiClientMessageForSystemState) i - 1 else i
+        for (i in history.indices) {
+            if (history[i] is AiClientMessageForUser) {
+                val candidate = if (i > 0 && history[i - 1] is AiClientMessageForSystemState) i - 1 else i
                 starts += candidate
             }
         }

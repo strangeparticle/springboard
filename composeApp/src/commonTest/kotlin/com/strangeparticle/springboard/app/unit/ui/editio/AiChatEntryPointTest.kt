@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -16,6 +17,8 @@ import com.strangeparticle.editio.client.AiClientModelInfo
 import com.strangeparticle.editio.client.AiClientRequest
 import com.strangeparticle.editio.client.AiClientResponse
 import com.strangeparticle.editio.client.AiClientStopReason
+import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
+import com.strangeparticle.editio.conversation.AiClientMessageForUser
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsKey
@@ -250,6 +253,49 @@ internal class AiChatEntryPointTest {
         assertEquals(0, aiClient.requestCount)
     }
 
+    @Test
+    fun `switching model preserves chat history and sends next request with new model`() = runComposeUiTest {
+        val components = createComponents()
+        val aiClient = AiClientRecordingFake(mutableListOf("First response", "Second response"))
+        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
+        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
+        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-old")
+
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                aiClientFactory = { _, _ -> aiClient },
+                showFileOpen = false,
+            )
+        }
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("First message")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+        waitUntil { aiClient.recordedRequests.size == 1 && aiClient.remainingResponseCount == 1 }
+        waitUntil { onAllNodesWithText("First response", substring = true).fetchSemanticsNodes().isNotEmpty() }
+        waitForIdle()
+        onNodeWithText("You: First message").assertExists()
+        onNodeWithText("First response", substring = true).assertExists()
+
+        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-new")
+        waitForIdle()
+
+        onNodeWithText("You: First message").assertExists()
+        onNodeWithText("First response", substring = true).assertExists()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Second message")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+        waitUntil { aiClient.recordedRequests.size == 2 && aiClient.remainingResponseCount == 0 }
+        waitForIdle()
+
+        val secondRequest = aiClient.recordedRequests[1]
+        assertEquals("gpt-new", secondRequest.modelId)
+        assertTrue(secondRequest.history.filterIsInstance<AiClientMessageForUser>().any { it.text == "First message" })
+        assertTrue(secondRequest.history.filterIsInstance<AiClientMessageForAssistant>().any { it.text == "First response" })
+    }
+
     private fun createComponents(): Components {
         val persistenceService = PersistenceServiceInMemoryFake()
         val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
@@ -299,6 +345,25 @@ internal class AiChatEntryPointTest {
             requestCount += 1
             return AiClientResponse(
                 text = "ok",
+                toolCalls = emptyList(),
+                stopReason = AiClientStopReason.Stop,
+                raw = buildJsonObject {},
+            )
+        }
+
+        override suspend fun listModels(apiKey: String): List<AiClientModelInfo> = emptyList()
+    }
+
+    private class AiClientRecordingFake(
+        private val responses: MutableList<String>,
+    ) : AiClient {
+        val recordedRequests = mutableListOf<AiClientRequest>()
+        val remainingResponseCount: Int get() = responses.size
+
+        override suspend fun sendAiRequest(request: AiClientRequest): AiClientResponse {
+            recordedRequests += request
+            return AiClientResponse(
+                text = responses.removeFirst(),
                 toolCalls = emptyList(),
                 stopReason = AiClientStopReason.Stop,
                 raw = buildJsonObject {},

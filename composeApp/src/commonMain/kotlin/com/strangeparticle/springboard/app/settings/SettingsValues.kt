@@ -1,85 +1,41 @@
 package com.strangeparticle.springboard.app.settings
 
 /**
- * WARNING: This class must remain in sync with [SettingsRegistry].
+ * Holds the values for one source layer (defaults, persisted, env vars, CLI…).
  *
- * Every setting registered in [SettingsRegistry] must have a corresponding
- * typed property here, and vice versa. If you add a setting to the registry,
- * add a matching property here. If you add a property here, add a matching
- * registry entry. Unit tests enforce this contract.
- *
- * Holds the values for every setting as typed properties. Each instance
- * represents the values from one config source layer.
- *
- * A null property means this source did not provide a value for that setting.
+ * Backed by a map keyed by [SettingsItem.id]. Typed access goes through the
+ * parameterized [get] / [withSetting] / [withRawSetting] methods — the public
+ * API never leaks `Any?`. The unchecked cast inside [get] is sound because the
+ * only insertion paths are [withSetting] (statically typed by `T`) and the
+ * persistence boundary which goes through `item.deserialize` before insertion.
  */
-data class SettingsValues(
-    val startupTabs: List<String>? = null,
-    val openUrlsInNewWindowSingle: Boolean? = null,
-    val openUrlsInNewWindowMultiple: Boolean? = null,
-    val surfaceApplescriptErrors: Boolean? = null,
-    val resetKeyNavAfterKeyNavActivation: Boolean? = null,
-    val resetKeyNavAfterGridNavActivation: Boolean? = null,
-    val activeBrand: String? = null,
-    val hideAppAfterActivation: Boolean? = null,
-    val aiProvider: String? = null,
-    val aiOpenaiApiKey: String? = null,
-    val aiAnthropicApiKey: String? = null,
-    val aiModel: String? = null,
-    val showFullChatTranscript: Boolean? = null,
-) {
-    fun isSet(key: SettingsKey): Boolean = get(key) != null
+data class SettingsValues(private val values: Map<String, Any?> = emptyMap()) {
 
-    fun get(key: SettingsKey): Any? = when (key) {
-        SettingsKey.STARTUP_TABS -> startupTabs
-        SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE -> openUrlsInNewWindowSingle
-        SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE -> openUrlsInNewWindowMultiple
-        SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> surfaceApplescriptErrors
-        SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> resetKeyNavAfterKeyNavActivation
-        SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> resetKeyNavAfterGridNavActivation
-        SettingsKey.ACTIVE_BRAND -> activeBrand
-        SettingsKey.HIDE_APP_AFTER_ACTIVATION -> hideAppAfterActivation
-        SettingsKey.AI_PROVIDER -> aiProvider
-        SettingsKey.AI_OPENAI_API_KEY -> aiOpenaiApiKey
-        SettingsKey.AI_ANTHROPIC_API_KEY -> aiAnthropicApiKey
-        SettingsKey.AI_MODEL -> aiModel
-        SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT -> showFullChatTranscript
+    fun isSet(item: SettingsItem<*>): Boolean = values.containsKey(item.id)
+
+    fun isSetById(id: String): Boolean = values.containsKey(id)
+
+    /** Typed read. */
+    fun <T : Any> get(item: SettingsItem<T>): T? {
+        @Suppress("UNCHECKED_CAST")
+        return values[item.id] as T?
     }
 
-    @Suppress("UNCHECKED_CAST")
-    fun withSetting(key: SettingsKey, value: Any?): SettingsValues {
-        return when (key) {
-            SettingsKey.STARTUP_TABS -> copy(startupTabs = value as List<String>?)
-            SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE -> copy(openUrlsInNewWindowSingle = value as Boolean?)
-            SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE -> copy(openUrlsInNewWindowMultiple = value as Boolean?)
-            SettingsKey.SURFACE_APPLESCRIPT_ERRORS -> copy(surfaceApplescriptErrors = value as Boolean?)
-            SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION -> copy(resetKeyNavAfterKeyNavActivation = value as Boolean?)
-            SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION -> copy(resetKeyNavAfterGridNavActivation = value as Boolean?)
-            SettingsKey.ACTIVE_BRAND -> copy(activeBrand = value as String?)
-            SettingsKey.HIDE_APP_AFTER_ACTIVATION -> copy(hideAppAfterActivation = value as Boolean?)
-            SettingsKey.AI_PROVIDER -> copy(aiProvider = value as String?)
-            SettingsKey.AI_OPENAI_API_KEY -> copy(aiOpenaiApiKey = value as String?)
-            SettingsKey.AI_ANTHROPIC_API_KEY -> copy(aiAnthropicApiKey = value as String?)
-            SettingsKey.AI_MODEL -> copy(aiModel = value as String?)
-            SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT -> copy(showFullChatTranscript = value as Boolean?)
-        }
-    }
+    /** Typed read by id. Returns `Any?` because the id alone doesn't carry the type. */
+    fun getById(id: String): Any? = values[id]
 
-    companion object {
-        val settingsPropertyNames: Set<String> = setOf(
-            "startupTabs",
-            "openUrlsInNewWindowSingle",
-            "openUrlsInNewWindowMultiple",
-            "surfaceApplescriptErrors",
-            "resetKeyNavAfterKeyNavActivation",
-            "resetKeyNavAfterGridNavActivation",
-            "activeBrand",
-            "hideAppAfterActivation",
-            "aiProvider",
-            "aiOpenaiApiKey",
-            "aiAnthropicApiKey",
-            "aiModel",
-            "showFullChatTranscript",
-        )
-    }
+    /** Typed write. Setting to null removes the entry. */
+    fun <T : Any> withSetting(item: SettingsItem<T>, value: T?): SettingsValues =
+        copy(values = if (value == null) values - item.id else values + (item.id to value))
+
+    /**
+     * Type-erased write by id. Used at the persistence boundary, where the value
+     * has just come out of `item.deserialize` and is known to be the right type
+     * but the caller doesn't have the typed item handle in static context.
+     */
+    fun withRawSetting(id: String, value: Any?): SettingsValues =
+        copy(values = if (value == null) values - id else values + (id to value))
+
+    /** All currently-set ids (excludes unset entries). */
+    fun setIds(): Set<String> = values.keys
 }

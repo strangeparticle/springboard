@@ -1,10 +1,10 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
-import com.strangeparticle.editio.client.AiClientErrorType
-import com.strangeparticle.editio.client.AiClientException
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
+import com.strangeparticle.editio.client.AiProviderClientErrorType
+import com.strangeparticle.editio.client.AiProviderClientException
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
@@ -22,7 +22,7 @@ import com.strangeparticle.editio.toolcall.ToolCallHandler
 import com.strangeparticle.editio.toolcall.ToolCallHandlerResponse
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.editio.toolcall.ToolCallRegistry
-import com.strangeparticle.springboard.app.shared.AiClientInMemoryFake
+import com.strangeparticle.springboard.app.shared.AiProviderClientInMemoryFake
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -41,7 +41,7 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `submit records canonical user snapshot and assistant events`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("done")
         }
         val manager = createManager(aiClient, snapshotJson = "{\"tabs\":[]}")
@@ -62,7 +62,7 @@ internal class AiSessionManagerTest {
     fun `tool call flow records canonical lifecycle events`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
         val toolCall = ToolCall("call-1", "record_tool", "{}")
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(toolCall))
             responseQueue += textOnly("finished")
         }
@@ -77,7 +77,7 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `history token eviction does not delete canonical events`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("first")
             responseQueue += textOnly("second")
         }
@@ -92,7 +92,7 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `submit appends user transcript part`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("done")
         }
         val manager = createManager(aiClient)
@@ -104,20 +104,20 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `first request includes current snapshot state`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("done")
         }
         val manager = createManager(aiClient, snapshotJson = "{\"tabs\":[]}")
 
         manager.submit("What is open?").join()
 
-        val systemState = assertIs<AiClientMessageForSystemState>(aiClient.recordedRequests.single().history.first())
+        val systemState = assertIs<AiConversationMessageForSystemState>(aiClient.recordedRequests.single().history.first())
         assertEquals("{\"tabs\":[]}", systemState.snapshotJson)
     }
 
     @Test
     fun `text-only response appends assistant transcript and history message`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("I updated it.")
         }
         val manager = createManager(aiClient)
@@ -125,14 +125,14 @@ internal class AiSessionManagerTest {
         manager.submit("Update it").join()
 
         assertEquals(ChatMessagePart.AssistantText("I updated it."), manager.transcriptParts.last())
-        val assistantMessage = assertIs<AiClientMessageForAssistant>(manager.history.last())
+        val assistantMessage = assertIs<AiConversationMessageForAssistant>(manager.history.last())
         assertEquals("I updated it.", assistantMessage.text)
         assertEquals(emptyList(), assistantMessage.toolCalls)
     }
 
     @Test
     fun `snapshot flag clears after being included`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("done")
         }
         val manager = createManager(aiClient)
@@ -148,7 +148,7 @@ internal class AiSessionManagerTest {
         val releaseTool = CompletableDeferred<Unit>()
         val tool = RecordingToolCallHandler(releaseTool = releaseTool)
         val registry = ToolCallRegistry().apply { register(tool) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -170,7 +170,7 @@ internal class AiSessionManagerTest {
         val registry = ToolCallRegistry().apply {
             register(RecordingToolCallHandler(executionOrder = executionOrder))
         }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(
                 listOf(
                     ToolCall("call-1", "record_tool", "{}"),
@@ -189,7 +189,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `tool result appends provider tool message to history`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -205,7 +205,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `tool result uses transcript output for visible chat state`() = runTest {
         val registry = ToolCallRegistry().apply { register(TranscriptOutputToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "transcript_output_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -224,7 +224,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `tool call response triggers follow-up provider request and stops after text response`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -240,13 +240,13 @@ internal class AiSessionManagerTest {
     fun `terminal message tool response does not trigger follow-up provider request`() = runTest {
         val registry = ToolCallRegistry().apply { register(TerminalMessageToolCallHandler()) }
         var requestCount = 0
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             sendAiRequestHandler = {
                 requestCount += 1
                 if (requestCount == 1) {
                     multipleToolCalls(listOf(ToolCall("call-1", "terminal_message_tool", "{}")))
                 } else {
-                    throw AiClientException(AiClientErrorType.RateLimit, "rate limited")
+                    throw AiProviderClientException(AiProviderClientErrorType.RateLimit, "rate limited")
                 }
             }
         }
@@ -266,7 +266,7 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `second request without mutation does not inject another snapshot`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("first")
             responseQueue += textOnly("second")
         }
@@ -275,7 +275,7 @@ internal class AiSessionManagerTest {
         manager.submit("First").join()
         manager.submit("Second").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiClientMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
         assertEquals(1, systemStates.size)
     }
 
@@ -289,7 +289,7 @@ internal class AiSessionManagerTest {
             }
         }
         val registry = ToolCallRegistry().apply { register(StateChangingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "state_changing_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -297,7 +297,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("Mutate").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiClientMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
         assertEquals(listOf("{\"snapshot\":1}", "{\"snapshot\":2}"), systemStates.map { it.snapshotJson })
     }
 
@@ -305,7 +305,7 @@ internal class AiSessionManagerTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun `confirmation gated tool transitions to ApprovalRequested before user decides`() = runTest {
         val registry = ToolCallRegistry().apply { register(ApprovalGatedToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -330,7 +330,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `onApprovalDecision true resumes the tool and produces OutputAvailable`() = runTest {
         val registry = ToolCallRegistry().apply { register(ApprovalGatedToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -354,7 +354,7 @@ internal class AiSessionManagerTest {
         val registry = ToolCallRegistry().apply {
             register(SlowApprovalGatedToolCallHandler(releaseAfterApproval))
         }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "slow_approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -375,7 +375,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `onApprovalDecision false resumes the tool and produces OutputDenied`() = runTest {
         val registry = ToolCallRegistry().apply { register(ApprovalGatedToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -395,7 +395,7 @@ internal class AiSessionManagerTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun `unresolved approval keeps the current request job active`() = runTest {
         val registry = ToolCallRegistry().apply { register(ApprovalGatedToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -417,7 +417,7 @@ internal class AiSessionManagerTest {
     fun `submit rejects a new turn while a request is active`() = runTest {
         val releaseTool = CompletableDeferred<Unit>()
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler(releaseTool = releaseTool)) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -435,8 +435,8 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `provider error appends chat error and allows next submit`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
-            sendAiRequestException = AiClientException(AiClientErrorType.Network, "network unavailable")
+        val aiClient = AiProviderClientInMemoryFake().apply {
+            sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
         }
         val manager = createManager(aiClient)
 
@@ -454,7 +454,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `non-mutating respond style tool does not mark state changed`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -462,7 +462,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("Explain").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiClientMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
         assertEquals(1, systemStates.size)
     }
 
@@ -471,7 +471,7 @@ internal class AiSessionManagerTest {
     fun `stop cancels the active request job`() = runTest {
         val releaseTool = CompletableDeferred<Unit>()
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler(releaseTool = releaseTool)) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -490,7 +490,7 @@ internal class AiSessionManagerTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun `stop marks unresolved approval request as denied and ignores later decisions`() = runTest {
         val registry = ToolCallRegistry().apply { register(ApprovalGatedToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-save", "approval_gated_tool", "{}")))
             responseQueue += textOnly("finished")
         }
@@ -514,7 +514,7 @@ internal class AiSessionManagerTest {
         // The transcript ToolCall part it produced must remain — cancellation is not a rollback.
         val releaseTool = CompletableDeferred<Unit>()
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler(releaseTool = releaseTool)) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
         }
         val manager = createManager(aiClient, toolCallRegistry = registry)
@@ -539,7 +539,7 @@ internal class AiSessionManagerTest {
     fun `submit after cancellation starts a fresh turn`() = runTest {
         val releaseTool = CompletableDeferred<Unit>()
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler(releaseTool = releaseTool)) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             // First submit: tool call response, then suspends in the tool (cancelled before the next request).
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             // Second submit consumes this response.
@@ -564,7 +564,7 @@ internal class AiSessionManagerTest {
 
     @Test
     fun `oldest user-assistant turn is evicted when history exceeds token budget`() = runTest {
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             responseQueue += textOnly("first reply")
             responseQueue += textOnly("second reply")
             responseQueue += textOnly("third reply")
@@ -579,7 +579,7 @@ internal class AiSessionManagerTest {
         // The request sent for the third submit should NOT include the first user message.
         val historySentOnThirdRequest = aiClient.recordedRequests.last().history
         val userTextsSent = historySentOnThirdRequest
-            .filterIsInstance<AiClientMessageForUser>()
+            .filterIsInstance<AiConversationMessageForUser>()
             .map { it.text }
         assertTrue(userTextsSent.none { it.startsWith("a") }, "first user message must be evicted")
         assertTrue(userTextsSent.any { it.startsWith("c") }, "current user message must remain")
@@ -588,7 +588,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `tool result messages are evicted with the assistant turn that requested them`() = runTest {
         val registry = ToolCallRegistry().apply { register(RecordingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             // Turn 1: user message → tool call → tool result → assistant text
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "record_tool", "{}")))
             responseQueue += textOnly("first done")
@@ -619,7 +619,7 @@ internal class AiSessionManagerTest {
             }
         }
         val registry = ToolCallRegistry().apply { register(StateChangingToolCallHandler()) }
-        val aiClient = AiClientInMemoryFake().apply {
+        val aiClient = AiProviderClientInMemoryFake().apply {
             // Turn 1: mutating tool, triggers snapshot before turn 2 starts.
             responseQueue += multipleToolCalls(listOf(ToolCall("call-1", "state_changing_tool", "{}")))
             responseQueue += textOnly("first done")
@@ -640,13 +640,13 @@ internal class AiSessionManagerTest {
         manager.submit("c".repeat(50)).join()
 
         val historySent = aiClient.recordedRequests.last().history
-        val snapshotsSent = historySent.filterIsInstance<AiClientMessageForSystemState>().map { it.snapshotJson }
+        val snapshotsSent = historySent.filterIsInstance<AiConversationMessageForSystemState>().map { it.snapshotJson }
         // The first snapshot ({"snap":1}) belonged to turn 1; it must be gone.
         assertTrue(snapshotsSent.none { it == "{\"snap\":1}" }, "snapshot from evicted turn 1 must also be evicted")
     }
 
     private fun TestScope.createManager(
-        aiClient: AiClientInMemoryFake,
+        aiClient: AiProviderClientInMemoryFake,
         snapshotJson: String = "{\"springboards\":[]}",
         snapshotProvider: AiSessionSnapshotProvider = object : AiSessionSnapshotProvider {
             override fun getSnapshotJson(): String = snapshotJson

@@ -1,10 +1,10 @@
 package com.strangeparticle.editio.client.provider.openai.request
 
-import com.strangeparticle.editio.client.AiClientRequest
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.client.AiProviderClientRequest
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessage
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.toolcall.AiToolCallDefinition
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
@@ -25,7 +25,7 @@ internal data class OpenAiChatCompletionRequestDto(
     val maxTokens: Int? = null,
 ) {
     companion object {
-        fun from(request: AiClientRequest): OpenAiChatCompletionRequestDto = OpenAiChatCompletionRequestDto(
+        fun from(request: AiProviderClientRequest): OpenAiChatCompletionRequestDto = OpenAiChatCompletionRequestDto(
             model = request.modelId,
             messages = buildMessages(request),
             tools = request.tools.takeIf { it.isNotEmpty() }?.map(::toOpenAiTool),
@@ -33,7 +33,7 @@ internal data class OpenAiChatCompletionRequestDto(
             maxTokens = request.maxTokens,
         )
 
-        private fun buildMessages(request: AiClientRequest): List<com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto> = buildList {
+        private fun buildMessages(request: AiProviderClientRequest): List<com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto> = buildList {
             add(
                 _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
                     role = "system",
@@ -43,12 +43,12 @@ internal data class OpenAiChatCompletionRequestDto(
             addAll(request.history.map(::toOpenAiMessage))
         }
 
-        private fun toOpenAiMessage(message: AiClientMessage): com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto = when (message) {
-            is AiClientMessageForUser -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
+        private fun toOpenAiMessage(message: AiConversationMessage): com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto = when (message) {
+            is AiConversationMessageForUser -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
                 role = "user",
                 content = message.text.toJsonElement(),
             )
-            is AiClientMessageForAssistant -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
+            is AiConversationMessageForAssistant -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
                 role = "assistant",
                 content = message.text?.toJsonElement() ?: JsonNull,
                 toolCalls = message.toolCalls.takeIf { it.isNotEmpty() }?.map(::toOpenAiToolCall),
@@ -58,7 +58,7 @@ internal data class OpenAiChatCompletionRequestDto(
                 toolCallId = message.toolCallId,
                 content = message.content.toJsonElement(),
             )
-            is AiClientMessageForSystemState -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
+            is AiConversationMessageForSystemState -> _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiMessageDto(
                 role = "user",
                 content = "<current_state>${message.snapshotJson}</current_state>".toJsonElement(),
             )

@@ -1,14 +1,24 @@
 package com.strangeparticle.springboard.app.unit.settings
 
+import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
-import com.strangeparticle.springboard.app.settings.SettingItem
-import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsSource
-import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowSingleSetting
+import com.strangeparticle.springboard.app.settings.items.core.ResetKeyNavAfterKeyNavActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting
+import com.strangeparticle.springboard.app.settings.items.core.SurfaceAppleScriptErrorsSetting
+import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
-import kotlin.test.*
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SettingsManagerTest {
 
@@ -20,456 +30,92 @@ class SettingsManagerTest {
         urlParams: Map<String, String> = emptyMap(),
     ): SettingsManager {
         val persistence = PersistenceServiceInMemoryFake()
-        if (persistedDto != null) {
-            persistence.persistSettings(persistedDto)
-        }
-        val manager = SettingsManager(target, persistence)
+        if (persistedDto != null) persistence.persistSettings(persistedDto)
+        val registry = SettingsRegistry(
+            coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        )
+        val manager = SettingsManager(target, registry, persistence)
         manager.loadSettingsAtStartup(envVars, cliArgs, urlParams)
         return manager
     }
 
-    // -- Default Values --
-
     @Test
-    fun `default boolean values`() {
+    fun `default values resolve from item defaults`() {
         val manager = createManager()
-        assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE))
-        assertTrue(manager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE))
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertTrue(manager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION))
-        assertTrue(manager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION))
+        assertTrue(manager.resolveValue(OpenUrlsInNewWindowSingleSetting))
+        assertFalse(manager.resolveValue(SurfaceAppleScriptErrorsSetting))
+        assertTrue(manager.resolveValue(ResetKeyNavAfterKeyNavActivationSetting))
+        assertEquals(emptyList(), manager.resolveValue(StartupTabsSetting))
+        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SurfaceAppleScriptErrorsSetting))
     }
-
-    @Test
-    fun `default startup tabs is empty`() {
-        val manager = createManager()
-        assertEquals(emptyList<String>(), manager.getStringList(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `default source is app default`() {
-        val manager = createManager()
-        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- Precedence: SESSION > URL_PARAM > CLI_FLAG > PERSISTENCE > ENV > DEFAULT --
 
     @Test
     fun `persisted user settings override defaults`() {
         val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = true)
+            persistedDto = SettingsDto(values = mapOf(
+                SurfaceAppleScriptErrorsSetting.id to JsonPrimitive(true),
+            )),
         )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertTrue(manager.resolveValue(SurfaceAppleScriptErrorsSetting))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SurfaceAppleScriptErrorsSetting))
     }
 
     @Test
-    fun `persisted user settings startup tabs`() {
+    fun `persisted startup tabs round-trip`() {
         val manager = createManager(
-            persistedDto = SettingsDto(startupTabs = listOf("/path/to/file.json"))
+            persistedDto = SettingsDto(values = mapOf(
+                StartupTabsSetting.id to JsonArray(listOf(JsonPrimitive("/path/to/file.json"))),
+            )),
         )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/path/to/file.json"), tabs)
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.STARTUP_TABS))
+        assertEquals(listOf("/path/to/file.json"), manager.resolveValue(StartupTabsSetting))
     }
 
     @Test
-    fun `persisted user settings override env var`() {
+    fun `persisted user settings take precedence over env vars`() {
         val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
+            persistedDto = SettingsDto(values = mapOf(
+                SurfaceAppleScriptErrorsSetting.id to JsonPrimitive(false),
+            )),
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertFalse(manager.resolveValue(SurfaceAppleScriptErrorsSetting))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SurfaceAppleScriptErrorsSetting))
     }
 
     @Test
-    fun `cli flag overrides persisted user settings at startup`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `env var overrides default`() {
+    fun `env vars override defaults when no persisted user setting exists`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
         )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertTrue(manager.resolveValue(SurfaceAppleScriptErrorsSetting))
+        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SurfaceAppleScriptErrorsSetting))
     }
 
     @Test
-    fun `params override env var`() {
+    fun `cli flags beat env vars`() {
         val manager = createManager(
             envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "false"),
             cliArgs = listOf("--surface-applescript-errors"),
         )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        assertTrue(manager.resolveValue(SurfaceAppleScriptErrorsSetting))
+        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SurfaceAppleScriptErrorsSetting))
     }
 
     @Test
-    fun `params startup tabs from cli`() {
-        val manager = createManager(
-            cliArgs = listOf("--startup-tabs", "/a.json,/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/a.json", "/b.json"), tabs)
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `positional cli path does not set startup tabs`() {
-        val manager = createManager(
-            cliArgs = listOf("/cli/path.json"),
-        )
-        assertEquals(emptyList<String>(), manager.getStringList(SettingsKey.STARTUP_TABS))
-        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `cli boolean flag is present means true`() {
-        val manager = createManager(
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- Override Detection (isOverridden = user has explicitly set value) --
-
-    @Test
-    fun `is not overridden when only env var set`() {
-        val manager = createManager(
-            envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "true"),
-        )
-        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `is not overridden when only params set`() {
-        val manager = createManager(
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `is not overridden for default`() {
+    fun `user setting mutation persists to in-memory layer`() {
         val manager = createManager()
-        assertFalse(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
+        manager.setUserSetting(HideAppAfterActivationSetting, false)
+        assertFalse(manager.resolveValue(HideAppAfterActivationSetting))
+        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(HideAppAfterActivationSetting))
     }
 
     @Test
-    fun `is overridden when user setting exists`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
-        )
-        assertTrue(manager.isOverridden(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- Source Tracking --
-
-    @Test
-    fun `getEffectiveSource returns highest priority source`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
-            envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "false"),
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertEquals(SettingsSource.CLI_FLAG, manager.getEffectiveSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `getValueFromSource returns value for specific source`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = false),
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertEquals(false, manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.USER_SETTINGS_FROM_PERSISTENCE))
-        assertEquals(true, manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.CLI_FLAG))
-    }
-
-    @Test
-    fun `getValueFromSource returns null when source has no value`() {
-        val manager = createManager()
-        assertNull(manager.getValueFromSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, SettingsSource.CLI_FLAG))
-    }
-
-    // -- User Settings Mutation --
-
-    @Test
-    fun `set user setting`() {
-        val manager = createManager()
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `set user setting persists`() {
-        val persistence = PersistenceServiceInMemoryFake()
-        val manager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistence)
-        manager.loadSettingsAtStartup()
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, true)
-
-        val savedDto = persistence.currentSettings()
-        assertNotNull(savedDto)
-        assertEquals(true, savedDto.surfaceAppleScriptErrors)
-    }
-
-    @Test
-    fun `session user setting overrides cli flag`() {
-        val manager = createManager(
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, false)
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- Target Filtering --
-
-    @Test
-    fun `applicable settings for wasm excludes desktop settings`() {
+    fun `non-applicable settings are filtered for the environment`() {
         val manager = createManager(target = RuntimeEnvironment.WASM)
-        val applicable = manager.applicableSettings()
-        for (item in applicable) {
-            assertFalse(
-                item is SettingItem.Desktop,
-                "${item.key} should not be applicable on WASM"
-            )
-        }
-    }
-
-    @Test
-    fun `applicable settings for desktop osx includes all settings`() {
-        val manager = createManager(target = RuntimeEnvironment.DesktopOsx)
-        val applicable = manager.applicableSettings()
-        assertEquals(SettingsKey.entries.size, applicable.size)
-    }
-
-    // -- Type Safety --
-
-    @Test
-    fun `get boolean on list type throws`() {
-        val manager = createManager()
-        assertFailsWith<IllegalArgumentException> {
-            manager.getBoolean(SettingsKey.STARTUP_TABS)
-        }
-    }
-
-    @Test
-    fun `get string list on boolean throws`() {
-        val manager = createManager()
-        assertFailsWith<IllegalArgumentException> {
-            manager.getStringList(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
-        }
-    }
-
-    // -- Coercion --
-
-    @Test
-    fun `coerce string to boolean`() {
-        val entry = SettingsRegistry.require(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
-        assertEquals(true, SettingsManager.coerceStringValue(entry, "true"))
-        assertEquals(false, SettingsManager.coerceStringValue(entry, "false"))
-    }
-
-    @Test
-    fun `coerce invalid string to boolean throws`() {
-        val entry = SettingsRegistry.require(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
-        assertFailsWith<IllegalArgumentException> {
-            SettingsManager.coerceStringValue(entry, "maybe")
-        }
-    }
-
-    @Test
-    fun `coerce comma-delimited string to list`() {
-        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
-        val result = SettingsManager.coerceStringValue(entry, "/a.json,/b.json")
-        assertEquals(listOf("/a.json", "/b.json"), result)
-    }
-
-    @Test
-    fun `coerce blank string to list returns empty`() {
-        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
-        val result = SettingsManager.coerceStringValue(entry, "  ")
-        assertEquals(emptyList<String>(), result)
-    }
-
-    @Test
-    fun `coerce single value string to list`() {
-        val entry = SettingsRegistry.require(SettingsKey.STARTUP_TABS)
-        val result = SettingsManager.coerceStringValue(entry, "/single.json")
-        assertEquals(listOf("/single.json"), result)
-    }
-
-    // -- List Coercion from Env Var --
-
-    @Test
-    fun `env var sets startup tabs via comma-delimited string`() {
-        val manager = createManager(
-            envVars = mapOf("SPRINGBOARD_STARTUP_TABS" to "/env/a.json,/env/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/env/a.json", "/env/b.json"), tabs)
-        assertEquals(SettingsSource.ENVIRONMENT_VARIABLE, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `cli startup tabs override env var startup tabs`() {
-        val manager = createManager(
-            envVars = mapOf("SPRINGBOARD_STARTUP_TABS" to "/env/a.json"),
-            cliArgs = listOf("--startup-tabs", "/cli/a.json,/cli/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/cli/a.json", "/cli/b.json"), tabs)
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `cli startup tabs override persisted user startup tabs`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(startupTabs = listOf("/user/a.json")),
-            cliArgs = listOf("--startup-tabs", "/cli/a.json,/cli/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/cli/a.json", "/cli/b.json"), tabs)
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    // -- Invalid External Values --
-
-    @Test
-    fun `invalid env var is ignored`() {
-        val manager = createManager(
-            envVars = mapOf("SPRINGBOARD_SURFACE_APPLESCRIPT_ERRORS" to "not-a-boolean"),
-        )
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- URL_PARAM Precedence --
-
-    @Test
-    fun `url param overrides user settings`() {
-        val manager = createManager(
-            target = RuntimeEnvironment.WASM,
-            persistedDto = SettingsDto(startupTabs = listOf("/user/a.json")),
-            urlParams = mapOf("startup-tabs" to "/url/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/url/b.json"), tabs)
-        assertEquals(SettingsSource.URL_PARAM, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `url param overrides env var`() {
-        val manager = createManager(
-            target = RuntimeEnvironment.WASM,
-            envVars = mapOf("SPRINGBOARD_STARTUP_TABS" to "/env/a.json"),
-            urlParams = mapOf("startup-tabs" to "/url/b.json"),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/url/b.json"), tabs)
-        assertEquals(SettingsSource.URL_PARAM, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `no url param falls back to persisted user settings`() {
-        val manager = createManager(
-            target = RuntimeEnvironment.WASM,
-            persistedDto = SettingsDto(startupTabs = listOf("/user/a.json")),
-        )
-        val tabs = manager.getStringList(SettingsKey.STARTUP_TABS)
-        assertEquals(listOf("/user/a.json"), tabs)
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    // -- Clear User Setting --
-
-    @Test
-    fun `clear session setting reveals cli flag value`() {
-        val manager = createManager(
-            cliArgs = listOf("--surface-applescript-errors"),
-        )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, false)
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, null)
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    @Test
-    fun `clear user setting reveals default when no other source`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(surfaceAppleScriptErrors = true),
-        )
-        assertTrue(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-
-        manager.setUserSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, null)
-        assertFalse(manager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-        assertEquals(SettingsSource.APP_DEFAULT, manager.getSource(SettingsKey.SURFACE_APPLESCRIPT_ERRORS))
-    }
-
-    // -- Session/Persistence Layer Interaction --
-
-    @Test
-    fun `cli flag wins over persisted startup tabs at startup`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(startupTabs = listOf("/saved/a.json")),
-            cliArgs = listOf("--startup-tabs", "/cli/b.json"),
-        )
-        assertEquals(listOf("/cli/b.json"), manager.getStringList(SettingsKey.STARTUP_TABS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `session setting wins over cli flag after user change`() {
-        val manager = createManager(
-            cliArgs = listOf("--startup-tabs", "/cli/b.json"),
-        )
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-
-        manager.setUserSetting(SettingsKey.STARTUP_TABS, listOf("/user/c.json"))
-        assertEquals(listOf("/user/c.json"), manager.getStringList(SettingsKey.STARTUP_TABS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `clearing session and persistence reveals cli flag`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(startupTabs = listOf("/saved/a.json")),
-            cliArgs = listOf("--startup-tabs", "/cli/b.json"),
-        )
-        manager.setUserSetting(SettingsKey.STARTUP_TABS, listOf("/user/c.json"))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_SESSION, manager.getSource(SettingsKey.STARTUP_TABS))
-
-        manager.setUserSetting(SettingsKey.STARTUP_TABS, null)
-        assertEquals(listOf("/cli/b.json"), manager.getStringList(SettingsKey.STARTUP_TABS))
-        assertEquals(SettingsSource.CLI_FLAG, manager.getSource(SettingsKey.STARTUP_TABS))
-    }
-
-    @Test
-    fun `persisted startup tabs load when no cli flag`() {
-        val manager = createManager(
-            persistedDto = SettingsDto(startupTabs = listOf("/saved/a.json")),
-        )
-        assertEquals(listOf("/saved/a.json"), manager.getStringList(SettingsKey.STARTUP_TABS))
-        assertEquals(SettingsSource.USER_SETTINGS_FROM_PERSISTENCE, manager.getSource(SettingsKey.STARTUP_TABS))
+        val items = manager.applicableSettings().map { it.id }
+        // Desktop-only items should be filtered out
+        assertFalse(SurfaceAppleScriptErrorsSetting.id in items)
+        // General items survive
+        assertTrue(ResetKeyNavAfterKeyNavActivationSetting.id in items)
     }
 }

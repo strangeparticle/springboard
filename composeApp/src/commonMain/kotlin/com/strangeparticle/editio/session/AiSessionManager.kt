@@ -1,11 +1,11 @@
 package com.strangeparticle.editio.session
 
-import com.strangeparticle.editio.client.AiClient
-import com.strangeparticle.editio.client.AiClientRequest
-import com.strangeparticle.editio.conversation.AiClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.client.AiProviderClient
+import com.strangeparticle.editio.client.AiProviderClientRequest
+import com.strangeparticle.editio.conversation.AiConversationMessage
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.session.event.AiChatEvent
 import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
 import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
@@ -33,7 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 internal class AiSessionManager(
-    private val aiClient: AiClient,
+    private val aiClient: AiProviderClient,
     private val toolCallRegistry: ToolCallRegistry,
     private val snapshotProvider: AiSessionSnapshotProvider,
     private val toolCallExecutionContextFactory: AiSessionToolCallExecutionContextFactory,
@@ -60,7 +60,7 @@ internal class AiSessionManager(
 
     val events: List<AiChatEvent> get() = resolvedEventsProvider()
     val transcriptParts: List<ChatMessagePart> get() = buildTranscriptParts(events)
-    val history: List<AiClientMessage> get() = buildProviderHistory(events)
+    val history: List<AiConversationMessage> get() = buildProviderHistory(events)
 
     private var currentRequestJob: Job? = null
     var stateChangedSinceLastSnapshotSent = true
@@ -116,7 +116,7 @@ internal class AiSessionManager(
             appendSnapshotIfChanged()
             val requestHistory = evictHistoryIfNeeded(history)
             val response = aiClient.sendAiRequest(
-                AiClientRequest(
+                AiProviderClientRequest(
                     modelId = modelIdProvider(),
                     systemPrompt = systemPromptProvider(),
                     history = requestHistory,
@@ -213,7 +213,7 @@ internal class AiSessionManager(
      * least the current turn even if it's individually over budget — that's a
      * provider-side context-length problem, not a history-management problem).
      */
-    private fun evictHistoryIfNeeded(history: List<AiClientMessage>): List<AiClientMessage> {
+    private fun evictHistoryIfNeeded(history: List<AiConversationMessage>): List<AiConversationMessage> {
         val requestHistory = history.toMutableList()
         while (estimateHistoryTokens(requestHistory) > maxHistoryTokens) {
             val boundaries = turnStartIndices(requestHistory)
@@ -223,15 +223,15 @@ internal class AiSessionManager(
         return requestHistory
     }
 
-    private fun estimateHistoryTokens(history: List<AiClientMessage>): Int = history.sumOf(::estimateMessageTokens)
+    private fun estimateHistoryTokens(history: List<AiConversationMessage>): Int = history.sumOf(::estimateMessageTokens)
 
-    private fun estimateMessageTokens(message: AiClientMessage): Int = when (message) {
-        is AiClientMessageForUser -> estimateTokens(message.text)
-        is AiClientMessageForAssistant -> {
+    private fun estimateMessageTokens(message: AiConversationMessage): Int = when (message) {
+        is AiConversationMessageForUser -> estimateTokens(message.text)
+        is AiConversationMessageForAssistant -> {
             estimateTokens(message.text ?: "") +
                 message.toolCalls.sumOf { estimateTokens(it.toolName) + estimateTokens(it.argumentsAsJsonString) }
         }
-        is AiClientMessageForSystemState -> estimateTokens(message.snapshotJson)
+        is AiConversationMessageForSystemState -> estimateTokens(message.snapshotJson)
         is ToolCallProviderClientMessage -> estimateTokens(message.content)
         else -> 0
     }
@@ -246,11 +246,11 @@ internal class AiSessionManager(
      * that appear mid-turn (between tool results and the follow-up assistant
      * response) are part of the surrounding turn, not their own turn.
      */
-    private fun turnStartIndices(history: List<AiClientMessage>): List<Int> {
+    private fun turnStartIndices(history: List<AiConversationMessage>): List<Int> {
         val starts = mutableListOf<Int>()
         for (i in history.indices) {
-            if (history[i] is AiClientMessageForUser) {
-                val candidate = if (i > 0 && history[i - 1] is AiClientMessageForSystemState) i - 1 else i
+            if (history[i] is AiConversationMessageForUser) {
+                val candidate = if (i > 0 && history[i - 1] is AiConversationMessageForSystemState) i - 1 else i
                 starts += candidate
             }
         }

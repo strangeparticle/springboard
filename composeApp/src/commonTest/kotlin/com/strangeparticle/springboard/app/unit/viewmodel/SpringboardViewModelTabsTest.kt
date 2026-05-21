@@ -182,7 +182,7 @@ class SpringboardViewModelTabsTest {
     @Test
     fun loadConfigInNewTabPersistsTabsDto() {
         val persistence = PersistenceServiceInMemoryFake()
-        val settingsManager = SettingsManager(RuntimeEnvironment.Test, persistence).also { it.loadSettingsAtStartup() }
+        val settingsManager = SettingsManager(RuntimeEnvironment.Test, com.strangeparticle.springboard.app.shared.createSettingsRegistryForTest(), persistence).also { it.loadSettingsAtStartup() }
         val viewModel = SpringboardViewModel(settingsManager, persistence)
         viewModel.loadConfigInNewTab(validJson, "/tmp/x.json")
         val persisted = persistence.loadTabs()

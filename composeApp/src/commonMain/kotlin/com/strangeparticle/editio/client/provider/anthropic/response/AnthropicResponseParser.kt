@@ -1,9 +1,9 @@
 package com.strangeparticle.editio.client.provider.anthropic.response
 
-import com.strangeparticle.editio.client.AiClientErrorType
-import com.strangeparticle.editio.client.AiClientException
-import com.strangeparticle.editio.client.AiClientResponse
-import com.strangeparticle.editio.client.AiClientStopReason
+import com.strangeparticle.editio.client.AiProviderClientErrorType
+import com.strangeparticle.editio.client.AiProviderClientException
+import com.strangeparticle.editio.client.AiProviderClientResponse
+import com.strangeparticle.editio.client.AiProviderClientStopReason
 import com.strangeparticle.editio.client.provider.anthropic.error.AnthropicErrorResponseDto
 import com.strangeparticle.editio.toolcall.ToolCall
 import kotlinx.serialization.SerializationException
@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Parses Anthropic Messages API DTOs into the provider-neutral [AiClientResponse] type.
+ * Parses Anthropic Messages API DTOs into the provider-neutral [AiProviderClientResponse] type.
  * Pure function — no IO. AnthropicResponseParserTest contains full JSON response and
  * error examples for this deserialization boundary.
  */
@@ -19,13 +19,13 @@ internal object AnthropicResponseParser {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun parseSuccess(body: String): AiClientResponse {
+    fun parseSuccess(body: String): AiProviderClientResponse {
         val raw = parseRawJsonObjectOrThrow(body)
         val response = try {
             json.decodeFromString<AnthropicChatCompletionResponseDto>(body)
         } catch (e: SerializationException) {
-            throw AiClientException(
-                AiClientErrorType.MalformedResponse,
+            throw AiProviderClientException(
+                AiProviderClientErrorType.MalformedResponse,
                 "Anthropic response did not match expected messages shape: ${e.message}",
                 rawProviderMessage = body,
                 cause = e,
@@ -47,7 +47,7 @@ internal object AnthropicResponseParser {
                 )
             }
 
-        return AiClientResponse(
+        return AiProviderClientResponse(
             text = text,
             toolCalls = toolCalls,
             stopReason = mapStopReason(response.stopReason),
@@ -60,7 +60,7 @@ internal object AnthropicResponseParser {
         val errorType = anthropicError?.let { classifyByAnthropicError(it.type, it.message) }
             ?: classifyHttpStatus(httpStatus)
         val rawProviderMessage = anthropicError?.message ?: body
-        throw AiClientException(
+        throw AiProviderClientException(
             classified = errorType,
             message = "Anthropic request failed with HTTP $httpStatus" +
                 (rawProviderMessage?.let { ": $it" } ?: ""),
@@ -76,43 +76,43 @@ internal object AnthropicResponseParser {
         null
     }
 
-    private fun classifyByAnthropicError(type: String, message: String): AiClientErrorType = when (type) {
-        "authentication_error", "permission_error" -> AiClientErrorType.InvalidApiKey
-        "rate_limit_error" -> AiClientErrorType.RateLimit
-        "api_error", "overloaded_error" -> AiClientErrorType.ProviderUnavailable
+    private fun classifyByAnthropicError(type: String, message: String): AiProviderClientErrorType = when (type) {
+        "authentication_error", "permission_error" -> AiProviderClientErrorType.InvalidApiKey
+        "rate_limit_error" -> AiProviderClientErrorType.RateLimit
+        "api_error", "overloaded_error" -> AiProviderClientErrorType.ProviderUnavailable
         "invalid_request_error" -> {
             val lower = message.lowercase()
-            if ("context" in lower || "token" in lower) AiClientErrorType.ContextTooLarge
-            else AiClientErrorType.Unknown
+            if ("context" in lower || "token" in lower) AiProviderClientErrorType.ContextTooLarge
+            else AiProviderClientErrorType.Unknown
         }
-        else -> AiClientErrorType.Unknown
+        else -> AiProviderClientErrorType.Unknown
     }
 
-    private fun mapStopReason(stopReason: String?): AiClientStopReason = when (stopReason) {
-        "end_turn", "stop_sequence" -> AiClientStopReason.Stop
-        "tool_use" -> AiClientStopReason.ToolUse
-        "max_tokens" -> AiClientStopReason.MaxTokens
-        else -> AiClientStopReason.Other
+    private fun mapStopReason(stopReason: String?): AiProviderClientStopReason = when (stopReason) {
+        "end_turn", "stop_sequence" -> AiProviderClientStopReason.Stop
+        "tool_use" -> AiProviderClientStopReason.ToolUse
+        "max_tokens" -> AiProviderClientStopReason.MaxTokens
+        else -> AiProviderClientStopReason.Other
     }
 
-    private fun classifyHttpStatus(status: Int): AiClientErrorType = when (status) {
-        401, 403 -> AiClientErrorType.InvalidApiKey
-        429 -> AiClientErrorType.RateLimit
-        529 -> AiClientErrorType.ProviderUnavailable
-        in 500..599 -> AiClientErrorType.ProviderUnavailable
-        else -> AiClientErrorType.Unknown
+    private fun classifyHttpStatus(status: Int): AiProviderClientErrorType = when (status) {
+        401, 403 -> AiProviderClientErrorType.InvalidApiKey
+        429 -> AiProviderClientErrorType.RateLimit
+        529 -> AiProviderClientErrorType.ProviderUnavailable
+        in 500..599 -> AiProviderClientErrorType.ProviderUnavailable
+        else -> AiProviderClientErrorType.Unknown
     }
 
     private fun parseRawJsonObjectOrThrow(body: String): JsonObject = try {
         json.parseToJsonElement(body) as? JsonObject
-            ?: throw AiClientException(
-                AiClientErrorType.MalformedResponse,
+            ?: throw AiProviderClientException(
+                AiProviderClientErrorType.MalformedResponse,
                 "Anthropic response was not a JSON object.",
                 rawProviderMessage = body,
             )
     } catch (e: SerializationException) {
-        throw AiClientException(
-            AiClientErrorType.MalformedResponse,
+        throw AiProviderClientException(
+            AiProviderClientErrorType.MalformedResponse,
             "Anthropic response was not valid JSON: ${e.message}",
             rawProviderMessage = body,
             cause = e,

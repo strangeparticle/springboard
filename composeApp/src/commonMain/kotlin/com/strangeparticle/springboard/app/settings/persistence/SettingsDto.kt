@@ -1,89 +1,60 @@
 package com.strangeparticle.springboard.app.settings.persistence
 
-import com.strangeparticle.springboard.app.settings.StringFromDropDown
-import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.SettingsItem
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.SettingsValues
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
+/**
+ * On-disk persistence envelope. The map is keyed by [SettingsItem.id]; values
+ * are stored as [JsonElement] (each item owns its [SettingsItem.serialize] /
+ * [SettingsItem.deserialize] codec). `JsonElement` only appears at this
+ * persistence boundary — application-layer code sees typed values via
+ * [SettingsValues.get] / [SettingsManager.resolveValue].
+ *
+ * The legacy typed-fields shape from earlier releases is migrated forward by
+ * [SettingsDtoLegacyMigration] during read.
+ */
 @Serializable
-data class SettingsDto(
-    val startupTabs: List<String>? = null,
-    val openUrlsInNewWindowSingle: Boolean? = null,
-    val openUrlsInNewWindowMultiple: Boolean? = null,
-    val surfaceAppleScriptErrors: Boolean? = null,
-    val resetKeyNavAfterKeyNavActivation: Boolean? = null,
-    val resetKeyNavAfterGridNavActivation: Boolean? = null,
-    val activeBrand: String? = null,
-    val aiProvider: String? = null,
-    val aiOpenaiApiKey: String? = null,
-    val aiAnthropicApiKey: String? = null,
-    val aiModel: String? = null,
-    val showFullChatTranscript: Boolean? = null,
-) {
-    fun toSettingsValues(): SettingsValues {
-        var values = SettingsValues()
-        if (startupTabs != null) {
-            values = values.withSetting(SettingsKey.STARTUP_TABS, startupTabs)
-        }
-        if (openUrlsInNewWindowSingle != null) {
-            values = values.withSetting(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE, openUrlsInNewWindowSingle)
-        }
-        if (openUrlsInNewWindowMultiple != null) {
-            values = values.withSetting(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE, openUrlsInNewWindowMultiple)
-        }
-        if (surfaceAppleScriptErrors != null) {
-            values = values.withSetting(SettingsKey.SURFACE_APPLESCRIPT_ERRORS, surfaceAppleScriptErrors)
-        }
-        if (resetKeyNavAfterKeyNavActivation != null) {
-            values = values.withSetting(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION, resetKeyNavAfterKeyNavActivation)
-        }
-        if (resetKeyNavAfterGridNavActivation != null) {
-            values = values.withSetting(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION, resetKeyNavAfterGridNavActivation)
-        }
-        if (activeBrand != null) {
-            val declaration = SettingsRegistry.require(SettingsKey.ACTIVE_BRAND).defaultValue as StringFromDropDown
-            if (declaration.isAllowed(activeBrand)) {
-                values = values.withSetting(SettingsKey.ACTIVE_BRAND, activeBrand)
+data class SettingsDto(val values: Map<String, JsonElement> = emptyMap()) {
+
+    /**
+     * Convert this DTO back into a [SettingsValues] layer, looking up each id
+     * in [registry] and delegating to the item's [SettingsItem.deserialize].
+     * Unknown ids are skipped silently (forward compatibility — a setting
+     * declared in a newer build is harmless to ignore in an older one).
+     */
+    fun toSettingsValues(registry: SettingsRegistry): SettingsValues {
+        var result = SettingsValues()
+        for ((id, json) in values) {
+            val item = registry.byId(id) ?: continue
+            @Suppress("UNCHECKED_CAST")
+            val typedItem = item as SettingsItem<Any>
+            try {
+                val value = typedItem.deserialize(json)
+                result = result.withRawSetting(id, value)
+            } catch (_: Exception) {
+                // Malformed value for an otherwise-known id: skip.
             }
         }
-        if (aiProvider != null) {
-            val declaration = SettingsRegistry.require(SettingsKey.AI_PROVIDER).defaultValue as StringFromDropDown
-            if (declaration.isAllowed(aiProvider)) {
-                values = values.withSetting(SettingsKey.AI_PROVIDER, aiProvider)
-            }
-        }
-        if (aiOpenaiApiKey != null) {
-            values = values.withSetting(SettingsKey.AI_OPENAI_API_KEY, aiOpenaiApiKey)
-        }
-        if (aiAnthropicApiKey != null) {
-            values = values.withSetting(SettingsKey.AI_ANTHROPIC_API_KEY, aiAnthropicApiKey)
-        }
-        if (aiModel != null) {
-            values = values.withSetting(SettingsKey.AI_MODEL, aiModel)
-        }
-        if (showFullChatTranscript != null) {
-            values = values.withSetting(SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT, showFullChatTranscript)
-        }
-        return values
+        return result
     }
 
     companion object {
-        fun fromSettingsValues(values: SettingsValues): SettingsDto {
-            return SettingsDto(
-                startupTabs = values.startupTabs,
-                openUrlsInNewWindowSingle = values.openUrlsInNewWindowSingle,
-                openUrlsInNewWindowMultiple = values.openUrlsInNewWindowMultiple,
-                surfaceAppleScriptErrors = values.surfaceApplescriptErrors,
-                resetKeyNavAfterKeyNavActivation = values.resetKeyNavAfterKeyNavActivation,
-                resetKeyNavAfterGridNavActivation = values.resetKeyNavAfterGridNavActivation,
-                activeBrand = values.activeBrand,
-                aiProvider = values.aiProvider,
-                aiOpenaiApiKey = values.aiOpenaiApiKey,
-                aiAnthropicApiKey = values.aiAnthropicApiKey,
-                aiModel = values.aiModel,
-                showFullChatTranscript = values.showFullChatTranscript,
-            )
+        /**
+         * Build a DTO from a [SettingsValues] layer. Only emits ids that the
+         * registry knows about and that have a non-null value in the layer.
+         */
+        fun fromSettingsValues(values: SettingsValues, registry: SettingsRegistry): SettingsDto {
+            val out = mutableMapOf<String, JsonElement>()
+            for (item in registry.all()) {
+                @Suppress("UNCHECKED_CAST")
+                val typedItem = item as SettingsItem<Any>
+                val value = values.get(typedItem) ?: continue
+                out[item.id] = typedItem.serialize(value)
+            }
+            return SettingsDto(out)
         }
     }
 }

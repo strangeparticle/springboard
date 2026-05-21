@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiClientErrorType
-import com.strangeparticle.editio.client.AiClientException
-import com.strangeparticle.editio.client.AiClientStopReason
+import com.strangeparticle.editio.client.AiProviderClientErrorType
+import com.strangeparticle.editio.client.AiProviderClientException
+import com.strangeparticle.editio.client.AiProviderClientStopReason
 import com.strangeparticle.editio.client.provider.anthropic.response.AnthropicResponseParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ internal class AnthropicResponseParserTest {
 
         assertEquals("An activator maps a coordinate to an action.", result.text)
         assertTrue(result.toolCalls.isEmpty())
-        assertEquals(AiClientStopReason.Stop, result.stopReason)
+        assertEquals(AiProviderClientStopReason.Stop, result.stopReason)
     }
 
     @Test
@@ -67,7 +67,7 @@ internal class AnthropicResponseParserTest {
         assertEquals(1, result.toolCalls.size)
         assertEquals("toolu_01", result.toolCalls[0].toolCallId)
         assertEquals("add_app", result.toolCalls[0].toolName)
-        assertEquals(AiClientStopReason.ToolUse, result.stopReason)
+        assertEquals(AiProviderClientStopReason.ToolUse, result.stopReason)
     }
 
     @Test
@@ -148,24 +148,24 @@ internal class AnthropicResponseParserTest {
 
     @Test
     fun `parseSuccess_stopReasonMapping covers all cases`() {
-        fun stopReasonFor(reason: String): AiClientStopReason {
+        fun stopReasonFor(reason: String): AiProviderClientStopReason {
             val body = """{"id":"m","type":"message","role":"assistant","model":"claude","content":[{"type":"text","text":"ok"}],"stop_reason":"$reason"}"""
             return AnthropicResponseParser.parseSuccess(body).stopReason
         }
 
-        assertEquals(AiClientStopReason.Stop, stopReasonFor("end_turn"))
-        assertEquals(AiClientStopReason.Stop, stopReasonFor("stop_sequence"))
-        assertEquals(AiClientStopReason.ToolUse, stopReasonFor("tool_use"))
-        assertEquals(AiClientStopReason.MaxTokens, stopReasonFor("max_tokens"))
-        assertEquals(AiClientStopReason.Other, stopReasonFor("unknown_reason"))
+        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("end_turn"))
+        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("stop_sequence"))
+        assertEquals(AiProviderClientStopReason.ToolUse, stopReasonFor("tool_use"))
+        assertEquals(AiProviderClientStopReason.MaxTokens, stopReasonFor("max_tokens"))
+        assertEquals(AiProviderClientStopReason.Other, stopReasonFor("unknown_reason"))
     }
 
     @Test
     fun `parseSuccess_malformedBodyThrowsMalformedResponse`() {
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseSuccess("not json")
         }
-        assertEquals(AiClientErrorType.MalformedResponse, error.classified)
+        assertEquals(AiProviderClientErrorType.MalformedResponse, error.classified)
     }
 
     // ── parseErrorAndThrow ───────────────────────────────────────────────────
@@ -173,61 +173,61 @@ internal class AnthropicResponseParserTest {
     @Test
     fun `parseErrorAndThrow_authenticationError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"authentication_error","message":"Invalid API key"}}"""
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(401, body)
         }
-        assertEquals(AiClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_permissionError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"permission_error","message":"Forbidden"}}"""
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(403, body)
         }
-        assertEquals(AiClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_rateLimitError maps to RateLimit`() {
         val body = """{"type":"error","error":{"type":"rate_limit_error","message":"Too many requests"}}"""
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(429, body)
         }
-        assertEquals(AiClientErrorType.RateLimit, error.classified)
+        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_overloadedError maps to ProviderUnavailable on status 529`() {
         val body = """{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(529, body)
         }
-        assertEquals(AiClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_invalidRequestWithContextInMessage maps to ContextTooLarge`() {
         val body = """{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long: 200000 tokens exceeds context window"}}"""
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(400, body)
         }
-        assertEquals(AiClientErrorType.ContextTooLarge, error.classified)
+        assertEquals(AiProviderClientErrorType.ContextTooLarge, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_fallsBackToHttpStatusWhenBodyIsUnparseable`() {
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(429, "not json")
         }
-        assertEquals(AiClientErrorType.RateLimit, error.classified)
+        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_500 maps to ProviderUnavailable`() {
-        val error = assertFailsWith<AiClientException> {
+        val error = assertFailsWith<AiProviderClientException> {
             AnthropicResponseParser.parseErrorAndThrow(500, null)
         }
-        assertEquals(AiClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
     }
 }

@@ -1,6 +1,6 @@
 package com.strangeparticle.editio.client.provider.anthropic
 
-import com.strangeparticle.editio.client.AiClientModelInfo
+import com.strangeparticle.editio.client.AiProviderClientModelInfo
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,7 +14,7 @@ import kotlinx.serialization.json.contentOrNull
  */
 internal object AnthropicModelFilter {
 
-    fun filterAndMap(responseBody: JsonObject): List<AiClientModelInfo> {
+    fun filterAndMap(responseBody: JsonObject): List<AiProviderClientModelInfo> {
         val data = responseBody["data"] as? JsonArray ?: return emptyList()
         return data
             .mapNotNull { entry ->
@@ -24,7 +24,7 @@ internal object AnthropicModelFilter {
                 val id = (obj["id"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
                 if (!id.startsWith("claude-")) return@mapNotNull null
                 val displayName = (obj["display_name"] as? JsonPrimitive)?.contentOrNull ?: id
-                AiClientModelInfo(id = id, displayName = displayName, supportsToolCalling = true)
+                AiProviderClientModelInfo(id = id, displayName = displayName, supportsToolCalling = true)
             }
             .sortedByDescending { it.id }
     }

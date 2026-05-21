@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import com.strangeparticle.editio.client.AiClientErrorType
-import com.strangeparticle.editio.client.AiClientException
+import com.strangeparticle.editio.client.AiProviderClientErrorType
+import com.strangeparticle.editio.client.AiProviderClientException
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
@@ -23,7 +23,7 @@ import com.strangeparticle.springboard.app.editio.toolcall.SaveSpringboardToolCa
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
-import com.strangeparticle.springboard.app.shared.AiClientInMemoryFake
+import com.strangeparticle.springboard.app.shared.AiProviderClientInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -149,7 +149,7 @@ internal class AiEditingTests {
     @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
-        fixture.aiClient.sendAiRequestException = AiClientException(AiClientErrorType.Network, "network unavailable")
+        fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
 
         fixture.manager.submit("Try").join()
 
@@ -161,7 +161,7 @@ internal class AiEditingTests {
     }
 
     private fun TestScope.createFixture(source: String = "/test/springboard.json"): Fixture {
-        val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, PersistenceServiceInMemoryFake())
+        val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, com.strangeparticle.springboard.app.shared.createSettingsRegistryForTest(), PersistenceServiceInMemoryFake())
         settingsManager.loadSettingsAtStartup()
         val fileService = PlatformFileContentServiceInMemoryFake()
         val viewModel = SpringboardViewModel(
@@ -171,7 +171,7 @@ internal class AiEditingTests {
             fileContentService = fileService,
         )
         viewModel.loadConfig(TestFixtureJson.URL_ONLY, source)
-        val aiClient = AiClientInMemoryFake()
+        val aiClient = AiProviderClientInMemoryFake()
         val registry = ToolCallRegistry().apply {
             register(AddAppToolCallHandler())
             register(AddEnvironmentToolCallHandler())
@@ -211,7 +211,7 @@ internal class AiEditingTests {
     private data class Fixture(
         val viewModel: SpringboardViewModel,
         val fileService: PlatformFileContentServiceInMemoryFake,
-        val aiClient: AiClientInMemoryFake,
+        val aiClient: AiProviderClientInMemoryFake,
         val registry: ToolCallRegistry,
         val manager: AiSessionManager,
     )

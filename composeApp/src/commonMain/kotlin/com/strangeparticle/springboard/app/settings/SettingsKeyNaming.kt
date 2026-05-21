@@ -1,26 +1,30 @@
 package com.strangeparticle.springboard.app.settings
 
 /**
- * Derives all external names for a [SettingsKey] from its enum name.
- * The enum name (UPPER_SNAKE_CASE) is the single source of truth.
+ * Derives external names for a [SettingsItem] from its [SettingsItem.id].
+ *
+ * Item ids are snake_case (sometimes with dots, e.g. `ai.openai.api_key`).
+ * For env vars / URL params / CLI flags the dots collapse to underscores /
+ * hyphens; for JSON the id is used verbatim as the persistence key.
  */
 object SettingsKeyNaming {
 
-    /** `STARTUP_TABS` → `startup-tabs` */
-    fun urlParamName(key: SettingsKey): String =
-        key.name.lowercase().replace('_', '-')
+    /** `startup_tabs` → `startup-tabs`; `ai.openai.api_key` → `ai-openai-api-key` */
+    fun urlParamName(item: SettingsItem<*>): String =
+        item.id.replace('_', '-').replace('.', '-')
 
-    /** `STARTUP_TABS` → `--startup-tabs` */
-    fun cliFlag(key: SettingsKey): String =
-        "--${urlParamName(key)}"
+    /** `startup_tabs` → `--startup-tabs` */
+    fun cliFlag(item: SettingsItem<*>): String = "--${urlParamName(item)}"
 
-    /** `STARTUP_TABS` → `SPRINGBOARD_STARTUP_TABS` */
-    fun envVarName(key: SettingsKey): String =
-        "SPRINGBOARD_${key.name}"
+    /**
+     * `startup_tabs` → `SPRINGBOARD_STARTUP_TABS`; provider items override
+     * via [SettingsItem.envVarNameOverride] to use a non-prefixed name like
+     * `OPENAI_API_KEY`.
+     */
+    fun envVarName(item: SettingsItem<*>): String =
+        item.envVarNameOverride
+            ?: "SPRINGBOARD_${item.id.uppercase().replace('.', '_')}"
 
-    /** `STARTUP_TABS` → `startupTabs` */
-    fun jsonKey(key: SettingsKey): String =
-        key.name.lowercase().split("_").mapIndexed { index, word ->
-            if (index == 0) word else word.replaceFirstChar { it.uppercase() }
-        }.joinToString("")
+    /** The JSON persistence key is just the id, verbatim. */
+    fun jsonKey(item: SettingsItem<*>): String = item.id
 }

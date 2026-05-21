@@ -11,13 +11,16 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.strangeparticle.editio.client.AiClient
-import com.strangeparticle.editio.client.provider.anthropic.AiClientAnthropic
-import com.strangeparticle.editio.client.provider.openai.AiClientOpenAi
+import com.strangeparticle.editio.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
-import com.strangeparticle.springboard.app.settings.*
-import com.strangeparticle.springboard.app.settings.ai.AiProvider
+import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
+import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting
+import com.strangeparticle.springboard.app.settings.items.core.SurfaceAppleScriptErrorsSetting
+import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
@@ -45,7 +48,10 @@ fun main(args: Array<String>) {
 
     // Initialize services
     val persistenceService = PersistenceServiceDefaultImpl()
-    val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
+    val settingsRegistry = SettingsRegistry(
+        coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+    )
+    val settingsManager = SettingsManager(runtimeEnvironment, settingsRegistry, persistenceService)
 
     // Load all settings sources: persisted user settings, env vars, CLI args
     settingsManager.loadSettingsAtStartup(
@@ -54,7 +60,7 @@ fun main(args: Array<String>) {
     )
 
     // Propagate the resolved surfaceAppleScriptErrors value to the browser automation module
-    val resolvedSurfaceAppleScriptErrors = settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)
+    val resolvedSurfaceAppleScriptErrors = settingsManager.resolveValue(SurfaceAppleScriptErrorsSetting)
     surfaceAppleScriptErrors = resolvedSurfaceAppleScriptErrors
 
     val activationService = PlatformActivationServiceDesktopImpl(
@@ -64,32 +70,15 @@ fun main(args: Array<String>) {
     val networkContentService = NetworkContentServiceDesktopImpl()
     val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
 
-    // Shared Ktor client for any AI provider call (settings model fetch today; session chat tomorrow).
+    // Shared Ktor client for any AI provider call. Plugged into the SettingsViewModel
+    // so DropDownFromApiCallSettingsItem.loadOptions and AiProvider.createClient can
+    // reach it through the standard SettingsItemContext.
     val aiHttpClient = HttpClient(CIO)
-    // Snapshot env vars once; the settings UI uses these to render the env-var-override label.
-    val envVars: Map<String, String> = System.getenv()
 
-    /**
-     * Build a provider-specific [AiClient] using the API key the user supplied. The settings
-     * UI calls this to populate its model dropdown; the session manager will call it the same
-     * way once chat is wired up.
-     */
-    fun aiClientFor(provider: AiProvider, apiKey: String): AiClient? = when (provider) {
-        AiProvider.OpenAi -> AiClientOpenAi(httpClient = aiHttpClient, apiKeyProvider = { apiKey })
-        AiProvider.Anthropic -> AiClientAnthropic(httpClient = aiHttpClient, apiKeyProvider = { apiKey })
-        AiProvider.None -> null
-    }
-
-    val aiFetchModels: suspend (AiProvider, String) -> List<com.strangeparticle.editio.client.AiClientModelInfo> =
-        { provider, apiKey ->
-            val client = aiClientFor(provider, apiKey)
-            if (client == null) emptyList() else client.listModels(apiKey)
-        }
-
-    val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
+    val startupTabs = settingsManager.resolveValue(StartupTabsSetting)
 
     println("[Springboard] startup tabs: ${if (startupTabs.isEmpty()) "none" else startupTabs.joinToString(", ")}")
-    if (settingsManager.getBoolean(SettingsKey.SURFACE_APPLESCRIPT_ERRORS)) {
+    if (resolvedSurfaceAppleScriptErrors) {
         println("[Springboard] AppleScript error surfacing enabled")
     }
 
@@ -103,7 +92,7 @@ fun main(args: Array<String>) {
             SpringboardViewModel(settingsManager, persistenceService, activationService, contentLoader)
         }
         val settingsViewModel = remember {
-            SettingsViewModel(settingsManager = settingsManager)
+            SettingsViewModel(settingsManager = settingsManager, httpClient = aiHttpClient)
         }
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
@@ -284,9 +273,6 @@ fun main(args: Array<String>) {
                 onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
                 onCloseActiveSettings = closeActiveSettings,
                 networkContentService = networkContentService,
-                aiEnvironmentVariables = envVars,
-                aiFetchModels = aiFetchModels,
-                aiClientFactory = ::aiClientFor,
             )
 
             // Grow the window to fit the largest springboard across all tabs (never shrink).

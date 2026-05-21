@@ -19,9 +19,9 @@ import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
 import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
 import com.strangeparticle.editio.session.projection.buildProviderHistory
 import com.strangeparticle.editio.session.projection.buildTranscriptParts
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.editio.help.AiAssistantTerseHelpText
@@ -41,7 +41,7 @@ internal sealed class AiChatScrollbackPane {
     ) : AiChatScrollbackPane()
 
     // Debug-only panes used when SHOW_FULL_CHAT_TRANSCRIPT is on. Each represents
-    // exactly one AiClientMessage from AiSessionManager.history so the developer
+    // exactly one AiConversationMessage from AiSessionManager.history so the developer
     // can see every payload exchanged with the model — including the state
     // snapshots and raw tool-result payloads the normal Interaction view hides.
 
@@ -128,9 +128,9 @@ internal fun buildSlimScrollbackPanes(events: List<AiChatEvent>): List<AiChatScr
 internal fun buildDebugScrollbackPanes(events: List<AiChatEvent>): List<AiChatScrollbackPane> =
     buildProviderHistory(events).mapIndexedNotNull { index, message ->
         when (message) {
-            is AiClientMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, index)
-            is AiClientMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, index)
-            is AiClientMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, index)
+            is AiConversationMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, index)
+            is AiConversationMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, index)
+            is AiConversationMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, index)
             is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, index)
             else -> null
         }

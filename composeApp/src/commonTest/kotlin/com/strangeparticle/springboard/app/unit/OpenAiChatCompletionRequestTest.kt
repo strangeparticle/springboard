@@ -1,13 +1,13 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiClientRequest
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
+import com.strangeparticle.editio.client.AiProviderClientRequest
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessage
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.AiToolCallDefinition
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +22,7 @@ import kotlin.test.assertTrue
 
 /**
  * Tests for [com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
-     * envelope: top-level shape, message role mapping for each [AiClientMessage] variant,
+     * envelope: top-level shape, message role mapping for each [AiConversationMessage] variant,
  * and tool-definition adaptation.
  */
 internal class OpenAiChatCompletionRequestTest {
@@ -30,16 +30,16 @@ internal class OpenAiChatCompletionRequestTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun emptyRequest(
-        history: List<AiClientMessage> = emptyList(),
+        history: List<AiConversationMessage> = emptyList(),
         tools: List<AiToolCallDefinition> = emptyList(),
-    ) = AiClientRequest(
+    ) = AiProviderClientRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
         history = history,
         tools = tools,
     )
 
-    private fun buildBody(request: AiClientRequest): JsonObject {
+    private fun buildBody(request: AiProviderClientRequest): JsonObject {
         val rawJson = json.encodeToString(
             _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
             _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
@@ -60,7 +60,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `body matches rendered request example without tools`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiClientMessageForUser("hello")),
+            history = listOf(AiConversationMessageForUser("hello")),
         ))
 
         val expected = json.parseToJsonElement(
@@ -117,8 +117,8 @@ internal class OpenAiChatCompletionRequestTest {
         val body = buildBody(
             emptyRequest(
                 history = listOf(
-                    AiClientMessageForUser("Add an app."),
-                    AiClientMessageForAssistant(
+                    AiConversationMessageForUser("Add an app."),
+                    AiConversationMessageForAssistant(
                         text = null,
                         toolCalls = listOf(ToolCall("call-1", "add_app", """{"tab_id":"tab-1"}""")),
                     ),
@@ -202,7 +202,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `UserMessage maps to role=user with content`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiClientMessageForUser("hello")),
+            history = listOf(AiConversationMessageForUser("hello")),
         ))
         val messages = body["messages"] as JsonArray
         val userMsg = messages[1] as JsonObject
@@ -214,7 +214,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `AssistantMessage with text only maps to role=assistant with content`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiClientMessageForAssistant(text = "ok", toolCalls = emptyList())),
+            history = listOf(AiConversationMessageForAssistant(text = "ok", toolCalls = emptyList())),
         ))
         val assistantMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -227,7 +227,7 @@ internal class OpenAiChatCompletionRequestTest {
     fun `AssistantMessage with tool_calls maps to assistant with tool_calls array`() {
         val toolCall = ToolCall("call-1", "do_thing", """{"foo":"bar"}""")
         val body = buildBody(emptyRequest(
-            history = listOf(AiClientMessageForAssistant(text = null, toolCalls = listOf(toolCall))),
+            history = listOf(AiConversationMessageForAssistant(text = null, toolCalls = listOf(toolCall))),
         ))
         val assistantMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -262,7 +262,7 @@ internal class OpenAiChatCompletionRequestTest {
     fun `SystemStateMessage maps to a user-role message wrapped in current_state tags`() {
         val snapshot = """{"tabs":[],"activeTabId":null}"""
         val body = buildBody(emptyRequest(
-            history = listOf(AiClientMessageForSystemState(snapshot)),
+            history = listOf(AiConversationMessageForSystemState(snapshot)),
         ))
         val stateMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -290,10 +290,10 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `interpolated string values are escaped in the request JSON`() {
         val body = buildBody(
-            AiClientRequest(
+            AiProviderClientRequest(
                 modelId = "gpt-5\"quoted",
                 systemPrompt = "system prompt with \"quotes\" and newline\nnext line",
-                history = listOf(AiClientMessageForUser("user text with \"quotes\" and newline\nnext line")),
+                history = listOf(AiConversationMessageForUser("user text with \"quotes\" and newline\nnext line")),
                 tools = listOf(
                     AiToolCallDefinition(
                         name = "tool_\"quoted",

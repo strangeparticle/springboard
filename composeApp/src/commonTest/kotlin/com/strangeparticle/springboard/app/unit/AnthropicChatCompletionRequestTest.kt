@@ -1,10 +1,10 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiClientRequest
+import com.strangeparticle.editio.client.AiProviderClientRequest
 import com.strangeparticle.editio.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.toolcall.AiToolCallDefinition
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
@@ -32,10 +32,10 @@ internal class AnthropicChatCompletionRequestTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun emptyRequest(
-        history: List<com.strangeparticle.editio.conversation.AiClientMessage> = emptyList(),
+        history: List<com.strangeparticle.editio.conversation.AiConversationMessage> = emptyList(),
         tools: List<AiToolCallDefinition> = emptyList(),
         maxTokens: Int? = null,
-    ) = AiClientRequest(
+    ) = AiProviderClientRequest(
         modelId = "claude-sonnet-4-6",
         systemPrompt = "you are an assistant",
         history = history,
@@ -43,7 +43,7 @@ internal class AnthropicChatCompletionRequestTest {
         maxTokens = maxTokens,
     )
 
-    private fun buildBody(request: AiClientRequest): JsonObject {
+    private fun buildBody(request: AiProviderClientRequest): JsonObject {
         val rawJson = json.encodeToString(
             AnthropicChatCompletionRequestDto.serializer(),
             AnthropicChatCompletionRequestDto.from(request),
@@ -86,7 +86,7 @@ internal class AnthropicChatCompletionRequestTest {
 
     @Test
     fun `user message maps to user role with plain string content`() {
-        val body = buildBody(emptyRequest(history = listOf(AiClientMessageForUser("hello"))))
+        val body = buildBody(emptyRequest(history = listOf(AiConversationMessageForUser("hello"))))
 
         val messages = body["messages"]!!.jsonArray
         assertEquals(1, messages.size)
@@ -98,7 +98,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `assistant text message maps to assistant role with plain string content`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiClientMessageForAssistant(text = "I can help with that.", toolCalls = emptyList()),
+            AiConversationMessageForAssistant(text = "I can help with that.", toolCalls = emptyList()),
         )))
 
         val messages = body["messages"]!!.jsonArray
@@ -111,7 +111,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `assistant message with tool calls maps to content block array`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiClientMessageForAssistant(
+            AiConversationMessageForAssistant(
                 text = "I'll add that.",
                 toolCalls = listOf(ToolCall("toolu_01", "add_app", """{"tab_id":"t1","id":"a1","name":"App","display_message":"x"}""")),
             ),
@@ -135,7 +135,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `tool result maps to user role with tool_result content block`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiClientMessageForAssistant(text = null, toolCalls = listOf(ToolCall("toolu_01", "add_app", "{}"))),
+            AiConversationMessageForAssistant(text = null, toolCalls = listOf(ToolCall("toolu_01", "add_app", "{}"))),
             ToolCallProviderClientMessage("toolu_01", "done"),
         )))
 
@@ -155,7 +155,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `multiple consecutive tool results are merged into one user message`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiClientMessageForAssistant(text = null, toolCalls = listOf(
+            AiConversationMessageForAssistant(text = null, toolCalls = listOf(
                 ToolCall("id1", "add_app", "{}"),
                 ToolCall("id2", "add_resource", "{}"),
             )),
@@ -177,8 +177,8 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `state injection and user message are merged into one user message`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiClientMessageForSystemState("""{"tabs":[]}"""),
-            AiClientMessageForUser("add an app"),
+            AiConversationMessageForSystemState("""{"tabs":[]}"""),
+            AiConversationMessageForUser("add an app"),
         )))
 
         val messages = body["messages"]!!.jsonArray

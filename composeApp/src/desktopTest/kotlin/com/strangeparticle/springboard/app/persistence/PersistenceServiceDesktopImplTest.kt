@@ -1,6 +1,9 @@
 package com.strangeparticle.springboard.app.persistence
 
 import com.strangeparticle.springboard.app.settings.persistence.SettingsDto
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.boolean
 import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
@@ -23,12 +26,13 @@ class PersistenceServiceDesktopImplTest {
         val homeDir = Files.createTempDirectory("springboard-persistence-test-home").toFile()
         val service = PersistenceServiceDesktopImpl(homeDirectoryPath = homeDir.absolutePath)
 
-        val dto = SettingsDto(surfaceAppleScriptErrors = true)
+        val dto = SettingsDto(values = mapOf("surface_applescript_errors" to JsonPrimitive(true)))
         service.persistSettings(dto)
 
         val expectedFile = File(homeDir, ".springboard/springboard_settings.json")
         assertEquals(true, expectedFile.exists())
-        assertEquals(true, service.loadSettings()?.surfaceAppleScriptErrors)
+        val loaded = service.loadSettings()
+        assertEquals(true, (loaded?.values?.get("surface_applescript_errors") as? JsonPrimitive)?.jsonPrimitive?.boolean)
     }
 
     @Test

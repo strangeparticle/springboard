@@ -1,10 +1,10 @@
 package com.strangeparticle.editio.client.provider.anthropic.request
 
-import com.strangeparticle.editio.client.AiClientRequest
-import com.strangeparticle.editio.conversation.AiClientMessage
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.client.AiProviderClientRequest
+import com.strangeparticle.editio.conversation.AiConversationMessage
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.toolcall.AiToolCallDefinition
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
@@ -38,7 +38,7 @@ internal data class AnthropicChatCompletionRequestDto(
 
         private const val DEFAULT_MAX_TOKENS = 8192
 
-        fun from(request: AiClientRequest): AnthropicChatCompletionRequestDto =
+        fun from(request: AiProviderClientRequest): AnthropicChatCompletionRequestDto =
             AnthropicChatCompletionRequestDto(
                 model = request.modelId,
                 messages = buildMessages(request.history),
@@ -53,14 +53,14 @@ internal data class AnthropicChatCompletionRequestDto(
          *
          * Anthropic requires strictly alternating user/assistant roles. Two cases produce
          * back-to-back user turns that must be merged:
-         *  1. AiClientMessageForSystemState followed by AiClientMessageForUser
+         *  1. AiConversationMessageForSystemState followed by AiConversationMessageForUser
          *  2. Multiple consecutive ToolCallProviderClientMessage instances (all → user role)
          *
          * Consecutive user-role inputs accumulate into a pending list and are flushed as
          * a single AnthropicMessageDto with a JsonArray content when an assistant turn arrives
          * or the history ends.
          */
-        private fun buildMessages(history: List<AiClientMessage>): List<AnthropicMessageDto> {
+        private fun buildMessages(history: List<AiConversationMessage>): List<AnthropicMessageDto> {
             val result = mutableListOf<AnthropicMessageDto>()
             val pendingUserBlocks = mutableListOf<JsonElement>()
 
@@ -80,16 +80,16 @@ internal data class AnthropicChatCompletionRequestDto(
 
             for (message in history) {
                 when (message) {
-                    is AiClientMessageForUser -> {
+                    is AiConversationMessageForUser -> {
                         pendingUserBlocks.add(textBlock(message.text))
                     }
-                    is AiClientMessageForSystemState -> {
+                    is AiConversationMessageForSystemState -> {
                         pendingUserBlocks.add(textBlock("<current_state>${message.snapshotJson}</current_state>"))
                     }
                     is ToolCallProviderClientMessage -> {
                         pendingUserBlocks.add(toolResultBlock(message.toolCallId, message.content))
                     }
-                    is AiClientMessageForAssistant -> {
+                    is AiConversationMessageForAssistant -> {
                         flushPendingUser()
                         result.add(toAssistantMessage(message))
                     }
@@ -100,7 +100,7 @@ internal data class AnthropicChatCompletionRequestDto(
             return result
         }
 
-        private fun toAssistantMessage(message: AiClientMessageForAssistant): AnthropicMessageDto {
+        private fun toAssistantMessage(message: AiConversationMessageForAssistant): AnthropicMessageDto {
             val blocks = buildList {
                 message.text?.let { add(textBlock(it)) }
                 message.toolCalls.forEach { add(toolUseBlock(it)) }

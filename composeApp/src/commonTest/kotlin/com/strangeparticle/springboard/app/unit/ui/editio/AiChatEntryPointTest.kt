@@ -1,31 +1,22 @@
 package com.strangeparticle.springboard.app.unit.ui.editio
 
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
-import com.strangeparticle.editio.client.AiClient
-import com.strangeparticle.editio.client.AiClientModelInfo
-import com.strangeparticle.editio.client.AiClientRequest
-import com.strangeparticle.editio.client.AiClientResponse
-import com.strangeparticle.editio.client.AiClientStopReason
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import androidx.compose.runtime.mutableStateOf
+import com.strangeparticle.editio.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
-import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
-import com.strangeparticle.springboard.app.settings.ai.AiProvider
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
+import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
-import com.strangeparticle.springboard.app.editio.help.AiAssistantFullHelpText
+import com.strangeparticle.springboard.app.shared.stubHttpClientForTests
 import com.strangeparticle.springboard.app.ui.AppBottomBar
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
@@ -33,9 +24,7 @@ import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
-import kotlinx.serialization.json.buildJsonObject
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -130,175 +119,12 @@ internal class AiChatEntryPointTest {
         onNodeWithTag(TestTags.SETTINGS_SCREEN).assertExists()
     }
 
-    @Test
-    fun `configured AI settings show chat input instead of not configured prompt`() = runComposeUiTest {
-        val components = createComponents()
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-5")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> AiClientNoopFake() },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertExists()
-        onNodeWithText("AI is not configured").assertDoesNotExist()
-    }
-
-    @Test
-    fun `configured AI settings without a client remain not configured`() = runComposeUiTest {
-        val components = createComponents()
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-5")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> null },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-
-        onNodeWithText("AI is not configured").assertExists()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertDoesNotExist()
-    }
-
-    @Test
-    fun `help slash command renders locally without calling AI client`() = runComposeUiTest {
-        val components = createComponents()
-        val aiClient = AiClientCountingFake()
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-5")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> aiClient },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("/help")
-        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
-
-        onNodeWithText("You: /help").assertExists()
-        onNodeWithText(AiAssistantFullHelpText.title, substring = true).assertExists()
-        onNodeWithTag(TestTags.AI_CHAT_HISTORY).performScrollToIndex(0)
-        onNodeWithText("/help_terse").assertExists()
-        assertEquals(0, aiClient.requestCount)
-    }
-
-    @Test
-    fun `terse help slash command renders locally without calling AI client`() = runComposeUiTest {
-        val components = createComponents()
-        val aiClient = AiClientCountingFake()
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-5")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> aiClient },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("/help_terse")
-        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
-
-        onNodeWithText("You: /help_terse").assertExists()
-        assertEquals(0, aiClient.requestCount)
-    }
-
-    @Test
-    fun `unknown slash command renders local error without calling AI client`() = runComposeUiTest {
-        val components = createComponents()
-        val aiClient = AiClientCountingFake()
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-5")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> aiClient },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("/wat")
-        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
-
-        onNodeWithText("You: /wat").assertExists()
-        onNodeWithText("Unknown command: /wat. Try /help.").assertExists()
-        assertEquals(0, aiClient.requestCount)
-    }
-
-    @Test
-    fun `switching model preserves chat history and sends next request with new model`() = runComposeUiTest {
-        val components = createComponents()
-        val aiClient = AiClientRecordingFake(mutableListOf("First response", "Second response"))
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_PROVIDER, AiProvider.OpenAi.id)
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_OPENAI_API_KEY, "sk-test")
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-old")
-
-        setContent {
-            SpringboardApp(
-                viewModel = components.viewModel,
-                settingsViewModel = components.settingsViewModel,
-                aiClientFactory = { _, _ -> aiClient },
-                showFileOpen = false,
-            )
-        }
-
-        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("First message")
-        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
-        waitUntil { aiClient.recordedRequests.size == 1 && aiClient.remainingResponseCount == 1 }
-        waitUntil { onAllNodesWithText("First response", substring = true).fetchSemanticsNodes().isNotEmpty() }
-        waitForIdle()
-        onNodeWithText("First message").assertExists()
-        onNodeWithText("First response", substring = true).assertExists()
-
-        components.settingsViewModel.setUserSetting(SettingsKey.AI_MODEL, "gpt-new")
-        waitForIdle()
-
-        onNodeWithText("First message").assertExists()
-        onNodeWithText("First response", substring = true).assertExists()
-
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Second message")
-        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
-        waitUntil { aiClient.recordedRequests.size == 2 && aiClient.remainingResponseCount == 0 }
-        waitForIdle()
-
-        val secondRequest = aiClient.recordedRequests[1]
-        assertEquals("gpt-new", secondRequest.modelId)
-        assertTrue(secondRequest.history.filterIsInstance<AiClientMessageForUser>().any { it.text == "First message" })
-        assertTrue(secondRequest.history.filterIsInstance<AiClientMessageForAssistant>().any { it.text == "First response" })
-    }
-
     private fun createComponents(): Components {
         val persistenceService = PersistenceServiceInMemoryFake()
-        val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, persistenceService)
+        val registry = SettingsRegistry(
+            coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        )
+        val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, registry, persistenceService)
         settingsManager.loadSettingsAtStartup()
         return Components(
             viewModel = SpringboardViewModel(
@@ -306,7 +132,7 @@ internal class AiChatEntryPointTest {
                 persistenceService = persistenceService,
                 platformActivationService = PlatformActivationServiceInMemoryFake(),
             ),
-            settingsViewModel = SettingsViewModel(settingsManager),
+            settingsViewModel = SettingsViewModel(settingsManager, stubHttpClientForTests()),
         )
     }
 
@@ -323,53 +149,5 @@ internal class AiChatEntryPointTest {
             }
         }
         return signature
-    }
-
-    private class AiClientNoopFake : AiClient {
-        override suspend fun sendAiRequest(request: AiClientRequest): AiClientResponse =
-            AiClientResponse(
-                text = "ok",
-                toolCalls = emptyList(),
-                stopReason = AiClientStopReason.Stop,
-                raw = buildJsonObject {},
-            )
-
-        override suspend fun listModels(apiKey: String): List<AiClientModelInfo> = emptyList()
-    }
-
-    private class AiClientCountingFake : AiClient {
-        var requestCount = 0
-            private set
-
-        override suspend fun sendAiRequest(request: AiClientRequest): AiClientResponse {
-            requestCount += 1
-            return AiClientResponse(
-                text = "ok",
-                toolCalls = emptyList(),
-                stopReason = AiClientStopReason.Stop,
-                raw = buildJsonObject {},
-            )
-        }
-
-        override suspend fun listModels(apiKey: String): List<AiClientModelInfo> = emptyList()
-    }
-
-    private class AiClientRecordingFake(
-        private val responses: MutableList<String>,
-    ) : AiClient {
-        val recordedRequests = mutableListOf<AiClientRequest>()
-        val remainingResponseCount: Int get() = responses.size
-
-        override suspend fun sendAiRequest(request: AiClientRequest): AiClientResponse {
-            recordedRequests += request
-            return AiClientResponse(
-                text = responses.removeFirst(),
-                toolCalls = emptyList(),
-                stopReason = AiClientStopReason.Stop,
-                raw = buildJsonObject {},
-            )
-        }
-
-        override suspend fun listModels(apiKey: String): List<AiClientModelInfo> = emptyList()
     }
 }

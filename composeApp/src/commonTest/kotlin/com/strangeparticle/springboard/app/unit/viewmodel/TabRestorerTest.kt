@@ -38,7 +38,7 @@ class TabRestorerTest {
     }
 
     private fun createViewModel(persistence: PersistenceServiceInMemoryFake): SpringboardViewModel {
-        val settingsManager = SettingsManager(RuntimeEnvironment.Test, persistence).also { it.loadSettingsAtStartup() }
+        val settingsManager = SettingsManager(RuntimeEnvironment.Test, com.strangeparticle.springboard.app.shared.createSettingsRegistryForTest(), persistence).also { it.loadSettingsAtStartup() }
         return SpringboardViewModel(settingsManager, persistence)
     }
 

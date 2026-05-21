@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
-import com.strangeparticle.editio.client.AiClient
-import com.strangeparticle.editio.client.AiClientModelInfo
+import com.strangeparticle.editio.client.provider.AiProvider
+import com.strangeparticle.editio.client.provider.AiProviderRegistry
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
@@ -24,8 +24,8 @@ import com.strangeparticle.springboard.app.editio.toolcall.*
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
-import com.strangeparticle.springboard.app.settings.SettingsKey
-import com.strangeparticle.springboard.app.settings.ai.AiProvider
+import com.strangeparticle.springboard.app.settings.items.core.AiProviderSetting
+import com.strangeparticle.springboard.app.settings.items.core.ShowFullChatTranscriptSetting
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.editio.AiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
@@ -65,9 +65,6 @@ internal fun SpringboardApp(
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
-    aiEnvironmentVariables: Map<String, String> = emptyMap(),
-    aiFetchModels: suspend (AiProvider, String) -> List<AiClientModelInfo> = { _, _ -> emptyList() },
-    aiClientFactory: (AiProvider, String) -> AiClient? = { _, _ -> null },
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -75,8 +72,6 @@ internal fun SpringboardApp(
     val derivedAiChatPaneState = rememberAiChatPaneState(
         viewModel = viewModel,
         settingsViewModel = settingsViewModel,
-        environmentVariables = aiEnvironmentVariables,
-        aiClientFactory = aiClientFactory,
         coroutineScope = coroutineScope,
     )
     val effectiveAiChatPaneState = if (aiChatPaneState.isConfigured) aiChatPaneState else derivedAiChatPaneState
@@ -130,8 +125,6 @@ internal fun SpringboardApp(
                         },
                         onShowActiveSettings = onOpenActiveSettingsFromSettings,
                         currentTabSources = viewModel.currentTabSources,
-                        aiEnvironmentVariables = aiEnvironmentVariables,
-                        aiFetchModels = aiFetchModels,
                         showAiSettingsFirst = aiSettingsFirst,
                     )
                 }
@@ -167,18 +160,17 @@ internal fun SpringboardApp(
 private fun rememberAiChatPaneState(
     viewModel: SpringboardViewModel,
     settingsViewModel: SettingsViewModel,
-    environmentVariables: Map<String, String>,
-    aiClientFactory: (AiProvider, String) -> AiClient?,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
 ): AiChatPaneState {
     settingsViewModel.settingsVersion
-    val provider = AiProvider.fromId(
-        settingsViewModel.getResolvedValue(SettingsKey.AI_PROVIDER) as? String ?: AiProvider.None.id,
-    )
-    val apiKey = resolveAiApiKey(provider, settingsViewModel, environmentVariables)
-    val modelId = settingsViewModel.getResolvedValue(SettingsKey.AI_MODEL) as? String ?: ""
-    val aiClient = remember(provider, apiKey) {
-        apiKey?.let { aiClientFactory(provider, it) }
+    val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
+    val provider: AiProvider? = AiProviderRegistry.byId(selectedProviderId)
+    val context = settingsViewModel.itemContext()
+    val isConfigured = provider != null && provider.isConfigured(context)
+    val modelId = provider?.currentModelId(context).orEmpty()
+
+    val aiClient = remember(provider, isConfigured, modelId) {
+        if (provider != null && isConfigured) provider.createClient(context) else null
     }
     var transcriptVersion by remember { mutableStateOf(0) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
@@ -188,7 +180,7 @@ private fun rememberAiChatPaneState(
         mutableStateOf(initialTerseHelpEvents())
     }
 
-    if (provider == AiProvider.None || apiKey == null || modelId.isBlank() || aiClient == null) {
+    if (provider == null || aiClient == null || modelId.isBlank()) {
         return AiChatPaneState.notConfigured()
     }
 
@@ -218,8 +210,7 @@ private fun rememberAiChatPaneState(
         )
     }
     transcriptVersion
-    val showFullChatTranscript =
-        (settingsViewModel.getResolvedValue(SettingsKey.SHOW_FULL_CHAT_TRANSCRIPT) as? Boolean) == true
+    val showFullChatTranscript = settingsViewModel.getResolvedValue(ShowFullChatTranscriptSetting)
     val effectiveScrollbackPanes = if (showFullChatTranscript) {
         buildDebugScrollbackPanes(chatEvents)
     } else {
@@ -285,24 +276,6 @@ private fun rememberAiChatPaneState(
     )
 }
 
-private fun resolveAiApiKey(
-    provider: AiProvider,
-    settingsViewModel: SettingsViewModel,
-    environmentVariables: Map<String, String>,
-): String? {
-    val envName = when (provider) {
-        AiProvider.OpenAi -> "OPENAI_API_KEY"
-        AiProvider.Anthropic -> "ANTHROPIC_API_KEY"
-        AiProvider.None -> return null
-    }
-    environmentVariables[envName]?.trim()?.takeIf { it.isNotEmpty() }?.let { return it }
-    val key = when (provider) {
-        AiProvider.OpenAi -> SettingsKey.AI_OPENAI_API_KEY
-        AiProvider.Anthropic -> SettingsKey.AI_ANTHROPIC_API_KEY
-        AiProvider.None -> return null
-    }
-    return (settingsViewModel.getResolvedValue(key) as? String)?.trim()?.takeIf { it.isNotEmpty() }
-}
 
 private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegistry().apply {
     register(AddAppGroupToolCallHandler())

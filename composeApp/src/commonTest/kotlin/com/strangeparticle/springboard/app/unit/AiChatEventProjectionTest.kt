@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.conversation.AiClientMessageForAssistant
-import com.strangeparticle.editio.conversation.AiClientMessageForSystemState
-import com.strangeparticle.editio.conversation.AiClientMessageForUser
+import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.editio.conversation.AiConversationMessageForUser
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
 import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
@@ -69,8 +69,8 @@ internal class AiChatEventProjectionTest {
         assertEquals(listOf(ChatMessagePart.AssistantText("First response")), interaction.responseParts)
 
         val history = buildProviderHistory(events)
-        assertEquals("First message", assertIs<AiClientMessageForUser>(history[0]).text)
-        assertEquals("First response", assertIs<AiClientMessageForAssistant>(history[1]).text)
+        assertEquals("First message", assertIs<AiConversationMessageForUser>(history[0]).text)
+        assertEquals("First response", assertIs<AiConversationMessageForAssistant>(history[1]).text)
     }
 
     @Test
@@ -81,7 +81,7 @@ internal class AiChatEventProjectionTest {
         )
 
         assertEquals(1, buildSlimScrollbackPanes(events).size)
-        assertEquals("{\"tabs\":[]}", assertIs<AiClientMessageForSystemState>(buildProviderHistory(events)[0]).snapshotJson)
+        assertEquals("{\"tabs\":[]}", assertIs<AiConversationMessageForSystemState>(buildProviderHistory(events)[0]).snapshotJson)
 
         val debug = buildDebugScrollbackPanes(events)
         assertIs<AiChatScrollbackPane.DebugStateSnapshot>(debug[0])

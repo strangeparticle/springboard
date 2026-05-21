@@ -42,7 +42,7 @@ object ActivatorDesktopTestScenarios {
         )
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
-        val settingsViewModel = SettingsViewModel(settingsManager)
+        val settingsViewModel = SettingsViewModel(settingsManager, com.strangeparticle.springboard.app.shared.stubHttpClientForTests())
         return ActivatorDesktopTestComponents(viewModel, settingsViewModel, activationService)
     }
 

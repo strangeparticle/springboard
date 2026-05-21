@@ -16,7 +16,11 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
-import com.strangeparticle.springboard.app.settings.SettingsKey
+import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowMultipleSetting
+import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowSingleSetting
+import com.strangeparticle.springboard.app.settings.items.core.ResetKeyNavAfterGridNavActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.ResetKeyNavAfterKeyNavActivationSetting
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.ui.toast.TabToastState
@@ -618,7 +622,7 @@ class SpringboardViewModel(
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
 
         executeActivators(listOf(activator), isSingleSelection = true)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_KEY_NAV_ACTIVATION)) {
+        if (settingsManager.resolveValue(ResetKeyNavAfterKeyNavActivationSetting)) {
             resetKeyNavSelections()
         }
     }
@@ -628,7 +632,7 @@ class SpringboardViewModel(
         val currentSpringboard = springboard ?: return
         val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
         executeActivators(listOf(activator), isSingleSelection = true)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+        if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
         }
     }
@@ -654,7 +658,7 @@ class SpringboardViewModel(
             }
         }
         executeActivators(activators, isSingleSelection = false)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+        if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
         }
     }
@@ -680,7 +684,7 @@ class SpringboardViewModel(
             }
         }
         executeActivators(activators, isSingleSelection = false)
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+        if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
         }
     }
@@ -724,7 +728,7 @@ class SpringboardViewModel(
         }
         executeActivators(activators, isSingleSelection = false)
         multiSelectSet = emptySet()
-        if (settingsManager.getBoolean(SettingsKey.RESET_KEY_NAV_AFTER_GRID_NAV_ACTIVATION)) {
+        if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
         }
     }
@@ -758,9 +762,9 @@ class SpringboardViewModel(
         val urlActivators = activators.filterIsInstance<UrlActivator>()
         if (urlActivators.isNotEmpty()) {
             val shouldOpenNewWindow = if (isSingleSelection) {
-                settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_SINGLE)
+                settingsManager.resolveValue(OpenUrlsInNewWindowSingleSetting)
             } else {
-                settingsManager.getBoolean(SettingsKey.OPEN_URLS_IN_NEW_WINDOW_MULTIPLE)
+                settingsManager.resolveValue(OpenUrlsInNewWindowMultipleSetting)
             }
             if (shouldOpenNewWindow) {
                 platformActivationService.openNewBrowserWindowIfAppropriate()
@@ -775,7 +779,7 @@ class SpringboardViewModel(
             }
         }
 
-        if (settingsManager.getBoolean(SettingsKey.HIDE_APP_AFTER_ACTIVATION)) {
+        if (settingsManager.resolveValue(HideAppAfterActivationSetting)) {
             platformActivationService.hideApplicationViaPid()
         }
     }

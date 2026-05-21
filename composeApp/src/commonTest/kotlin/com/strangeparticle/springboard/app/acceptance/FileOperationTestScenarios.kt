@@ -32,7 +32,7 @@ object FileOperationTestScenarios {
             persistenceService = PersistenceServiceInMemoryFake(),
             contentLoader = contentLoader,
         )
-        val settingsViewModel = SettingsViewModel(settingsManager)
+        val settingsViewModel = SettingsViewModel(settingsManager, com.strangeparticle.springboard.app.shared.stubHttpClientForTests())
         return FileOperationTestComponents(viewModel, settingsViewModel, fileContentService)
     }
 

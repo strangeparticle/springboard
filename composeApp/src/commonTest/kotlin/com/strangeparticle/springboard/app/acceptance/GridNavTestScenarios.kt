@@ -35,7 +35,7 @@ object GridNavTestScenarios {
     ): GridNavTestComponents {
         val settingsManager = createSettingsManagerForTest()
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
-        val settingsViewModel = SettingsViewModel(settingsManager)
+        val settingsViewModel = SettingsViewModel(settingsManager, com.strangeparticle.springboard.app.shared.stubHttpClientForTests())
         return GridNavTestComponents(viewModel, settingsViewModel, activationService)
     }
 

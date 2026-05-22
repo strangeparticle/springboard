@@ -72,7 +72,7 @@ internal class EntityCrudToolsTest {
         val (ctx, _) = loadedContext()
 
         val error = assertFailsWith<SpringboardMutationError> {
-            addApp(ctx.viewModel.springboard!!, App(id = "app1", name = "Dup"))
+            addApp(ctx.viewModel.springboardUnfiltered!!, App(id = "app1", name = "Dup"))
         }
 
         assertEquals("duplicate_id", error.code)
@@ -82,7 +82,7 @@ internal class EntityCrudToolsTest {
     @Test
     fun `add_app appends to springboard, flips dirty, marks state changed`() = runTest {
         val (ctx, tabId) = loadedContext()
-        val initialAppCount = ctx.viewModel.springboard!!.apps.size
+        val initialAppCount = ctx.viewModel.springboardUnfiltered!!.apps.size
 
         val result = AddAppToolCallHandler().executeToolCallHandler(
             AddAppToolCallHandlerRequest(tab_id = tabId, id = "auth", name = "Auth Service", display_message = "added"),
@@ -90,7 +90,7 @@ internal class EntityCrudToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals(initialAppCount + 1, ctx.viewModel.springboard!!.apps.size)
+        assertEquals(initialAppCount + 1, ctx.viewModel.springboardUnfiltered!!.apps.size)
         assertTrue(ctx.viewModel.activeTab!!.isDirty)
         assertEquals(1, ctx.stateChangedCount)
     }
@@ -148,7 +148,7 @@ internal class EntityCrudToolsTest {
         )
 
         assertTrue(result.success)
-        val updated = ctx.viewModel.springboard!!.apps.first { it.id == "app1" }
+        val updated = ctx.viewModel.springboardUnfiltered!!.apps.first { it.id == "app1" }
         assertEquals("Renamed App", updated.name)
         assertTrue(ctx.viewModel.activeTab!!.isDirty)
     }
@@ -185,7 +185,7 @@ internal class EntityCrudToolsTest {
         )
 
         assertTrue(result.success)
-        assertNull(ctx.viewModel.springboard!!.apps.first { it.id == "a1" }.appGroupId)
+        assertNull(ctx.viewModel.springboardUnfiltered!!.apps.first { it.id == "a1" }.appGroupId)
     }
 
     @Test
@@ -207,7 +207,7 @@ internal class EntityCrudToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals("g1", ctx.viewModel.springboard!!.apps.first { it.id == "a1" }.appGroupId)
+        assertEquals("g1", ctx.viewModel.springboardUnfiltered!!.apps.first { it.id == "a1" }.appGroupId)
     }
 
     @Test
@@ -317,7 +317,7 @@ internal class EntityCrudToolsTest {
         )
 
         assertTrue(result.success)
-        assertTrue(ctx.viewModel.springboard!!.apps.none { it.id == "a2" })
+        assertTrue(ctx.viewModel.springboardUnfiltered!!.apps.none { it.id == "a2" })
     }
 
     // ── resource CRUD (lighter coverage — same pattern as app) ──────────
@@ -330,7 +330,7 @@ internal class EntityCrudToolsTest {
             ctx,
         )
         assertTrue(result.success)
-        assertTrue(ctx.viewModel.springboard!!.resources.any { it.id == "newRes" })
+        assertTrue(ctx.viewModel.springboardUnfiltered!!.resources.any { it.id == "newRes" })
     }
 
     @Test
@@ -341,7 +341,7 @@ internal class EntityCrudToolsTest {
             ctx,
         )
         assertTrue(result.success)
-        val updated = ctx.viewModel.springboard!!.resources.first { it.id == "res1" }
+        val updated = ctx.viewModel.springboardUnfiltered!!.resources.first { it.id == "res1" }
         assertEquals("Renamed Resource", updated.name)
     }
 
@@ -366,7 +366,7 @@ internal class EntityCrudToolsTest {
             ctx,
         )
         assertTrue(result.success)
-        assertTrue(ctx.viewModel.springboard!!.environments.any { it.id == "stage" })
+        assertTrue(ctx.viewModel.springboardUnfiltered!!.environments.any { it.id == "stage" })
     }
 
     @Test
@@ -401,7 +401,7 @@ internal class EntityCrudToolsTest {
         assertTrue(result.success)
         assertEquals(
             "Common Renamed",
-            ctx.viewModel.springboard!!.environments.first { it.id == "common" }.name,
+            ctx.viewModel.springboardUnfiltered!!.environments.first { it.id == "common" }.name,
         )
     }
 
@@ -433,7 +433,7 @@ internal class EntityCrudToolsTest {
         assertTrue(updateResult.success)
         assertEquals(
             "Group 1 (updated)",
-            ctx.viewModel.springboard!!.appGroups.first { it.id == "g1" }.description,
+            ctx.viewModel.springboardUnfiltered!!.appGroups.first { it.id == "g1" }.description,
         )
     }
 

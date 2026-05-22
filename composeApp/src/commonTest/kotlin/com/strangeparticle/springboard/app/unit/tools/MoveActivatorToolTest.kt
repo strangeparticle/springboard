@@ -84,10 +84,10 @@ internal class MoveActivatorToolCallHandlerTest {
 
         assertTrue(result.success)
         // Source tab no longer has the activator.
-        val sourceSpringboard = ctx.viewModel.findTab(sourceTabId)!!.springboard!!
+        val sourceSpringboard = ctx.viewModel.findTab(sourceTabId)!!.springboardUnfiltered!!
         assertNull(sourceSpringboard.indexes.activatorByCoordinate[coord])
         // Destination tab has the activator.
-        val destSpringboard = ctx.viewModel.findTab(destTabId)!!.springboard!!
+        val destSpringboard = ctx.viewModel.findTab(destTabId)!!.springboardUnfiltered!!
         assertNotNull(destSpringboard.indexes.activatorByCoordinate[coord])
         // Both tabs marked dirty.
         assertTrue(ctx.viewModel.findTab(sourceTabId)!!.isDirty)
@@ -177,7 +177,7 @@ internal class MoveActivatorToolCallHandlerTest {
         assertEquals("missing_reference", result.code)
         // Source must NOT have been mutated since the destination add failed.
         val coord = Coordinate("preprod", "app1", "res1")
-        val sourceSpringboard = ctx.viewModel.findTab(sourceTabId)!!.springboard!!
+        val sourceSpringboard = ctx.viewModel.findTab(sourceTabId)!!.springboardUnfiltered!!
         assertNotNull(sourceSpringboard.indexes.activatorByCoordinate[coord],
             "Source tab must be untouched when the destination add fails")
     }
@@ -212,7 +212,7 @@ internal class MoveActivatorToolCallHandlerTest {
         assertEquals("duplicate_coordinate", result.code)
         // Source untouched.
         val coord = Coordinate("preprod", "app1", "res1")
-        assertNotNull(ctx.viewModel.findTab(sourceTabId)!!.springboard!!.indexes.activatorByCoordinate[coord])
+        assertNotNull(ctx.viewModel.findTab(sourceTabId)!!.springboardUnfiltered!!.indexes.activatorByCoordinate[coord])
     }
 
     @Test

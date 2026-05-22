@@ -142,7 +142,7 @@ fun main(args: Array<String>) {
             state = windowState
         ) {
             SpringboardMenuBar(
-                hasActiveSpringboard = viewModel.springboard != null,
+                hasActiveSpringboard = viewModel.springboardFilteredForRuntime != null,
                 canSaveActiveTabInPlace = viewModel.canSaveActiveTabInPlace,
                 isActiveTabDirty = viewModel.activeTab?.isDirty == true,
                 canCreateNewTab = viewModel.canCreateNewTab,
@@ -198,11 +198,11 @@ fun main(args: Array<String>) {
                     }
                 },
                 onSaveLocalCopyAs = {
-                    val springboard = viewModel.springboard
-                    if (springboard == null) {
+                    val springboardFilteredForRuntime = viewModel.springboardFilteredForRuntime
+                    if (springboardFilteredForRuntime == null) {
                         return@SpringboardMenuBar
                     }
-                    val suggestedName = springboard.name.replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"
+                    val suggestedName = springboardFilteredForRuntime.name.replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"
                     val path = saveLocalCopyAsFileDialog(suggestedName)
                     if (path != null) {
                         when (val result = viewModel.saveActiveTabAs(path)) {
@@ -219,7 +219,7 @@ fun main(args: Array<String>) {
                     }
                 },
                 onReload = {
-                    if (viewModel.springboard == null) return@SpringboardMenuBar
+                    if (viewModel.springboardFilteredForRuntime == null) return@SpringboardMenuBar
                     kotlinx.coroutines.MainScope().launch {
                         viewModel.reloadCurrentSource()
                     }
@@ -276,7 +276,7 @@ fun main(args: Array<String>) {
             )
 
             // Grow the window to fit the largest springboard across all tabs (never shrink).
-            LaunchedEffect(viewModel.tabs.mapNotNull { it.springboard }) {
+            LaunchedEffect(viewModel.tabs.mapNotNull { it.springboardFilteredForRuntime }) {
                 growWindowToFitLargestTab(viewModel, windowState)
             }
 

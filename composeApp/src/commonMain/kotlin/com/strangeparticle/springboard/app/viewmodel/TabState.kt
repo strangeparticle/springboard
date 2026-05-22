@@ -8,7 +8,7 @@ data class TabState(
     val tabId: String,
     val label: String,
     val source: String?,
-    val springboard: Springboard?,
+    val springboardFilteredForRuntime: Springboard?,
     val springboardUnfiltered: Springboard?,
     val selectedEnvironmentId: String?,
     val selectedAppId: String?,
@@ -19,7 +19,7 @@ data class TabState(
     val isLoading: Boolean,
     val isDirty: Boolean = false,
 ) {
-    val isEmpty: Boolean get() = springboard == null
+    val isEmpty: Boolean get() = springboardFilteredForRuntime == null
 
     companion object {
         const val DEFAULT_EMPTY_LABEL: String = "New Tab"
@@ -28,7 +28,7 @@ data class TabState(
             tabId = tabId,
             label = DEFAULT_EMPTY_LABEL,
             source = null,
-            springboard = null,
+            springboardFilteredForRuntime = null,
             springboardUnfiltered = null,
             selectedEnvironmentId = null,
             selectedAppId = null,

@@ -46,9 +46,9 @@ class SaveActionTest {
         assertEquals(false, vm.activeTab?.isDirty)
 
         // What was written matches a fresh re-serialization of the loaded springboard.
-        val springboard = vm.springboard
-        assertNotNull(springboard)
-        val expected = SpringboardJsonWriter.toJson(springboard)
+        val springboardUnfiltered = vm.springboardUnfiltered
+        assertNotNull(springboardUnfiltered)
+        val expected = SpringboardJsonWriter.toJson(springboardUnfiltered)
         assertEquals(expected, fileService.writtenFiles["/path/to/local.json"])
     }
 

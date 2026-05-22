@@ -107,7 +107,7 @@ fun main() {
  * and picks the highest zoom preset that is conservatively below the calculated fit.
  */
 private fun selectZoomToFitViewport(viewModel: SpringboardViewModel) {
-    val springboard = viewModel.springboard ?: run {
+    val springboardFilteredForRuntime = viewModel.springboardFilteredForRuntime ?: run {
         println("[Springboard] selectZoomToFitViewport: no springboard loaded")
         return
     }
@@ -119,7 +119,7 @@ private fun selectZoomToFitViewport(viewModel: SpringboardViewModel) {
     println("[Springboard] zoom fit: viewport=${viewportWidth}x${viewportHeight}, " +
         "available=${availableWidth}x${availableHeight}")
 
-    val selected = computeZoomToFit(availableWidth, availableHeight, springboard)
+    val selected = computeZoomToFit(availableWidth, availableHeight, springboardFilteredForRuntime)
     println("[Springboard] zoom fit: selected=${selected.displayLabel()}")
     viewModel.gridZoomSelection = selected
 }

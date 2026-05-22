@@ -58,7 +58,7 @@ internal class TabManagementToolsTest {
         // The new tab is the active tab.
         val activeTab = ctx.viewModel.activeTab
         assertNotNull(activeTab)
-        assertNull(activeTab.springboard, "newly created tab has no springboard yet")
+        assertNull(activeTab.springboardFilteredForRuntime, "newly created tab has no springboard yet")
         assertEquals(1, ctx.stateChangedCount)
     }
 
@@ -76,10 +76,10 @@ internal class TabManagementToolsTest {
         assertEquals(initialCount + 1, ctx.viewModel.tabs.size)
         val activeTab = ctx.viewModel.activeTab
         assertNotNull(activeTab)
-        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertEquals("Untitled-1", activeTab.springboardFilteredForRuntime?.name)
         assertNull(activeTab.source)
         assertTrue(activeTab.isDirty)
-        assertEquals("", activeTab.springboard?.jsonSource)
+        assertEquals("", activeTab.springboardUnfiltered?.jsonSource)
         assertEquals(1, ctx.stateChangedCount)
     }
 
@@ -94,7 +94,7 @@ internal class TabManagementToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals("Untitled-2", ctx.viewModel.activeTab?.springboard?.name)
+        assertEquals("Untitled-2", ctx.viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test
@@ -126,8 +126,8 @@ internal class TabManagementToolsTest {
 
         assertTrue(result.success)
         assertEquals(initialTabCount, ctx.viewModel.tabs.size, "should not have created a new tab")
-        assertNotNull(ctx.viewModel.springboard)
-        assertEquals("URL Only Springboard", ctx.viewModel.springboard!!.name)
+        assertNotNull(ctx.viewModel.springboardFilteredForRuntime)
+        assertEquals("URL Only Springboard", ctx.viewModel.springboardFilteredForRuntime!!.name)
     }
 
     @Test
@@ -169,7 +169,7 @@ internal class TabManagementToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals("URL Only Springboard", ctx.viewModel.springboard!!.name)
+        assertEquals("URL Only Springboard", ctx.viewModel.springboardFilteredForRuntime!!.name)
     }
 
     @Test
@@ -184,7 +184,7 @@ internal class TabManagementToolsTest {
 
         assertTrue(result.success)
         assertEquals(initialTabCount + 1, ctx.viewModel.tabs.size)
-        assertEquals("URL Only Springboard", ctx.viewModel.springboard!!.name)
+        assertEquals("URL Only Springboard", ctx.viewModel.springboardFilteredForRuntime!!.name)
     }
 
     // ── close_tab ───────────────────────────────────────────────────────
@@ -256,8 +256,8 @@ internal class TabManagementToolsTest {
         // Springboard went to the tab that was active when the tool call was issued
         // (the loader targets activeTabId at call time, which was already newActiveTabId
         // here — so we verify the new active tab got the content, not the old one).
-        assertNotNull(ctx.viewModel.findTab(newActiveTabId)?.springboard)
-        assertNull(ctx.viewModel.findTab(targetTabId)?.springboard, "original tab must be untouched")
+        assertNotNull(ctx.viewModel.findTab(newActiveTabId)?.springboardFilteredForRuntime)
+        assertNull(ctx.viewModel.findTab(targetTabId)?.springboardFilteredForRuntime, "original tab must be untouched")
     }
 
     @Test

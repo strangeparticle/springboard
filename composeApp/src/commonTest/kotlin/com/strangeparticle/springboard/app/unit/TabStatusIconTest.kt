@@ -80,7 +80,7 @@ class TabStatusIconTest {
         assertEquals(
             emptyList(),
             tabStatusIconsFor(
-                TabState.createEmpty("tab-1").copy(source = "/path/to/file.json", springboard = null),
+                TabState.createEmpty("tab-1").copy(source = "/path/to/file.json", springboardFilteredForRuntime = null),
             )
         )
     }
@@ -90,7 +90,7 @@ class TabStatusIconTest {
             tabId = "tab-1",
             label = "Test",
             source = source,
-            springboard = springboard,
+            springboardFilteredForRuntime = springboard,
             springboardUnfiltered = springboard,
             selectedEnvironmentId = null,
             selectedAppId = null,

@@ -137,7 +137,7 @@ object KeyNavTestScenarios {
         val viewModel = SpringboardViewModel(createSettingsManagerForTest(), PersistenceServiceInMemoryFake())
         viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITHOUT_COMMON, "/test/springboard.json")
 
-        val expected = viewModel.springboard?.environments?.firstOrNull()?.id
+        val expected = viewModel.springboardFilteredForRuntime?.environments?.firstOrNull()?.id
         assertEquals(expected, viewModel.selectedEnvironmentId)
     }
 

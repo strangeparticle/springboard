@@ -305,7 +305,7 @@ object GridNavTestScenarios {
         components.viewModel.activateCell(Coordinate("dev", "app1", "res1"))
 
         assertTrue(components.activationService.executedCommands.isEmpty())
-        assertNull(components.viewModel.springboard?.indexes?.activatorByCoordinate?.get(Coordinate("dev", "app1", "res1")))
+        assertNull(components.viewModel.springboardFilteredForRuntime?.indexes?.activatorByCoordinate?.get(Coordinate("dev", "app1", "res1")))
         assertTrue(components.viewModel.springboardUnfiltered?.activators.orEmpty().isNotEmpty())
     }
 

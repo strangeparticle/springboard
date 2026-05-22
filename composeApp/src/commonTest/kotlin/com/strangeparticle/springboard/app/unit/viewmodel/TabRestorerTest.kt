@@ -64,7 +64,7 @@ class TabRestorerTest {
         restorer.restoreInto(viewModel, listOf("/a.json", "/b.json"))
 
         assertEquals(2, viewModel.tabs.size)
-        assertEquals(listOf("A", "B"), viewModel.tabs.map { it.springboard?.name })
+        assertEquals(listOf("A", "B"), viewModel.tabs.map { it.springboardFilteredForRuntime?.name })
         assertTrue(errors.isEmpty())
     }
 
@@ -102,7 +102,7 @@ class TabRestorerTest {
 
         restorer.restoreInto(viewModel, listOf("/a.json", "/missing.json", "/c.json"))
 
-        assertEquals(listOf("A", "C"), viewModel.tabs.map { it.springboard?.name })
+        assertEquals(listOf("A", "C"), viewModel.tabs.map { it.springboardFilteredForRuntime?.name })
         assertEquals(1, errors.size)
         assertTrue(errors.single().contains("/missing.json"))
     }

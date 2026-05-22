@@ -33,7 +33,7 @@ internal class RespondWithMessageToolCallHandlerTest {
     fun `respondWithMessage does not mutate viewmodel state`() = runTest {
         val context = createContext()
         context.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test.json")
-        val initialAppCount = context.viewModel.springboard?.apps?.size ?: 0
+        val initialAppCount = context.viewModel.springboardUnfiltered?.apps?.size ?: 0
         val initialDirty = context.viewModel.activeTab?.isDirty == true
 
         val result = RespondWithMessageToolCallHandler().executeToolCallHandler(
@@ -42,7 +42,7 @@ internal class RespondWithMessageToolCallHandlerTest {
         )
 
         assertTrue(result.success)
-        assertEquals(initialAppCount, context.viewModel.springboard?.apps?.size,
+        assertEquals(initialAppCount, context.viewModel.springboardUnfiltered?.apps?.size,
             "respond_with_message must not change viewmodel state")
         assertEquals(initialDirty, context.viewModel.activeTab?.isDirty,
             "respond_with_message must not flip the dirty flag")

@@ -101,15 +101,15 @@ internal fun MainScreen(
                 )
             }
         } else {
-            val currentSpringboard = activeTab.springboard
+            val currentSpringboardFilteredForRuntime = activeTab.springboardFilteredForRuntime
             val currentEnvironmentId = activeTab.selectedEnvironmentId
 
             Box(modifier = Modifier.weight(1f)) {
-                if (currentSpringboard != null &&
-                    (currentEnvironmentId != null || currentSpringboard.hasAnyAllEnvsActivators())
+                if (currentSpringboardFilteredForRuntime != null &&
+                    (currentEnvironmentId != null || currentSpringboardFilteredForRuntime.hasAnyAllEnvsActivators())
                 ) {
                     GridNav(
-                        springboard = currentSpringboard,
+                        springboard = currentSpringboardFilteredForRuntime,
                         selectedEnvironmentId = currentEnvironmentId,
                         multiSelectSet = viewModel.multiSelectSet,
                         keyNavCoordinate = viewModel.keyNavCoordinate,
@@ -131,7 +131,7 @@ internal fun MainScreen(
                 isReloading = isReloading,
                 onZoomSelectionChange = { viewModel.gridZoomSelection = it },
                 onReload = {
-                    if (viewModel.springboard?.source == null) return@StatusBar
+                    if (viewModel.springboardFilteredForRuntime?.source == null) return@StatusBar
                     scope.launch {
                         isReloading = true
                         try {

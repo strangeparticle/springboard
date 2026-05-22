@@ -57,9 +57,9 @@ internal class AiEditingTests {
 
         fixture.manager.submit("Add logs activator").join()
 
-        val springboard = fixture.viewModel.springboard
-        assertNotNull(springboard)
-        assertTrue(springboard.activators.any { it.resourceId == "res2" })
+        val springboardUnfiltered = fixture.viewModel.springboardUnfiltered
+        assertNotNull(springboardUnfiltered)
+        assertTrue(springboardUnfiltered.activators.any { it.resourceId == "res2" })
     }
 
     @Test
@@ -90,7 +90,7 @@ internal class AiEditingTests {
 
         fixture.manager.submit("Undo the existing activator").join()
 
-        assertTrue(fixture.viewModel.springboard?.activators.orEmpty().isEmpty())
+        assertTrue(fixture.viewModel.springboardUnfiltered?.activators.orEmpty().isEmpty())
     }
 
     @Test
@@ -134,16 +134,16 @@ internal class AiEditingTests {
 
         val activeTab = fixture.viewModel.activeTab
         assertNotNull(activeTab)
-        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertEquals("Untitled-1", activeTab.springboardFilteredForRuntime?.name)
         assertNull(activeTab.source)
         assertTrue(activeTab.isDirty)
-        assertEquals("", activeTab.springboard?.jsonSource)
-        val springboard = activeTab.springboard
-        assertNotNull(springboard)
-        assertTrue(springboard.apps.any { it.id == "metrics" })
-        assertTrue(springboard.resources.any { it.id == "dashboard" })
-        assertTrue(springboard.environments.any { it.id == "prod" })
-        assertTrue(springboard.activators.any { it.appId == "metrics" && it.resourceId == "dashboard" && it.environmentId == "prod" })
+        assertEquals("", activeTab.springboardUnfiltered?.jsonSource)
+        val springboardUnfiltered = activeTab.springboardUnfiltered
+        assertNotNull(springboardUnfiltered)
+        assertTrue(springboardUnfiltered.apps.any { it.id == "metrics" })
+        assertTrue(springboardUnfiltered.resources.any { it.id == "dashboard" })
+        assertTrue(springboardUnfiltered.environments.any { it.id == "prod" })
+        assertTrue(springboardUnfiltered.activators.any { it.appId == "metrics" && it.resourceId == "dashboard" && it.environmentId == "prod" })
     }
 
     @Test

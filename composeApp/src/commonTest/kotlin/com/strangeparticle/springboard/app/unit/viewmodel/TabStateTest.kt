@@ -15,7 +15,7 @@ class TabStateTest {
         assertEquals("tab-1", tab.tabId)
         assertEquals(TabState.DEFAULT_EMPTY_LABEL, tab.label)
         assertNull(tab.source)
-        assertNull(tab.springboard)
+        assertNull(tab.springboardFilteredForRuntime)
         assertNull(tab.springboardUnfiltered)
         assertNull(tab.selectedEnvironmentId)
         assertNull(tab.selectedAppId)

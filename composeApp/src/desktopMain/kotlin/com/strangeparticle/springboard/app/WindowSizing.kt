@@ -53,10 +53,10 @@ fun calculateWindowHeight(springboard: Springboard, zoomPercent: Int = 100): Int
 }
 
 fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: WindowState) {
-    val springboard = viewModel.springboard ?: return
+    val springboardFilteredForRuntime = viewModel.springboardFilteredForRuntime ?: return
 
-    val contentWidth = calculateWindowWidth(springboard)
-    val contentHeight = calculateWindowHeight(springboard)
+    val contentWidth = calculateWindowWidth(springboardFilteredForRuntime)
+    val contentHeight = calculateWindowHeight(springboardFilteredForRuntime)
 
     val screenSize = Toolkit.getDefaultToolkit().screenSize
     val maxScreenWidth = (screenSize.width * ScreenUsableMarginFactor).toInt()
@@ -71,7 +71,7 @@ fun resizeWindowToFitSpringboard(viewModel: SpringboardViewModel, windowState: W
 }
 
 fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: WindowState) {
-    val tabsWithContent = viewModel.tabs.filter { it.springboard != null }
+    val tabsWithContent = viewModel.tabs.filter { it.springboardFilteredForRuntime != null }
     if (tabsWithContent.isEmpty()) return
 
     val screenSize = Toolkit.getDefaultToolkit().screenSize
@@ -82,10 +82,10 @@ fun growWindowToFitLargestTab(viewModel: SpringboardViewModel, windowState: Wind
     var neededHeight = windowState.size.height.value.toInt()
 
     for (tab in tabsWithContent) {
-        val springboard = tab.springboard!!
+        val springboardFilteredForRuntime = tab.springboardFilteredForRuntime!!
         val zoomPercent = tab.gridZoomSelection.percent
-        neededWidth = maxOf(neededWidth, calculateWindowWidth(springboard, zoomPercent))
-        neededHeight = maxOf(neededHeight, calculateWindowHeight(springboard, zoomPercent))
+        neededWidth = maxOf(neededWidth, calculateWindowWidth(springboardFilteredForRuntime, zoomPercent))
+        neededHeight = maxOf(neededHeight, calculateWindowHeight(springboardFilteredForRuntime, zoomPercent))
     }
 
     val finalWidth = minOf(neededWidth, maxScreenWidth)

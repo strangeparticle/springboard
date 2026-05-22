@@ -82,7 +82,7 @@ class SpringboardViewModel(
         )
         updateTabById(tabId) { current ->
             current.copy(
-                springboard = filteredSpringboard,
+                springboardFilteredForRuntime = filteredSpringboard,
                 springboardUnfiltered = springboardConfig,
                 source = tabSource,
                 label = deriveTabLabel(springboardConfig.name),
@@ -131,7 +131,7 @@ class SpringboardViewModel(
         )
         updateTabById(tabId) {
             it.copy(
-                springboard = filteredSpringboard,
+                springboardFilteredForRuntime = filteredSpringboard,
                 springboardUnfiltered = newSpringboard,
             )
         }
@@ -166,10 +166,10 @@ class SpringboardViewModel(
      */
     fun saveTab(tabId: String): SaveResult {
         val tab = findTab(tabId) ?: return SaveResult.NoSpringboard
-        val springboard = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
+        val springboardUnfiltered = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
         val source = tab.source ?: return SaveResult.NotSupportedForSource
         if (isNonSaveableInPlaceSource(source)) return SaveResult.NotSupportedForSource
-        return writeSpringboardTo(source, springboard, rewriteTabSource = false, tabId = tabId)
+        return writeSpringboardTo(source, springboardUnfiltered, rewriteTabSource = false, tabId = tabId)
     }
 
     fun saveActiveTab(): SaveResult = saveTab(activeTabId)
@@ -183,8 +183,8 @@ class SpringboardViewModel(
      */
     fun saveActiveTabAs(targetPath: String): SaveResult {
         val tab = activeTab ?: return SaveResult.NoSpringboard
-        val springboard = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
-        return writeSpringboardTo(targetPath, springboard, rewriteTabSource = true, tabId = activeTabId)
+        val springboardUnfiltered = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
+        return writeSpringboardTo(targetPath, springboardUnfiltered, rewriteTabSource = true, tabId = activeTabId)
     }
 
     private fun writeSpringboardTo(
@@ -250,7 +250,7 @@ class SpringboardViewModel(
     }
 
     private fun nextUntitledSpringboardName(): String {
-        val existingNames = _tabs.mapNotNull { it.springboard?.name }.toSet()
+        val existingNames = _tabs.mapNotNull { it.springboardFilteredForRuntime?.name }.toSet()
         var index = 1
         while ("Untitled-$index" in existingNames) {
             index++
@@ -347,9 +347,9 @@ class SpringboardViewModel(
         return activeTabId
     }
 
-    var springboard: Springboard?
-        get() = activeTab?.springboard
-        private set(value) { updateActiveTab { it.copy(springboard = value) } }
+    var springboardFilteredForRuntime: Springboard?
+        get() = activeTab?.springboardFilteredForRuntime
+        private set(value) { updateActiveTab { it.copy(springboardFilteredForRuntime = value) } }
 
     val springboardUnfiltered: Springboard?
         get() = activeTab?.springboardUnfiltered
@@ -391,20 +391,20 @@ class SpringboardViewModel(
      */
     var focusAppDropdownRequested by mutableStateOf(false)
 
-    val environments by derivedStateOf { springboard?.environments ?: emptyList() }
+    val environments by derivedStateOf { springboardFilteredForRuntime?.environments ?: emptyList() }
     val apps by derivedStateOf {
-        val currentSpringboard = springboard ?: return@derivedStateOf emptyList()
-        currentSpringboard.appColumnLayout()
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyList()
+        currentSpringboardFilteredForRuntime.appColumnLayout()
             .filterIsInstance<AppColumn>()
             .map { it.app }
     }
-    val resources by derivedStateOf { springboard?.resources ?: emptyList() }
+    val resources by derivedStateOf { springboardFilteredForRuntime?.resources ?: emptyList() }
 
-    val isConfigLoaded by derivedStateOf { springboard != null }
+    val isConfigLoaded by derivedStateOf { springboardFilteredForRuntime != null }
 
     val appEnabledStates by derivedStateOf {
-        val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
-        currentSpringboard.apps.associate { app ->
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyMap<String, Boolean>()
+        currentSpringboardFilteredForRuntime.apps.associate { app ->
             app.id to hasMatchingActivator(
                 environmentId = selectedEnvironmentId,
                 appId = app.id,
@@ -414,8 +414,8 @@ class SpringboardViewModel(
     }
 
     val resourceEnabledStates by derivedStateOf {
-        val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
-        currentSpringboard.resources.associate { resource ->
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyMap<String, Boolean>()
+        currentSpringboardFilteredForRuntime.resources.associate { resource ->
             resource.id to hasMatchingActivator(
                 environmentId = selectedEnvironmentId,
                 appId = selectedAppId,
@@ -430,8 +430,8 @@ class SpringboardViewModel(
     // so an env that would activate via the all-envs activator is not falsely
     // shown as disabled.
     val environmentEnabledStates by derivedStateOf {
-        val currentSpringboard = springboard ?: return@derivedStateOf emptyMap<String, Boolean>()
-        currentSpringboard.environments.associate { environment ->
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyMap<String, Boolean>()
+        currentSpringboardFilteredForRuntime.environments.associate { environment ->
             environment.id to hasMatchingActivator(
                 environmentId = environment.id,
                 appId = selectedAppId,
@@ -466,7 +466,7 @@ class SpringboardViewModel(
         val strictEnv = selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID
         val strictCoordinate = Coordinate(strictEnv, appId, resourceId)
 
-        val activators = springboard?.indexes?.activatorByCoordinate
+        val activators = springboardFilteredForRuntime?.indexes?.activatorByCoordinate
             ?: return@derivedStateOf strictCoordinate
 
         if (activators.containsKey(strictCoordinate)) return@derivedStateOf strictCoordinate
@@ -481,8 +481,8 @@ class SpringboardViewModel(
 
     val isActivateEnabled by derivedStateOf {
         val coordinate = keyNavCoordinate ?: return@derivedStateOf false
-        val currentSpringboard = springboard ?: return@derivedStateOf false
-        currentSpringboard.indexes.activatorByCoordinate.containsKey(coordinate)
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf false
+        currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate.containsKey(coordinate)
     }
 
     fun loadConfig(jsonString: String, source: String) {
@@ -503,7 +503,7 @@ class SpringboardViewModel(
      * No-op when there is no active springboard.
      */
     suspend fun reloadCurrentSource() {
-        val source = activeTab?.springboard?.source ?: return
+        val source = activeTab?.springboardFilteredForRuntime?.source ?: return
         val loader = contentLoader
         if (loader == null) {
             activeTabToast.error("Failed to reload: SpringboardViewModel was constructed without a SpringboardContentLoader")
@@ -644,8 +644,8 @@ class SpringboardViewModel(
     /** Activated via keyNav (drop-down selection + enter). */
     fun activateCurrentSelection() {
         val coordinate = keyNavCoordinate ?: return
-        val currentSpringboard = springboard ?: return
-        val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
+        val activator = currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate[coordinate] ?: return
 
         executeActivators(listOf(activator), isSingleSelection = true)
         if (settingsManager.resolveValue(ResetKeyNavAfterKeyNavActivationSetting)) {
@@ -655,8 +655,8 @@ class SpringboardViewModel(
 
     /** Activated via grid-nav (cell click). */
     fun activateCell(coordinate: Coordinate) {
-        val currentSpringboard = springboard ?: return
-        val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate] ?: return
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
+        val activator = currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate[coordinate] ?: return
         executeActivators(listOf(activator), isSingleSelection = true)
         if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
@@ -674,9 +674,9 @@ class SpringboardViewModel(
      * env-specific section also fire all-envs activators that apply to the column.
      */
     fun activateColumn(environmentId: String, appId: String) {
-        val currentSpringboard = springboard ?: return
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
         val activators = buildList {
-            currentSpringboard.resources.forEach { resource ->
+            currentSpringboardFilteredForRuntime.resources.forEach { resource ->
                 val activator = findActivatorWithAllEnvsFallback(environmentId, appId, resource.id)
                 if (activator != null) {
                     add(activator)
@@ -700,9 +700,9 @@ class SpringboardViewModel(
      * env-specific section also fire all-envs activators that apply to the row.
      */
     fun activateRow(environmentId: String, resourceId: String) {
-        val currentSpringboard = springboard ?: return
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
         val activators = buildList {
-            currentSpringboard.apps.forEach { app ->
+            currentSpringboardFilteredForRuntime.apps.forEach { app ->
                 val activator = findActivatorWithAllEnvsFallback(environmentId, app.id, resourceId)
                 if (activator != null) {
                     add(activator)
@@ -726,7 +726,7 @@ class SpringboardViewModel(
         appId: String,
         resourceId: String,
     ): Activator? {
-        val activators = springboard?.indexes?.activatorByCoordinate ?: return null
+        val activators = springboardFilteredForRuntime?.indexes?.activatorByCoordinate ?: return null
         val strictCoordinate = Coordinate(environmentId, appId, resourceId)
         activators[strictCoordinate]?.let { return it }
         if (environmentId != ALL_ENVS_ENVIRONMENT_ID) {
@@ -743,10 +743,10 @@ class SpringboardViewModel(
 
     /** Activated via grid-nav (shift-release after multi-select). */
     fun activateMultiSelect() {
-        val currentSpringboard = springboard ?: return
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
         val activators = buildList {
             multiSelectSet.forEach { coordinate ->
-            val activator = currentSpringboard.indexes.activatorByCoordinate[coordinate]
+            val activator = currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate[coordinate]
             if (activator != null) {
                     add(activator)
                 }
@@ -760,8 +760,8 @@ class SpringboardViewModel(
     }
 
     fun getActivatorForCell(coordinate: Coordinate): Activator? {
-        val currentSpringboard = springboard ?: return null
-        return currentSpringboard.indexes.activatorByCoordinate[coordinate]
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return null
+        return currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate[coordinate]
     }
 
     private fun executeActivator(activator: Activator) {
@@ -811,8 +811,8 @@ class SpringboardViewModel(
     }
 
     fun resetKeyNavSelections() {
-        val currentSpringboard = springboard ?: return
-        val environmentId = currentSpringboard.environments.firstOrNull()?.id
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
+        val environmentId = currentSpringboardFilteredForRuntime.environments.firstOrNull()?.id
         updateActiveTab {
             it.copy(
                 selectedEnvironmentId = environmentId,
@@ -834,8 +834,8 @@ class SpringboardViewModel(
         appId: String?,
         resourceId: String?,
     ): Boolean {
-        val currentSpringboard = springboard ?: return false
-        return currentSpringboard.indexes.activatorByCoordinate.keys.any { coordinate ->
+        val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return false
+        return currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate.keys.any { coordinate ->
             (environmentId == null ||
                 coordinate.environmentId == environmentId ||
                 coordinate.environmentId == ALL_ENVS_ENVIRONMENT_ID) &&

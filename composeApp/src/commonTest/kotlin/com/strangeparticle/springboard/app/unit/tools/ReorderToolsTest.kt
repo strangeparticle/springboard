@@ -48,7 +48,7 @@ internal class ReorderToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals(listOf("app2", "app1"), ctx.viewModel.springboard!!.apps.map { it.id })
+        assertEquals(listOf("app2", "app1"), ctx.viewModel.springboardUnfiltered!!.apps.map { it.id })
         assertTrue(ctx.viewModel.activeTab!!.isDirty)
     }
 
@@ -93,7 +93,7 @@ internal class ReorderToolsTest {
             ctx,
         )
         assertTrue(result.success)
-        assertEquals(listOf("res2", "res1"), ctx.viewModel.springboard!!.resources.map { it.id })
+        assertEquals(listOf("res2", "res1"), ctx.viewModel.springboardUnfiltered!!.resources.map { it.id })
     }
 
     @Test
@@ -110,14 +110,14 @@ internal class ReorderToolsTest {
         assertTrue(result.success)
         assertEquals(
             listOf("prod", "preprod", "common"),
-            ctx.viewModel.springboard!!.environments.map { it.id },
+            ctx.viewModel.springboardUnfiltered!!.environments.map { it.id },
         )
     }
 
     @Test
     fun `reorder_activators reorders by coordinates`() = runTest {
         val (ctx, tabId) = loadedContext()
-        val originalCoordinates = ctx.viewModel.springboard!!.activators.map {
+        val originalCoordinates = ctx.viewModel.springboardUnfiltered!!.activators.map {
             Coordinate(it.environmentId, it.appId, it.resourceId)
         }
         val reversed = originalCoordinates.reversed()
@@ -132,7 +132,7 @@ internal class ReorderToolsTest {
         )
 
         assertTrue(result.success)
-        val newCoordinates = ctx.viewModel.springboard!!.activators.map {
+        val newCoordinates = ctx.viewModel.springboardUnfiltered!!.activators.map {
             Coordinate(it.environmentId, it.appId, it.resourceId)
         }
         assertEquals(reversed, newCoordinates)

@@ -45,7 +45,7 @@ internal class GuidanceToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals(1, ctx.viewModel.springboard!!.guidanceData.size)
+        assertEquals(1, ctx.viewModel.springboardUnfiltered!!.guidanceData.size)
     }
 
     @Test
@@ -113,7 +113,7 @@ internal class GuidanceToolsTest {
         )
 
         assertTrue(result.success)
-        val guidance = ctx.viewModel.springboard!!.guidanceData.first()
+        val guidance = ctx.viewModel.springboardUnfiltered!!.guidanceData.first()
         assertEquals(listOf("new line 1", "new line 2"), guidance.guidanceLines)
     }
 
@@ -155,7 +155,7 @@ internal class GuidanceToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals(0, ctx.viewModel.springboard!!.guidanceData.size)
+        assertEquals(0, ctx.viewModel.springboardUnfiltered!!.guidanceData.size)
     }
 
     @Test
@@ -173,7 +173,7 @@ internal class GuidanceToolsTest {
 
         assertFalse(result.success)
         assertEquals("empty_guidance_lines", result.code)
-        assertEquals(0, ctx.viewModel.springboard!!.guidanceData.size)
+        assertEquals(0, ctx.viewModel.springboardUnfiltered!!.guidanceData.size)
     }
 
     @Test
@@ -199,7 +199,7 @@ internal class GuidanceToolsTest {
 
         assertFalse(result.success)
         assertEquals("empty_guidance_lines", result.code)
-        assertEquals(listOf("original"), ctx.viewModel.springboard!!.guidanceData.first().guidanceLines)
+        assertEquals(listOf("original"), ctx.viewModel.springboardUnfiltered!!.guidanceData.first().guidanceLines)
     }
 
     @Test
@@ -217,7 +217,7 @@ internal class GuidanceToolsTest {
 
         assertFalse(result.success)
         assertEquals("empty_guidance_line", result.code)
-        assertEquals(0, ctx.viewModel.springboard!!.guidanceData.size)
+        assertEquals(0, ctx.viewModel.springboardUnfiltered!!.guidanceData.size)
     }
 
     @Test
@@ -243,6 +243,6 @@ internal class GuidanceToolsTest {
 
         assertFalse(result.success)
         assertEquals("empty_guidance_line", result.code)
-        assertEquals(listOf("original"), ctx.viewModel.springboard!!.guidanceData.first().guidanceLines)
+        assertEquals(listOf("original"), ctx.viewModel.springboardUnfiltered!!.guidanceData.first().guidanceLines)
     }
 }

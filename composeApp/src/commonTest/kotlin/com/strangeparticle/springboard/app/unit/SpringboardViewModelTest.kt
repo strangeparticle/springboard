@@ -38,7 +38,7 @@ class SpringboardViewModelTest {
     @Test
     fun `initial state has no springboard loaded`() {
         val vm = createViewModel()
-        assertNull(vm.springboard)
+        assertNull(vm.springboardFilteredForRuntime)
         assertNull(vm.selectedEnvironmentId)
         assertNull(vm.selectedAppId)
         assertNull(vm.selectedResourceId)
@@ -50,7 +50,7 @@ class SpringboardViewModelTest {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
-        assertNotNull(vm.springboard)
+        assertNotNull(vm.springboardFilteredForRuntime)
         assertTrue(vm.isConfigLoaded)
         assertEquals("preprod", vm.selectedEnvironmentId)
         assertNull(vm.selectedAppId)
@@ -361,7 +361,7 @@ class SpringboardViewModelTest {
         val vm = createViewModel()
         vm.loadConfig(jsonWithGuidance, "/test.json")
 
-        val sb = vm.springboard
+        val sb = vm.springboardFilteredForRuntime
         assertNotNull(sb)
         assertEquals(1, sb.guidanceData.size)
 
@@ -377,7 +377,7 @@ class SpringboardViewModelTest {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")
 
-        val sb = vm.springboard
+        val sb = vm.springboardFilteredForRuntime
         assertNotNull(sb)
         assertTrue(sb.guidanceData.isEmpty())
         assertTrue(sb.indexes.guidanceByCoordinate.isEmpty())
@@ -809,7 +809,7 @@ class SpringboardViewModelTest {
         contents["/foo.json"] = jsonWithName("Updated")
         vm.reloadCurrentSource()
 
-        assertEquals("Updated", vm.springboard?.name)
+        assertEquals("Updated", vm.springboardFilteredForRuntime?.name)
         assertEquals(listOf("/foo.json"), loader.calls)
     }
 
@@ -842,7 +842,7 @@ class SpringboardViewModelTest {
 
         vm.reloadCurrentSource()
 
-        assertEquals("Initial", vm.springboard?.name)
+        assertEquals("Initial", vm.springboardFilteredForRuntime?.name)
         val errorToasts = vm.activeTabToast.activeToasts.filter {
             it.severity == com.strangeparticle.springboard.app.ui.toast.ToastSeverity.ERROR
         }
@@ -859,7 +859,7 @@ class SpringboardViewModelTest {
 
         vm.reloadCurrentSource()
 
-        assertEquals("Initial", vm.springboard?.name)
+        assertEquals("Initial", vm.springboardFilteredForRuntime?.name)
         val errorToasts = vm.activeTabToast.activeToasts.filter {
             it.severity == com.strangeparticle.springboard.app.ui.toast.ToastSeverity.ERROR
         }
@@ -876,7 +876,7 @@ class SpringboardViewModelTest {
         vm.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/foo.json")
 
         val coordinate = Coordinate("dev", "app1", "res1")
-        assertNull(vm.springboard?.indexes?.activatorByCoordinate?.get(coordinate))
+        assertNull(vm.springboardFilteredForRuntime?.indexes?.activatorByCoordinate?.get(coordinate))
         assertNotNull(vm.springboardUnfiltered?.indexes?.activatorByCoordinate?.get(coordinate))
     }
 

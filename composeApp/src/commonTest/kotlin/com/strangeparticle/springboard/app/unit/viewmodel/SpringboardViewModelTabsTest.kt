@@ -175,8 +175,8 @@ class SpringboardViewModelTabsTest {
         viewModel.loadConfigInNewTab(validJson, "/tmp/x.json")
         assertEquals(2, viewModel.tabs.size)
         assertNotEquals(firstId, viewModel.activeTabId)
-        assertNotNull(viewModel.springboard)
-        assertEquals("Test", viewModel.springboard?.name)
+        assertNotNull(viewModel.springboardFilteredForRuntime)
+        assertEquals("Test", viewModel.springboardFilteredForRuntime?.name)
     }
 
     @Test
@@ -203,7 +203,7 @@ class SpringboardViewModelTabsTest {
         assertTrue(result is SpringboardViewModel.LoadResult.Success)
         val activeTab = viewModel.activeTab
         assertNotNull(activeTab)
-        assertEquals("Untitled-1", activeTab.springboard?.name)
+        assertEquals("Untitled-1", activeTab.springboardFilteredForRuntime?.name)
         assertEquals("Untitled-1", activeTab.label)
         assertNull(activeTab.source)
         assertTrue(activeTab.isDirty)
@@ -212,8 +212,8 @@ class SpringboardViewModelTabsTest {
         assertNull(activeTab.selectedResourceId)
         assertTrue(activeTab.multiSelectSet.isEmpty())
         assertNull(activeTab.hoveredActivatorPreview)
-        assertEquals("", activeTab.springboard?.source)
-        assertEquals("", activeTab.springboard?.jsonSource)
+        assertEquals("", activeTab.springboardFilteredForRuntime?.source)
+        assertEquals("", activeTab.springboardFilteredForRuntime?.jsonSource)
     }
 
     @Test
@@ -223,7 +223,7 @@ class SpringboardViewModelTabsTest {
         viewModel.createUnsavedSpringboardTab()
         viewModel.createUnsavedSpringboardTab()
 
-        assertEquals("Untitled-2", viewModel.activeTab?.springboard?.name)
+        assertEquals("Untitled-2", viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test
@@ -233,7 +233,7 @@ class SpringboardViewModelTabsTest {
         viewModel.createTab()
         viewModel.createUnsavedSpringboardTab()
 
-        assertEquals("Untitled-1", viewModel.activeTab?.springboard?.name)
+        assertEquals("Untitled-1", viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test

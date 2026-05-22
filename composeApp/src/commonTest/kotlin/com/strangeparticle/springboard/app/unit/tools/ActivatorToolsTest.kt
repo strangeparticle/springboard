@@ -56,7 +56,7 @@ internal class ActivatorToolsTest {
 
         assertTrue(result.success)
         val coordinate = Coordinate("prod", "app2", "res2")
-        val activator = ctx.viewModel.springboard!!.indexes.activatorByCoordinate[coordinate]
+        val activator = ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[coordinate]
         assertNotNull(activator)
         assertTrue(activator is UrlActivator)
         assertEquals("https://prod.example.com/app2/res2", activator.url)
@@ -113,7 +113,7 @@ internal class ActivatorToolsTest {
         )
 
         assertTrue(result.success)
-        assertNotNull(ctx.viewModel.springboard!!.indexes.activatorByCoordinate[Coordinate("ALL", "app1", "res1")])
+        assertNotNull(ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[Coordinate("ALL", "app1", "res1")])
     }
 
     // ── add_command_activator and add_url_template_activator (smoke) ─────
@@ -168,7 +168,7 @@ internal class ActivatorToolsTest {
         )
 
         assertTrue(result.success)
-        val activator = ctx.viewModel.springboard!!.indexes.activatorByCoordinate[Coordinate("common", "app1", "res1")]
+        val activator = ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[Coordinate("common", "app1", "res1")]
         assertTrue(activator is UrlActivator)
         assertEquals("https://updated.example.com", activator.url)
     }
@@ -214,7 +214,7 @@ internal class ActivatorToolsTest {
     fun `remove_activator deletes the activator at the coordinate`() = runTest {
         val (ctx, tabId) = loadedContext()
         val coord = Coordinate("common", "app1", "res1")
-        assertNotNull(ctx.viewModel.springboard!!.indexes.activatorByCoordinate[coord])
+        assertNotNull(ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[coord])
 
         val result = RemoveActivatorToolCallHandler().executeToolCallHandler(
             RemoveActivatorToolCallHandlerRequest(
@@ -225,7 +225,7 @@ internal class ActivatorToolsTest {
         )
 
         assertTrue(result.success)
-        assertNull(ctx.viewModel.springboard!!.indexes.activatorByCoordinate[coord])
+        assertNull(ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[coord])
     }
 
     @Test

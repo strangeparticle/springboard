@@ -36,7 +36,7 @@ fun StatusBar(
     onReload: () -> Unit,
     onOpenFromNetwork: (() -> Unit)? = null,
 ) {
-    val currentSpringboard = activeTab.springboard ?: return
+    val currentSpringboardFilteredForRuntime = activeTab.springboardFilteredForRuntime ?: return
     val zoomSelection = activeTab.gridZoomSelection
     val currentUiBrand = LocalUiBrand.current
 
@@ -81,7 +81,7 @@ fun StatusBar(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "${currentSpringboard.source} @ ${formatTimestamp(currentSpringboard.lastLoadTime)}",
+            text = "${currentSpringboardFilteredForRuntime.source} @ ${formatTimestamp(currentSpringboardFilteredForRuntime.lastLoadTime)}",
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),

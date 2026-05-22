@@ -24,7 +24,7 @@ enum class TabStatusIcon {
  * - clean local-file tab or empty tab (`source == null`) → null
  */
 fun tabStatusIconsFor(tab: TabState): List<TabStatusIcon> {
-    if (tab.springboard == null) return emptyList()
+    if (tab.springboardFilteredForRuntime == null) return emptyList()
     val icons = mutableListOf<TabStatusIcon>()
     val source = tab.source
     if (source != null && isNonSaveableInPlaceSource(source)) icons += TabStatusIcon.NonSaveable

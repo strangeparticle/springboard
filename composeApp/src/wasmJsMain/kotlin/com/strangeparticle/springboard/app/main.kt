@@ -3,11 +3,14 @@ package com.strangeparticle.springboard.app
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
+import com.strangeparticle.editio.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImpl
-import com.strangeparticle.springboard.app.settings.SettingsKey
 import com.strangeparticle.springboard.app.settings.SettingsManager
+import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
+import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting
+import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.settings.parseUrlParams
 import com.strangeparticle.springboard.app.settings.readJsGlobalsAsEnvironmentVariables
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -18,6 +21,8 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderWasmImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import com.strangeparticle.springboard.app.viewmodel.TabRestorer
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.js.Js
 import kotlinx.browser.document
 
 @JsFun("(callback) => window.addEventListener('focus', callback)")
@@ -33,21 +38,25 @@ private external fun getWindowInnerHeight(): Int
 fun main() {
     val runtimeEnvironment = detectRuntimeEnvironment()
     val persistenceService = PersistenceServiceDefaultImpl()
-    val settingsManager = SettingsManager(runtimeEnvironment, persistenceService)
+    val settingsRegistry = SettingsRegistry(
+        coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+    )
+    val settingsManager = SettingsManager(runtimeEnvironment, settingsRegistry, persistenceService)
     val environmentVariables = readJsGlobalsAsEnvironmentVariables()
-    val urlParams = parseUrlParams()
+    val urlParams = parseUrlParams(settingsRegistry)
     settingsManager.loadSettingsAtStartup(
         environmentVariables = environmentVariables,
         urlParams = urlParams,
     )
 
     val networkContentService = NetworkContentServiceWasmImpl()
-    val startupTabs = settingsManager.getStringList(SettingsKey.STARTUP_TABS)
+    val aiHttpClient = HttpClient(Js)
+    val startupTabs = settingsManager.resolveValue(StartupTabsSetting)
 
     ComposeViewport(document.body!!) {
         val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService) }
         val settingsViewModel = remember {
-            SettingsViewModel(settingsManager = settingsManager)
+            SettingsViewModel(settingsManager = settingsManager, httpClient = aiHttpClient)
         }
         // Incremented each time the browser window gains focus
         var windowFocusTick by remember { mutableStateOf(0) }

@@ -12,8 +12,12 @@ private external fun getLocationSearch(): JsString
  * See `springboard_resources/settings-system.md` for the full name derivation
  * rules and a table of current settings with their external names.
  */
-fun parseUrlParams(): Map<String, String> {
+fun parseUrlParams(settingsRegistry: SettingsRegistry): Map<String, String> {
     val search = getLocationSearch().toString()
+    return parseUrlParamSearch(search, settingsRegistry)
+}
+
+internal fun parseUrlParamSearch(search: String, settingsRegistry: SettingsRegistry): Map<String, String> {
     if (search.isBlank() || search == "?") return emptyMap()
 
     val queryString = search.removePrefix("?")
@@ -27,7 +31,7 @@ fun parseUrlParams(): Map<String, String> {
         val paramValue = decodeUriComponent(pair.substring(equalsIndex + 1))
 
         if (paramName.isBlank() || paramValue.isBlank()) continue
-        if (SettingsRegistry.findByUrlParamName(paramName) == null) continue
+        if (settingsRegistry.byUrlParamName(paramName) == null) continue
 
         params[paramName] = paramValue
     }

@@ -15,8 +15,8 @@ import kotlin.test.assertEquals
  *
  * Rules per spec §2.3:
  * - dirty local-file or source-less tab → Dirty
- * - clean + non-saveable source (HTTP / S3) → Lock
- * - dirty + non-saveable source (HTTP / S3) → Lock + Dirty
+ * - clean + non-saveable source (HTTP/HTTPS) → Lock
+ * - dirty + non-saveable source (HTTP/HTTPS) → Lock + Dirty
  * - clean local-file → null
  * - empty (`source == null` or `springboard == null`) → null
  */
@@ -54,26 +54,10 @@ class TabStatusIconTest {
     }
 
     @Test
-    fun `clean s3 tab shows the NonSaveable status icon`() {
-        assertEquals(
-            listOf(TabStatusIcon.NonSaveable),
-            tabStatusIconsFor(loadedTab(source = "s3://bucket/key.json", isDirty = false)),
-        )
-    }
-
-    @Test
     fun `dirty http tab shows NonSaveable and Dirty icons`() {
         assertEquals(
             listOf(TabStatusIcon.NonSaveable, TabStatusIcon.Dirty),
             tabStatusIconsFor(loadedTab(source = "https://example.com/sb.json", isDirty = true)),
-        )
-    }
-
-    @Test
-    fun `dirty s3 tab shows NonSaveable and Dirty icons`() {
-        assertEquals(
-            listOf(TabStatusIcon.NonSaveable, TabStatusIcon.Dirty),
-            tabStatusIconsFor(loadedTab(source = "s3://bucket/key.json", isDirty = true)),
         )
     }
 

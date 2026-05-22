@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.domain.SpringboardSource
+import com.strangeparticle.springboard.app.domain.UnsupportedS3UrlMessage
 import com.strangeparticle.springboard.app.domain.determineSpringboardSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -48,41 +49,19 @@ class SpringboardSourceTest {
         assertEquals(SpringboardSource.FileSource("configs/board.json"), result)
     }
 
-    @Test fun `s3 URL returns S3Source with bucket and key`() {
-        val result = determineSpringboardSource("s3://my-bucket/board.json")
-        assertEquals(SpringboardSource.S3Source("my-bucket", "board.json"), result)
-    }
-
-    @Test fun `s3 URL uppercase scheme returns S3Source`() {
-        val result = determineSpringboardSource("S3://my-bucket/board.json")
-        assertEquals(SpringboardSource.S3Source("my-bucket", "board.json"), result)
-    }
-
-    @Test fun `s3 URL with nested key returns S3Source with full key path`() {
-        val result = determineSpringboardSource("s3://my-bucket/folder/sub/board.json")
-        assertEquals(SpringboardSource.S3Source("my-bucket", "folder/sub/board.json"), result)
-    }
-
-    @Test fun `s3 URL preserves case of key`() {
-        val result = determineSpringboardSource("s3://my-bucket/Folder/Board.JSON")
-        assertEquals(SpringboardSource.S3Source("my-bucket", "Folder/Board.JSON"), result)
-    }
-
-    @Test fun `s3 URL with no key throws IllegalArgumentException`() {
-        assertFailsWith<IllegalArgumentException> {
-            determineSpringboardSource("s3://my-bucket")
+    @Test fun `s3 URL is rejected with full HTTPS guidance`() {
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            determineSpringboardSource("s3://my-bucket/board.json")
         }
+
+        assertEquals(UnsupportedS3UrlMessage, thrown.message)
     }
 
-    @Test fun `s3 URL with trailing slash and no key throws IllegalArgumentException`() {
-        assertFailsWith<IllegalArgumentException> {
-            determineSpringboardSource("s3://my-bucket/")
+    @Test fun `s3 URL uppercase scheme is rejected with full HTTPS guidance`() {
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            determineSpringboardSource("S3://my-bucket/board.json")
         }
-    }
 
-    @Test fun `s3 URL with empty bucket throws IllegalArgumentException`() {
-        assertFailsWith<IllegalArgumentException> {
-            determineSpringboardSource("s3:///board.json")
-        }
+        assertEquals(UnsupportedS3UrlMessage, thrown.message)
     }
 }

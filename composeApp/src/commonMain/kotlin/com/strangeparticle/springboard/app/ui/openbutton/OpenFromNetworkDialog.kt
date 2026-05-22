@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.strangeparticle.springboard.app.domain.UnsupportedS3UrlMessage
+import com.strangeparticle.springboard.app.domain.isUnsupportedS3Url
 
 @Composable
 fun OpenFromNetworkDialog(
@@ -30,10 +32,13 @@ fun OpenFromNetworkDialog(
     onDismiss: () -> Unit,
 ) {
     var url by remember { mutableStateOf("") }
+    val trimmedUrl = url.trim()
+    val isS3Url = isUnsupportedS3Url(url)
+    val isValidUrl = trimmedUrl.isNotBlank() && !isS3Url
     val urlFocusRequester = remember { FocusRequester() }
     val confirmIfValid = {
-        if (url.isNotBlank()) {
-            onConfirm(url.trim())
+        if (isValidUrl) {
+            onConfirm(trimmedUrl)
         }
     }
 
@@ -59,7 +64,7 @@ fun OpenFromNetworkDialog(
                     when (keyEvent.key) {
                         Key.Enter, Key.NumPadEnter -> {
                             confirmIfValid()
-                            url.isNotBlank()
+                            isValidUrl
                         }
 
                         else -> false
@@ -104,6 +109,14 @@ fun OpenFromNetworkDialog(
                         .fillMaxWidth()
                         .focusRequester(urlFocusRequester),
                 )
+                if (isS3Url) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        UnsupportedS3UrlMessage,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -132,7 +145,7 @@ fun OpenFromNetworkDialog(
                     Spacer(Modifier.width(4.dp))
                     Button(
                         onClick = { confirmIfValid() },
-                        enabled = url.isNotBlank(),
+                        enabled = isValidUrl,
                         modifier = Modifier
                             .height(32.dp)
                             .defaultMinSize(minWidth = 78.dp),

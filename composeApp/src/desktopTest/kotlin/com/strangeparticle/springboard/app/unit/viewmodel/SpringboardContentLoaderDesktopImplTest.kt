@@ -85,4 +85,17 @@ class SpringboardContentLoaderDesktopImplTest {
         }
         assertTrue(thrown.message!!.contains("/nonexistent/path/to/file.json"))
     }
+
+    @Test
+    fun `s3 URL is not converted to an AWS HTTPS URL`() = runTest {
+        val network = FakeNetworkContentService(emptyMap())
+        val loader = SpringboardContentLoaderDesktopImpl(network)
+
+        val thrown = assertFailsWith<IllegalArgumentException> {
+            loader.loadContent("s3://bucket/key.json")
+        }
+
+        assertTrue(network.calls.isEmpty())
+        assertTrue(thrown.message!!.contains("full HTTPS URL"))
+    }
 }

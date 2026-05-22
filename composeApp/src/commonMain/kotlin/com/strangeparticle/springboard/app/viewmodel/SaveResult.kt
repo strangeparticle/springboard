@@ -17,7 +17,7 @@ sealed class SaveResult {
     data class WriteFailed(val path: String, val errorMessage: String) : SaveResult()
 
     /**
-     * The active tab's source is non-saveable in place (HTTP / `s3://` URL). The user
+     * The active tab's source is non-saveable in place (HTTP/HTTPS URL). The user
      * should be directed to Save As. The corresponding menu item should be disabled
      * and never invoke `saveActiveTab` in this state, so this result represents an
      * unexpected programmatic call rather than user error.

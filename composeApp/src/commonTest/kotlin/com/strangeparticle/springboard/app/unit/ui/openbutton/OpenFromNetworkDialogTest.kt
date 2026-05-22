@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.unit.ui.openbutton
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.*
+import com.strangeparticle.springboard.app.domain.UnsupportedS3UrlMessage
 import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,5 +62,28 @@ class OpenFromNetworkDialogTest {
         onNode(hasSetTextAction())
             .assertExists()
             .assertIsFocused()
+    }
+
+    @Test
+    fun `s3 URL shows validation hint and cannot be confirmed`() = runComposeUiTest {
+        var confirmedUrl: String? = null
+
+        setContent {
+            OpenFromNetworkDialog(
+                onConfirm = { confirmedUrl = it },
+                onDismiss = {},
+            )
+        }
+
+        val inputField = onNode(hasSetTextAction())
+        inputField.assertExists().assertIsFocused()
+        inputField.performTextInput("s3://bucket/key.json")
+
+        onNodeWithText(UnsupportedS3UrlMessage).assertExists()
+        onNodeWithText("Open").assertIsNotEnabled()
+        inputField.performKeyInput { pressKey(Key.Enter) }
+
+        waitForIdle()
+        assertEquals(null, confirmedUrl)
     }
 }

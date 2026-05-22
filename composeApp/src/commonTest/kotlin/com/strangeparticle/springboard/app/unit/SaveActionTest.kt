@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 
 /**
  * Tests for SpringboardViewModel.saveActiveTab() — the per-source-type behavior matrix
- * from spec §2.4: local file → Save enabled; HTTP / s3 → NotSupported; null source
+ * from spec §2.4: local file → Save enabled; HTTP/HTTPS → NotSupported; null source
  * (empty tab) → NoSpringboard; write failure → WriteFailed; success → dirty cleared.
  */
 class SaveActionTest {
@@ -90,17 +90,6 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab returns NotSupportedForSource for an s3-sourced tab`() {
-        val fileService = PlatformFileContentServiceInMemoryFake()
-        val vm = createViewModel(fileService)
-        vm.loadConfig(TestFixtureJson.URL_ONLY, "s3://bucket/key.json")
-
-        val result = vm.saveActiveTab()
-
-        assertEquals(SaveResult.NotSupportedForSource, result)
-    }
-
-    @Test
     fun `saveActiveTab returns NoSpringboard when active tab is empty`() {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = createViewModel(fileService)
@@ -119,17 +108,13 @@ class SaveActionTest {
     }
 
     @Test
-    fun `canSaveActiveTabInPlace is false for HTTP, s3, and empty tabs`() {
+    fun `canSaveActiveTabInPlace is false for HTTP and empty tabs`() {
         val vm = createViewModel(PlatformFileContentServiceInMemoryFake())
         // Empty
         assertFalse(vm.canSaveActiveTabInPlace)
 
         // HTTP
         vm.loadConfig(TestFixtureJson.URL_ONLY, "https://example.com/sb.json")
-        assertFalse(vm.canSaveActiveTabInPlace)
-
-        // S3
-        vm.loadConfig(TestFixtureJson.URL_ONLY, "s3://bucket/key.json")
         assertFalse(vm.canSaveActiveTabInPlace)
     }
 

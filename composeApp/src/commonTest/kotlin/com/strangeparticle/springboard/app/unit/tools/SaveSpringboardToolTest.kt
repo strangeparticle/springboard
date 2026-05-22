@@ -110,8 +110,8 @@ internal class SaveSpringboardToolCallHandlerTest {
     }
 
     @Test
-    fun `save refuses for s3 source`() = runTest {
-        val (ctx, tabId, _) = loadedContext(source = "s3://bucket/key.json")
+    fun `save refuses for HTTPS source`() = runTest {
+        val (ctx, tabId, _) = loadedContext(source = "https://bucket.s3.us-gov-west-1.amazonaws.com/key.json")
 
         val result = SaveSpringboardToolCallHandler().executeToolCallHandler(
             toolCallId = "call-5",

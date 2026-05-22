@@ -27,7 +27,7 @@ internal class SaveSpringboardToolCallHandler : ToolCallHandler {
             return errorStatusResult("Save in place is not supported for this tab's source.", "not_supported_for_source")
         }
         val loweredSource = source.lowercase()
-        if (loweredSource.startsWith("http://") || loweredSource.startsWith("https://") || loweredSource.startsWith("s3://")) {
+        if (loweredSource.startsWith("http://") || loweredSource.startsWith("https://")) {
             return errorStatusResult("Save in place is not supported for this tab's source.", "not_supported_for_source")
         }
         val approved = context.awaitUserApproval(toolCallId)

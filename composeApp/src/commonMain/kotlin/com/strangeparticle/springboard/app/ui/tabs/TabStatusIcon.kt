@@ -12,14 +12,14 @@ enum class TabStatusIcon {
     /** The tab has unsaved in-memory edits relative to its source. */
     Dirty,
 
-    /** The tab's source cannot be saved to in place (HTTP / `s3://` URLs). */
+    /** The tab's source cannot be saved to in place (HTTP/HTTPS URLs). */
     NonSaveable,
 }
 
 /**
  * Returns the status icons for the given tab. Rules per spec §2.3:
- * - clean + non-saveable source (HTTP / S3) → [TabStatusIcon.NonSaveable]
- * - dirty + non-saveable source (HTTP / S3) → [TabStatusIcon.NonSaveable], [TabStatusIcon.Dirty]
+ * - clean + non-saveable source (HTTP/HTTPS) → [TabStatusIcon.NonSaveable]
+ * - dirty + non-saveable source (HTTP/HTTPS) → [TabStatusIcon.NonSaveable], [TabStatusIcon.Dirty]
  * - dirty local-file or source-less tab → [TabStatusIcon.Dirty]
  * - clean local-file tab or empty tab (`source == null`) → null
  */
@@ -35,6 +35,5 @@ fun tabStatusIconsFor(tab: TabState): List<TabStatusIcon> {
 private fun isNonSaveableInPlaceSource(source: String): Boolean {
     val lowered = source.lowercase()
     return lowered.startsWith("http://") ||
-        lowered.startsWith("https://") ||
-        lowered.startsWith("s3://")
+        lowered.startsWith("https://")
 }

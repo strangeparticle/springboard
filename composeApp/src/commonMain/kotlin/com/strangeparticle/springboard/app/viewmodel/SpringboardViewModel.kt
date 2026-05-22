@@ -126,7 +126,7 @@ class SpringboardViewModel(
     /**
      * True when the active tab has a loaded springboard whose source is a local-file
      * path (and therefore can be saved in place via [saveActiveTab]). False for empty
-     * tabs, network-sourced tabs (HTTP / S3), and tabs with no source at all.
+     * tabs, HTTP(S) network-sourced tabs, and tabs with no source at all.
      */
     val canSaveActiveTabInPlace: Boolean
         get() {
@@ -143,7 +143,7 @@ class SpringboardViewModel(
      * user-facing feedback (toast, dialog, etc.).
      *
      * Use [saveActiveTabAs] for "save to a new location" flows. Network-sourced tabs
-     * (HTTP, `s3://`) cannot be saved in place — those return [SaveResult.NotSupportedForSource].
+     * (HTTP/HTTPS) cannot be saved in place — those return [SaveResult.NotSupportedForSource].
      */
     /**
      * Re-serializes the springboard in [tabId] and writes it to that tab's existing
@@ -164,9 +164,8 @@ class SpringboardViewModel(
      * Re-serializes the active tab's springboard via [SpringboardJsonWriter] and writes
      * to [targetPath] (a local-file path chosen by the user via Save As). On success
      * the tab's [TabState.source] is rewritten to [targetPath] so subsequent in-place
-     * saves overwrite that file. Works for any active-tab source, including HTTP and
-     * `s3://` URLs — Save As is the supported way to take a network-loaded springboard
-     * to disk.
+     * saves overwrite that file. Works for any active-tab source, including HTTP/HTTPS;
+     * Save As is the supported way to take a network-loaded springboard to disk.
      */
     fun saveActiveTabAs(targetPath: String): SaveResult {
         val tab = activeTab ?: return SaveResult.NoSpringboard
@@ -202,8 +201,7 @@ class SpringboardViewModel(
     private fun isNonSaveableInPlaceSource(source: String): Boolean {
         val lowered = source.lowercase()
         return lowered.startsWith("http://") ||
-            lowered.startsWith("https://") ||
-            lowered.startsWith("s3://")
+            lowered.startsWith("https://")
     }
 
     val canCreateNewTab: Boolean
@@ -484,7 +482,7 @@ class SpringboardViewModel(
     /**
      * Reloads the active tab's springboard from its current source. Dispatches
      * to the configured [SpringboardContentLoader], which knows how to fetch
-     * the raw JSON for any supported source kind (file path, http URL, s3 URL).
+     * the raw JSON for supported source kinds (file path or http/https URL).
      * No-op when there is no active springboard.
      */
     suspend fun reloadCurrentSource() {

@@ -2,20 +2,26 @@ package com.strangeparticle.springboard.app.unit.ui.editio
 
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.runtime.mutableStateOf
 import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.editio.client.provider.openai.OpenAiApiKeySetting
+import com.strangeparticle.editio.client.provider.openai.OpenAiPreferredModelSetting
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
+import com.strangeparticle.springboard.app.settings.items.core.AiProviderSetting
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
+import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.stubHttpClientForTests
 import com.strangeparticle.springboard.app.ui.AppBottomBar
 import com.strangeparticle.springboard.app.ui.SpringboardApp
@@ -24,6 +30,11 @@ import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.CompletableDeferred
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -119,12 +130,71 @@ internal class AiChatEntryPointTest {
         onNodeWithTag(TestTags.SETTINGS_SCREEN).assertExists()
     }
 
-    private fun createComponents(): Components {
+    @Test
+    fun `chat processing moves focus to keynav then restores input focus`() = runComposeUiTest {
+        val requestStarted = CompletableDeferred<Unit>()
+        val responseAllowed = CompletableDeferred<Unit>()
+        val components = createComponents(
+            configureAi = true,
+            httpClient = HttpClient(MockEngine {
+                requestStarted.complete(Unit)
+                responseAllowed.await()
+                respond(
+                    content = """
+                        {
+                          "choices": [
+                            {
+                              "message": { "role": "assistant", "content": "Done" },
+                              "finish_reason": "stop"
+                            }
+                          ]
+                        }
+                    """.trimIndent(),
+                    status = HttpStatusCode.OK,
+                )
+            }),
+        )
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Add Chrome")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+
+        waitUntil { requestStarted.isCompleted }
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertExists()
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+
+        responseAllowed.complete(Unit)
+        waitUntil { onAllNodesWithText("Done").fetchSemanticsNodes().isNotEmpty() }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertDoesNotExist()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    private fun createComponents(
+        configureAi: Boolean = false,
+        httpClient: HttpClient = stubHttpClientForTests(),
+    ): Components {
         val persistenceService = PersistenceServiceInMemoryFake()
         val registry = SettingsRegistry(
             coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
         )
         val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, registry, persistenceService)
+        if (configureAi) {
+            settingsManager.setUserSetting(AiProviderSetting, "openai")
+            settingsManager.setUserSetting(OpenAiApiKeySetting, "test-key")
+            settingsManager.setUserSetting(OpenAiPreferredModelSetting, "gpt-5")
+        }
         settingsManager.loadSettingsAtStartup()
         return Components(
             viewModel = SpringboardViewModel(
@@ -132,7 +202,7 @@ internal class AiChatEntryPointTest {
                 persistenceService = persistenceService,
                 platformActivationService = PlatformActivationServiceInMemoryFake(),
             ),
-            settingsViewModel = SettingsViewModel(settingsManager, stubHttpClientForTests()),
+            settingsViewModel = SettingsViewModel(settingsManager, httpClient),
         )
     }
 

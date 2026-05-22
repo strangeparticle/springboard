@@ -12,6 +12,7 @@ internal data class AiChatPaneState(
     val onSubmit: (String) -> Unit,
     val onStop: () -> Unit,
     val onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
+    val onProcessingFocusFallback: () -> Unit,
 ) {
     companion object {
         fun notConfigured(): AiChatPaneState = AiChatPaneState(
@@ -24,6 +25,7 @@ internal data class AiChatPaneState(
             onSubmit = {},
             onStop = {},
             onApprovalDecision = { _, _ -> },
+            onProcessingFocusFallback = {},
         )
 
         fun configured(
@@ -35,6 +37,7 @@ internal data class AiChatPaneState(
             onSubmit: (String) -> Unit,
             onStop: () -> Unit,
             onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
+            onProcessingFocusFallback: () -> Unit = {},
         ): AiChatPaneState = AiChatPaneState(
             isConfigured = true,
             providerLabel = providerLabel,
@@ -45,6 +48,7 @@ internal data class AiChatPaneState(
             onSubmit = onSubmit,
             onStop = onStop,
             onApprovalDecision = onApprovalDecision,
+            onProcessingFocusFallback = onProcessingFocusFallback,
         )
 
         private fun buildScrollbackPanesFromTranscript(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane> {

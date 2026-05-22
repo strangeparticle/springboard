@@ -273,6 +273,9 @@ private fun rememberAiChatPaneState(
             manager.onApprovalDecision(toolCallId, approved)
             transcriptVersion++
         },
+        onProcessingFocusFallback = {
+            viewModel.requestFocusAppDropdown()
+        },
     )
 }
 

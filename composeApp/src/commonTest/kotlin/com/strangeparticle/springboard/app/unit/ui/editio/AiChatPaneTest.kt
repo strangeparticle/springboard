@@ -248,7 +248,7 @@ internal class AiChatPaneTest {
     }
 
     @Test
-    fun `escape stops when running`() = runComposeUiTest {
+    fun `stop button stops when running`() = runComposeUiTest {
         var stopCount = 0
         val state = configuredState(isRunning = true, onStop = { stopCount += 1 })
 
@@ -258,10 +258,105 @@ internal class AiChatPaneTest {
             }
         }
 
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performClick()
-        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput { pressKey(Key.Escape) }
+        onNodeWithTag(TestTags.AI_CHAT_STOP_BUTTON).performClick()
 
         assertEquals(1, stopCount)
+    }
+
+    @Test
+    fun `running state disables input editing and submit`() = runComposeUiTest {
+        val sentMessages = mutableListOf<String>()
+        val state = configuredState(
+            isRunning = true,
+            onSubmit = { sentMessages += it },
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).assertIsNotEnabled()
+        onNodeWithTag(TestTags.AI_CHAT_STOP_BUTTON).assertIsEnabled()
+        onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertExists()
+
+        val input = onNodeWithTag(TestTags.AI_CHAT_INPUT)
+        input.assertIsNotEnabled()
+        input.assertTextEquals("")
+        assertEquals(emptyList(), sentMessages)
+    }
+
+    @Test
+    fun `idle state hides processing indicator and allows submit`() = runComposeUiTest {
+        val sentMessages = mutableListOf<String>()
+        val state = configuredState(
+            isRunning = false,
+            onSubmit = { sentMessages += it },
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertDoesNotExist()
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).assertIsEnabled()
+        onNodeWithTag(TestTags.AI_CHAT_STOP_BUTTON).assertIsNotEnabled()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Add Chrome")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+
+        assertEquals(listOf("Add Chrome"), sentMessages)
+    }
+
+    @Test
+    fun `running transition requests processing focus fallback`() = runComposeUiTest {
+        var fallbackCount = 0
+        val isRunning = mutableStateOf(false)
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(
+                        isRunning = isRunning.value,
+                        onProcessingFocusFallback = { fallbackCount += 1 },
+                    ),
+                    onClose = {},
+                    onOpenSettings = {},
+                )
+            }
+        }
+
+        waitForIdle()
+        assertEquals(0, fallbackCount)
+
+        isRunning.value = true
+        waitForIdle()
+
+        assertEquals(1, fallbackCount)
+    }
+
+    @Test
+    fun `focus returns to input after running completes`() = runComposeUiTest {
+        val isRunning = mutableStateOf(true)
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = configuredState(isRunning = isRunning.value),
+                    onClose = {},
+                    onOpenSettings = {},
+                )
+            }
+        }
+
+        waitForIdle()
+        isRunning.value = false
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
     }
 
     @Test
@@ -672,6 +767,7 @@ internal class AiChatPaneTest {
         scrollbackPanes: List<AiChatScrollbackPane>? = null,
         onSubmit: (String) -> Unit = {},
         onStop: () -> Unit = {},
+        onProcessingFocusFallback: () -> Unit = {},
     ): AiChatPaneState = if (scrollbackPanes == null) {
         AiChatPaneState.configured(
             providerLabel = "OpenAI",
@@ -681,6 +777,7 @@ internal class AiChatPaneTest {
             onSubmit = onSubmit,
             onStop = onStop,
             onApprovalDecision = { _, _ -> },
+            onProcessingFocusFallback = onProcessingFocusFallback,
         )
     } else {
         AiChatPaneState.configured(
@@ -692,6 +789,7 @@ internal class AiChatPaneTest {
             onSubmit = onSubmit,
             onStop = onStop,
             onApprovalDecision = { _, _ -> },
+            onProcessingFocusFallback = onProcessingFocusFallback,
         )
     }
 }

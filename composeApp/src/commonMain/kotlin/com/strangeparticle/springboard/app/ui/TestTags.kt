@@ -45,6 +45,7 @@ object TestTags {
     const val AI_CHAT_HISTORY = "aiChatHistory"
     const val AI_CHAT_SEND_BUTTON = "aiChatSendButton"
     const val AI_CHAT_STOP_BUTTON = "aiChatStopButton"
+    const val AI_CHAT_WORKING_INDICATOR = "aiChatWorkingIndicator"
     const val AI_CHAT_SCROLLBACK_PANE = "aiChatScrollbackPane"
     const val AI_CHAT_USER_MESSAGE = "aiChatUserMessage"
     const val AI_CHAT_ASSISTANT_MESSAGE = "aiChatAssistantMessage"

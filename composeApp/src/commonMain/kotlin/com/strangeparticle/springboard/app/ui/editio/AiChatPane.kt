@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +41,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -103,6 +106,8 @@ internal fun AiChatPane(
     height: androidx.compose.ui.unit.Dp = AiChatPaneDefaults.DefaultHeight,
 ) {
     var inputValue by remember { mutableStateOf(TextFieldValue("")) }
+    var hasBeenRunning by remember { mutableStateOf(false) }
+    val inputFocusRequester = remember { FocusRequester() }
     val inputInteractionSource = remember { MutableInteractionSource() }
     val isInputFocused by inputInteractionSource.collectIsFocusedAsState()
     val inputBorderColor = if (isInputFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
@@ -112,6 +117,14 @@ internal fun AiChatPane(
     LaunchedEffect(state.scrollbackPanes.size, state.scrollbackPanes.lastOrNull()) {
         if (state.scrollbackPanes.isNotEmpty()) {
             historyListState.scrollToItem(state.scrollbackPanes.size)
+        }
+    }
+    LaunchedEffect(state.isRunning) {
+        if (state.isRunning) {
+            hasBeenRunning = true
+            state.onProcessingFocusFallback()
+        } else if (hasBeenRunning) {
+            try { inputFocusRequester.requestFocus() } catch (_: Exception) {}
         }
     }
     fun sendInput() {
@@ -146,6 +159,7 @@ internal fun AiChatPane(
                     when (event.key) {
                         Key.Enter, Key.NumPadEnter -> {
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            if (state.isRunning) return@onPreviewKeyEvent true
                             if (event.isShiftPressed) {
                                 insertLineBreak()
                             } else {
@@ -274,24 +288,41 @@ internal fun AiChatPane(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            BasicTextField(
-                                value = inputValue,
-                                onValueChange = { inputValue = it },
-                                interactionSource = inputInteractionSource,
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .requiredHeight(76.dp)
-                                    .border(inputBorderWidth, inputBorderColor, MaterialTheme.shapes.small)
-                                    .padding(horizontal = 8.dp, vertical = 6.dp)
-                                    .testTag(TestTags.AI_CHAT_INPUT),
-                                textStyle = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 13.sp,
-                                ),
-                                minLines = 3,
-                                maxLines = 3,
-                            )
+                            ) {
+                                BasicTextField(
+                                    value = inputValue,
+                                    onValueChange = {
+                                        if (!state.isRunning) inputValue = it
+                                    },
+                                    enabled = !state.isRunning,
+                                    interactionSource = inputInteractionSource,
+                                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .requiredHeight(76.dp)
+                                        .focusRequester(inputFocusRequester)
+                                        .border(inputBorderWidth, inputBorderColor, MaterialTheme.shapes.small)
+                                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                                        .testTag(TestTags.AI_CHAT_INPUT),
+                                    textStyle = TextStyle(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 13.sp,
+                                    ),
+                                    minLines = 3,
+                                    maxLines = 3,
+                                )
+                                if (state.isRunning) {
+                                    ProcessingOverlay(
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .testTag(TestTags.AI_CHAT_WORKING_INDICATOR),
+                                    )
+                                }
+                            }
                             Button(
                                 onClick = { sendInput() },
                                 enabled = !state.isRunning,
@@ -308,6 +339,32 @@ internal fun AiChatPane(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProcessingOverlay(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.92f),
+        shape = MaterialTheme.shapes.small,
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                strokeWidth = 2.dp,
+            )
+            Text(
+                text = "Processing",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

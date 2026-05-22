@@ -50,11 +50,18 @@ fun main() {
     )
 
     val networkContentService = NetworkContentServiceWasmImpl()
+    val contentLoader = SpringboardContentLoaderWasmImpl(networkContentService)
     val aiHttpClient = HttpClient(Js)
     val startupTabs = settingsManager.resolveValue(StartupTabsSetting)
 
     ComposeViewport(document.body!!) {
-        val viewModel = remember { SpringboardViewModel(settingsManager, persistenceService) }
+        val viewModel = remember {
+            SpringboardViewModel(
+                settingsManager = settingsManager,
+                persistenceService = persistenceService,
+                contentLoader = contentLoader,
+            )
+        }
         val settingsViewModel = remember {
             SettingsViewModel(settingsManager = settingsManager, httpClient = aiHttpClient)
         }
@@ -89,7 +96,6 @@ fun main() {
         }
 
         LaunchedEffect(Unit) {
-            val contentLoader = SpringboardContentLoaderWasmImpl(networkContentService)
             val tabRestorer = TabRestorer(persistenceService, contentLoader)
             tabRestorer.restoreInto(viewModel, startupTabs)
         }

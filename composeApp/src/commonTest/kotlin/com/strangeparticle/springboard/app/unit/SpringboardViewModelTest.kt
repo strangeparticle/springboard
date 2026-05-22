@@ -847,6 +847,23 @@ class SpringboardViewModelTest {
         assertTrue(errorToasts.any { it.message.contains("network down") })
     }
 
+    @Test
+    fun `reloadCurrentSource reports a toast error when content loader is missing`() = kotlinx.coroutines.test.runTest {
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+        )
+        vm.loadConfig(jsonWithName("Initial"), "/foo.json")
+
+        vm.reloadCurrentSource()
+
+        assertEquals("Initial", vm.springboard?.name)
+        val errorToasts = vm.activeTabToast.activeToasts.filter {
+            it.severity == com.strangeparticle.springboard.app.ui.toast.ToastSeverity.ERROR
+        }
+        assertTrue(errorToasts.any { it.message.contains("SpringboardContentLoader") })
+    }
+
     // ---- isDirty + mark/clear (Task 3) ----
 
     @Test

@@ -134,13 +134,16 @@ internal fun MainScreen(
                     if (viewModel.springboard?.source == null) return@StatusBar
                     scope.launch {
                         isReloading = true
-                        val startTime = currentTimeMillis()
-                        viewModel.reloadCurrentSource()
-                        val elapsed = currentTimeMillis() - startTime
-                        if (elapsed < CommonUiConstants.ReloadSpinMinMs) {
-                            delay(CommonUiConstants.ReloadSpinMinMs - elapsed)
+                        try {
+                            val startTime = currentTimeMillis()
+                            viewModel.reloadCurrentSource()
+                            val elapsed = currentTimeMillis() - startTime
+                            if (elapsed < CommonUiConstants.ReloadSpinMinMs) {
+                                delay(CommonUiConstants.ReloadSpinMinMs - elapsed)
+                            }
+                        } finally {
+                            isReloading = false
                         }
-                        isReloading = false
                     }
                 },
                 onOpenFromNetwork = openFromNetwork,

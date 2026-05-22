@@ -488,7 +488,10 @@ class SpringboardViewModel(
     suspend fun reloadCurrentSource() {
         val source = activeTab?.springboard?.source ?: return
         val loader = contentLoader
-            ?: error("Cannot reload: SpringboardViewModel was constructed without a SpringboardContentLoader")
+        if (loader == null) {
+            activeTabToast.error("Failed to reload: SpringboardViewModel was constructed without a SpringboardContentLoader")
+            return
+        }
         try {
             val contents = loader.loadContent(source)
             loadConfig(contents, source)

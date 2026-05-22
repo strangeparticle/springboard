@@ -29,6 +29,31 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
+    val URL_TEMPLATE_ACTIVATOR = """
+    {
+      "name": "URL Template Springboard",
+      "environments": [{ "id": "dev", "name": "Dev" }],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "urlTemplate", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "urlTemplate": "https://example.com/{resource}" }
+      ]
+    }
+    """.trimIndent()
+
+    val COMMAND_STRICT_WITH_ALL_ENVS_URL_FALLBACK = """
+    {
+      "name": "Command Strict With All Envs URL Fallback",
+      "environments": [{ "id": "prod", "name": "Production" }],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "cmd", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "commandTemplate": "echo prod" },
+        { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "ALL", "url": "https://example.com/all/app1/res1" }
+      ]
+    }
+    """.trimIndent()
+
     val ALTERNATIVE_URL_ONLY = """
     {
       "name": "Alternative Springboard",

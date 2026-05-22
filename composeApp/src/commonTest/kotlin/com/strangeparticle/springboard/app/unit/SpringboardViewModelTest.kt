@@ -1,7 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.*
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
@@ -862,6 +864,42 @@ class SpringboardViewModelTest {
             it.severity == com.strangeparticle.springboard.app.ui.toast.ToastSeverity.ERROR
         }
         assertTrue(errorToasts.any { it.message.contains("SpringboardContentLoader") })
+    }
+
+    @Test
+    fun `wasm stores filtered springboard for UI and unfiltered springboard for data integrity`() {
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(target = RuntimeEnvironment.WASM),
+            PersistenceServiceInMemoryFake(),
+        )
+
+        vm.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/foo.json")
+
+        val coordinate = Coordinate("dev", "app1", "res1")
+        assertNull(vm.springboard?.indexes?.activatorByCoordinate?.get(coordinate))
+        assertNotNull(vm.springboardUnfiltered?.indexes?.activatorByCoordinate?.get(coordinate))
+    }
+
+    @Test
+    fun `wasm keynav ignores hidden strict command activator and falls back to all-envs url`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(target = RuntimeEnvironment.WASM),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(TestFixtureJson.COMMAND_STRICT_WITH_ALL_ENVS_URL_FALLBACK, "/foo.json")
+
+        vm.selectEnvironment("prod")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        assertEquals(Coordinate("ALL", "app1", "res1"), vm.keyNavCoordinate)
+
+        vm.activateCurrentSelection()
+
+        assertEquals(listOf("https://example.com/all/app1/res1"), activationService.openedUrls)
+        assertTrue(activationService.executedCommands.isEmpty())
     }
 
     // ---- isDirty + mark/clear (Task 3) ----

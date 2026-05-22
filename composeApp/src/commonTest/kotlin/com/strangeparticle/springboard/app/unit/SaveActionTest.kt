@@ -7,6 +7,7 @@ import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMem
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.viewmodel.SaveResult
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.Test
@@ -22,8 +23,11 @@ import kotlin.test.assertTrue
  */
 class SaveActionTest {
 
-    private fun createViewModel(fileService: PlatformFileContentServiceInMemoryFake) = SpringboardViewModel(
-        settingsManager = createSettingsManagerForTest(),
+    private fun createViewModel(
+        fileService: PlatformFileContentServiceInMemoryFake,
+        target: RuntimeEnvironment = RuntimeEnvironment.Test,
+    ) = SpringboardViewModel(
+        settingsManager = createSettingsManagerForTest(target = target),
         persistenceService = PersistenceServiceInMemoryFake(),
         platformActivationService = PlatformActivationServiceInMemoryFake(),
         fileContentService = fileService,
@@ -166,5 +170,19 @@ class SaveActionTest {
         // tab.source must NOT change when the write fails — user can retry against the
         // same tab without leaving it pointing at a path that was never written.
         assertEquals("/path/original.json", vm.activeTab?.source)
+    }
+
+    @Test
+    fun `saveActiveTab on wasm writes unfiltered springboard command activators`() {
+        val fileService = PlatformFileContentServiceInMemoryFake()
+        val vm = createViewModel(fileService, target = RuntimeEnvironment.WASM)
+        vm.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/path/to/local.json")
+
+        val result = vm.saveActiveTab()
+
+        assertEquals(SaveResult.Success("/path/to/local.json"), result)
+        val written = fileService.writtenFiles["/path/to/local.json"] ?: error("expected saved JSON")
+        val saved = SpringboardFactory.fromJson(written, "/path/to/local.json")
+        assertEquals(1, saved.activators.filterIsInstance<com.strangeparticle.springboard.app.domain.model.CommandActivator>().size)
     }
 }

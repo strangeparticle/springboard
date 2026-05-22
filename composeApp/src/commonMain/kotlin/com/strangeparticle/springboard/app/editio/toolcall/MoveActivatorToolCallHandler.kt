@@ -24,9 +24,9 @@ internal class MoveActivatorToolCallHandler : ToolCallHandler {
             ?: return context.errorResult("No tab with id '${args.from_tab_id}'.", "missing_tab")
         val destTab = context.viewModel.findTab(args.to_tab_id)
             ?: return context.errorResult("No tab with id '${args.to_tab_id}'.", "missing_tab")
-        val sourceSpringboard = sourceTab.springboard
+        val sourceSpringboard = sourceTab.springboardUnfiltered
             ?: return context.errorResult("Tab '${args.from_tab_id}' has no loaded springboard.", "tab_empty")
-        val destSpringboard = destTab.springboard
+        val destSpringboard = destTab.springboardUnfiltered
             ?: return context.errorResult("Tab '${args.to_tab_id}' has no loaded springboard.", "tab_empty")
         val coord = Coordinate(args.environment_id, args.app_id, args.resource_id)
         val activator = sourceSpringboard.indexes.activatorByCoordinate[coord]

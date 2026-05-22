@@ -1,7 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
+import com.strangeparticle.springboard.app.domain.factory.dto.CommandActivatorDto
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
@@ -19,8 +21,8 @@ import kotlin.test.assertTrue
  */
 internal class SpringboardAppSnapshotTest {
 
-    private fun createViewModel() = SpringboardViewModel(
-        settingsManager = createSettingsManagerForTest(),
+    private fun createViewModel(target: RuntimeEnvironment = RuntimeEnvironment.Test) = SpringboardViewModel(
+        settingsManager = createSettingsManagerForTest(target = target),
         persistenceService = PersistenceServiceInMemoryFake(),
         platformActivationService = PlatformActivationServiceInMemoryFake(),
     )
@@ -87,5 +89,17 @@ internal class SpringboardAppSnapshotTest {
         val snapshot = SpringboardAppSnapshot.capture(vm)
 
         assertEquals(true, snapshot.tabs.first().isDirty)
+    }
+
+    @Test
+    fun `capture uses unfiltered springboard on wasm`() {
+        val vm = createViewModel(target = RuntimeEnvironment.WASM)
+        vm.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/tab1.json")
+
+        val snapshot = SpringboardAppSnapshot.capture(vm)
+
+        val dto = snapshot.tabs.first().springboard
+        assertNotNull(dto)
+        assertEquals(1, dto.activators.filterIsInstance<CommandActivatorDto>().size)
     }
 }

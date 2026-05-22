@@ -43,6 +43,9 @@ class GridNavTests {
     @Test fun `cell click activation - cell click activates pre-prod resource`() =
         GridNavTestScenarios.cellClickActivatesPreProdResource()
 
+    @Test fun `wasm command activator cell is hidden and cannot execute`() =
+        GridNavTestScenarios.wasmCommandActivatorCellIsHiddenAndCannotExecute()
+
     @Test fun `cell click activation - cell click activates prod resource`() =
         GridNavTestScenarios.cellClickActivatesProdResource()
 

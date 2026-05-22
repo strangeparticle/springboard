@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
 import com.strangeparticle.springboard.app.ui.gridnav.IsInMultiSelectKey
 import com.strangeparticle.springboard.app.ui.gridnav.IsRowHighlightedKey
@@ -32,8 +33,9 @@ object GridNavTestScenarios {
 
     private fun createTestComponents(
         activationService: PlatformActivationServiceInMemoryFake = PlatformActivationServiceInMemoryFake(),
+        target: RuntimeEnvironment = RuntimeEnvironment.Test,
     ): GridNavTestComponents {
-        val settingsManager = createSettingsManagerForTest()
+        val settingsManager = createSettingsManagerForTest(target = target)
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake(), activationService)
         val settingsViewModel = SettingsViewModel(settingsManager, com.strangeparticle.springboard.app.shared.stubHttpClientForTests())
         return GridNavTestComponents(viewModel, settingsViewModel, activationService)
@@ -289,6 +291,22 @@ object GridNavTestScenarios {
         waitForIdle()
 
         assertTrue(components.activationService.openedUrls.contains("https://example.com/preprod/app1/dash"))
+    }
+
+    fun wasmCommandActivatorCellIsHiddenAndCannotExecute() = runComposeUiTest {
+        val components = createTestComponents(target = RuntimeEnvironment.WASM)
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/test/commands.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridCellActivatorIndicator("app1", "res1"))
+            .assertDoesNotExist()
+        components.viewModel.activateCell(Coordinate("dev", "app1", "res1"))
+
+        assertTrue(components.activationService.executedCommands.isEmpty())
+        assertNull(components.viewModel.springboard?.indexes?.activatorByCoordinate?.get(Coordinate("dev", "app1", "res1")))
+        assertTrue(components.viewModel.springboardUnfiltered?.activators.orEmpty().isNotEmpty())
     }
 
     fun cellClickActivatesProdResource() = runComposeUiTest {

@@ -77,7 +77,7 @@ internal fun SpringboardToolCallExecutionContext.getSpringboardForTabOrError(
 ): Springboard {
     val tab = viewModel.findTab(tabId)
         ?: throw SpringboardMutationError("No tab with id '$tabId'.", "missing_tab")
-    val springboard = tab.springboard
+    val springboard = tab.springboardUnfiltered
         ?: throw SpringboardMutationError("Tab '$tabId' has no loaded springboard.", "tab_empty")
     return springboard
 }

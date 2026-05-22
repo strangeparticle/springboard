@@ -37,7 +37,7 @@ internal data class SpringboardAppSnapshot(
                     label = tab.label,
                     source = tab.source,
                     isDirty = tab.isDirty,
-                    springboard = tab.springboard?.let(::springboardToDto),
+                    springboard = tab.springboardUnfiltered?.let(::springboardToDto),
                 )
             }
             return SpringboardAppSnapshot(

@@ -13,6 +13,12 @@ class StartupTests {
     @Test fun `springboard with command activators shows security warning`() =
         StartupTestScenarios.springboardWithCommandActivatorsShowsSecurityWarning()
 
+    @Test fun `wasm springboard with command activators skips security warning`() =
+        StartupTestScenarios.wasmSpringboardWithCommandActivatorsSkipsSecurityWarning()
+
+    @Test fun `wasm springboard with url template activators shows security warning`() =
+        StartupTestScenarios.wasmSpringboardWithUrlTemplateActivatorsShowsSecurityWarning()
+
     @Test fun `springboard without command activators skips security warning`() =
         StartupTestScenarios.springboardWithoutCommandActivatorsSkipsSecurityWarning()
 

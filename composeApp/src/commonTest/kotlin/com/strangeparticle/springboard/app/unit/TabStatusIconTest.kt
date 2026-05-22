@@ -91,6 +91,7 @@ class TabStatusIconTest {
             label = "Test",
             source = source,
             springboard = springboard,
+            springboardUnfiltered = springboard,
             selectedEnvironmentId = null,
             selectedAppId = null,
             selectedResourceId = null,

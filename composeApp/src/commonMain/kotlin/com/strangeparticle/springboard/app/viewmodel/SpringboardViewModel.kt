@@ -16,6 +16,7 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
+import com.strangeparticle.springboard.app.runtime.filterSpringboardForRuntime
 import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowMultipleSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowSingleSetting
@@ -35,7 +36,6 @@ class SpringboardViewModel(
 ) : ViewModel() {
 
     private var suppressAutosave: Boolean = false
-
     private var tabIdCounter = 0
     private fun generateTabId(): String = "tab-${++tabIdCounter}"
 
@@ -76,9 +76,14 @@ class SpringboardViewModel(
         isDirty: Boolean,
     ) {
         val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
+        val filteredSpringboard = filterSpringboardForRuntime(
+            springboardConfig,
+            settingsManager.runtimeEnvironment,
+        )
         updateTabById(tabId) { current ->
             current.copy(
-                springboard = springboardConfig,
+                springboard = filteredSpringboard,
+                springboardUnfiltered = springboardConfig,
                 source = tabSource,
                 label = deriveTabLabel(springboardConfig.name),
                 selectedEnvironmentId = initialEnvironmentId,
@@ -120,7 +125,16 @@ class SpringboardViewModel(
      * dirty-marking and state-changed signaling clean and explicit.
      */
     fun replaceTabSpringboard(tabId: String, newSpringboard: com.strangeparticle.springboard.app.domain.model.Springboard) {
-        updateTabById(tabId) { it.copy(springboard = newSpringboard) }
+        val filteredSpringboard = filterSpringboardForRuntime(
+            newSpringboard,
+            settingsManager.runtimeEnvironment,
+        )
+        updateTabById(tabId) {
+            it.copy(
+                springboard = filteredSpringboard,
+                springboardUnfiltered = newSpringboard,
+            )
+        }
     }
 
     /**
@@ -131,7 +145,7 @@ class SpringboardViewModel(
     val canSaveActiveTabInPlace: Boolean
         get() {
             val tab = activeTab ?: return false
-            if (tab.springboard == null) return false
+            if (tab.springboardUnfiltered == null) return false
             val source = tab.source ?: return false
             return !isNonSaveableInPlaceSource(source)
         }
@@ -152,7 +166,7 @@ class SpringboardViewModel(
      */
     fun saveTab(tabId: String): SaveResult {
         val tab = findTab(tabId) ?: return SaveResult.NoSpringboard
-        val springboard = tab.springboard ?: return SaveResult.NoSpringboard
+        val springboard = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
         val source = tab.source ?: return SaveResult.NotSupportedForSource
         if (isNonSaveableInPlaceSource(source)) return SaveResult.NotSupportedForSource
         return writeSpringboardTo(source, springboard, rewriteTabSource = false, tabId = tabId)
@@ -169,7 +183,7 @@ class SpringboardViewModel(
      */
     fun saveActiveTabAs(targetPath: String): SaveResult {
         val tab = activeTab ?: return SaveResult.NoSpringboard
-        val springboard = tab.springboard ?: return SaveResult.NoSpringboard
+        val springboard = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
         return writeSpringboardTo(targetPath, springboard, rewriteTabSource = true, tabId = activeTabId)
     }
 
@@ -336,6 +350,9 @@ class SpringboardViewModel(
     var springboard: Springboard?
         get() = activeTab?.springboard
         private set(value) { updateActiveTab { it.copy(springboard = value) } }
+
+    val springboardUnfiltered: Springboard?
+        get() = activeTab?.springboardUnfiltered
 
     var selectedEnvironmentId: String?
         get() = activeTab?.selectedEnvironmentId
@@ -547,7 +564,7 @@ class SpringboardViewModel(
             // Write directly to targetTabId — applySpringboard targets the active tab and
             // would corrupt a different tab if the user switches while the load is in flight.
             installSpringboardInTab(targetTabId, springboardConfig, tabSource = source, isDirty = false)
-            val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
+            val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
             if (hasUnsafeActivators) {
                 tabToastState(targetTabId).warning(
                     "This Springboard contains activators that execute CLI commands or process template expressions. Be sure you trust it before using."
@@ -591,7 +608,7 @@ class SpringboardViewModel(
     private fun applySpringboard(springboardConfig: Springboard, source: String) {
         installSpringboardInTab(activeTabId, springboardConfig, tabSource = source, isDirty = false)
 
-        val hasUnsafeActivators = springboardConfig.activators.any { it is UrlTemplateActivator || it is CommandActivator }
+        val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
         if (hasUnsafeActivators) {
             activeTabToast.warning(
                 "This Springboard contains activators that execute CLI commands or process template expressions. Be sure you trust it before using."
@@ -602,6 +619,14 @@ class SpringboardViewModel(
         println("[Springboard] config loaded: ${springboardConfig.name}")
         requestFocusAppDropdown()
         onTabsChanged()
+    }
+
+    private fun hasUnsafeActivatorsForRuntime(springboardConfig: Springboard): Boolean {
+        val runtimeSpringboard = filterSpringboardForRuntime(
+            springboardConfig,
+            settingsManager.runtimeEnvironment,
+        )
+        return runtimeSpringboard.activators.any { it is UrlTemplateActivator || it is CommandActivator }
     }
 
     fun selectEnvironment(environmentId: String?) {

@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.*
 import com.strangeparticle.springboard.app.AppVersion
+import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
@@ -13,8 +14,10 @@ import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemor
 @OptIn(ExperimentalTestApi::class)
 object StartupTestScenarios {
 
-    private fun createTestComponents(): Pair<SpringboardViewModel, SettingsViewModel> {
-        val settingsManager = createSettingsManagerForTest()
+    private fun createTestComponents(
+        target: RuntimeEnvironment = RuntimeEnvironment.Test,
+    ): Pair<SpringboardViewModel, SettingsViewModel> {
+        val settingsManager = createSettingsManagerForTest(target = target)
         val viewModel = SpringboardViewModel(settingsManager, PersistenceServiceInMemoryFake())
         val settingsViewModel = SettingsViewModel(settingsManager, com.strangeparticle.springboard.app.shared.stubHttpClientForTests())
         return viewModel to settingsViewModel
@@ -54,6 +57,38 @@ object StartupTestScenarios {
         }
         waitForIdle()
         viewModel.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/test/commands.json")
+        waitForIdle()
+
+        onNode(hasTestTag(TestTags.TOAST_SEVERITY_LABEL) and hasText("Warning"))
+            .assertExists()
+    }
+
+    fun wasmSpringboardWithCommandActivatorsSkipsSecurityWarning() = runComposeUiTest {
+        val (viewModel, settingsViewModel) = createTestComponents(RuntimeEnvironment.WASM)
+        setContent {
+            SpringboardApp(
+                viewModel = viewModel,
+                settingsViewModel = settingsViewModel,
+            )
+        }
+        waitForIdle()
+        viewModel.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/test/commands.json")
+        waitForIdle()
+
+        onNode(hasTestTag(TestTags.TOAST_SEVERITY_LABEL) and hasText("Warning"))
+            .assertDoesNotExist()
+    }
+
+    fun wasmSpringboardWithUrlTemplateActivatorsShowsSecurityWarning() = runComposeUiTest {
+        val (viewModel, settingsViewModel) = createTestComponents(RuntimeEnvironment.WASM)
+        setContent {
+            SpringboardApp(
+                viewModel = viewModel,
+                settingsViewModel = settingsViewModel,
+            )
+        }
+        waitForIdle()
+        viewModel.loadConfig(TestFixtureJson.URL_TEMPLATE_ACTIVATOR, "/test/url-template.json")
         waitForIdle()
 
         onNode(hasTestTag(TestTags.TOAST_SEVERITY_LABEL) and hasText("Warning"))

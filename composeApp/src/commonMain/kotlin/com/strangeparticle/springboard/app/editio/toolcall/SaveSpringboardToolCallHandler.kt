@@ -18,7 +18,7 @@ internal class SaveSpringboardToolCallHandler : ToolCallHandler {
     suspend fun executeToolCallHandler(toolCallId: String, args: SaveSpringboardToolCallHandlerRequest, context: SpringboardToolCallExecutionContext): SpringboardToolCallHandlerResponse {
         val targetTab = context.viewModel.findTab(args.tab_id)
             ?: return errorStatusResult("No tab with id '${args.tab_id}'.", "missing_tab")
-        val springboard = targetTab.springboard
+        val springboard = targetTab.springboardUnfiltered
         if (springboard == null) {
             return errorStatusResult("Tab '${args.tab_id}' has no loaded springboard to save.", "tab_empty")
         }

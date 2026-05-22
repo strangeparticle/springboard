@@ -42,7 +42,7 @@ internal fun ChatMessagePartRenderer(
 
 @Composable
 private fun UserTextRenderer(text: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         Surface(
             color = MaterialTheme.colorScheme.primary,
             shape = MaterialTheme.shapes.small,

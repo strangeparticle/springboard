@@ -456,7 +456,7 @@ private fun InteractionPaneContent(
     onApprovalDecision: (toolCallId: String, approved: Boolean) -> Unit,
     textStyle: TextStyle,
 ) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         Surface(
             modifier = Modifier.widthIn(max = 560.dp).testTag(TestTags.AI_CHAT_USER_MESSAGE),
             color = MaterialTheme.colorScheme.primary,

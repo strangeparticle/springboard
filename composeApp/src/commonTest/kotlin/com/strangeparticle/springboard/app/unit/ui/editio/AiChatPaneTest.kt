@@ -148,7 +148,7 @@ internal class AiChatPaneTest {
         onNodeWithText("Add Chrome").assertExists()
         onNodeWithText("Error: network unavailable").assertExists()
 
-        assertTrue(user.right > pane.right - 72.dp, "user message should sit on the right side of its pane")
+        assertTrue(user.left < pane.left + 72.dp, "user message should sit on the left side of its pane")
         assertTrue(assistant.left < pane.left + 72.dp, "assistant message should sit on the left side of its pane")
         assertTrue(error.top > user.bottom + 8.dp, "response/error should have breathing room below the user message")
     }

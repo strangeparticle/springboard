@@ -26,6 +26,7 @@ import com.strangeparticle.springboard.app.shared.stubHttpClientForTests
 import com.strangeparticle.springboard.app.ui.AppBottomBar
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
@@ -128,6 +129,48 @@ internal class AiChatEntryPointTest {
         onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
         onNodeWithTag(TestTags.AI_CHAT_SETTINGS_BUTTON).performClick()
         onNodeWithTag(TestTags.SETTINGS_SCREEN).assertExists()
+    }
+
+    @Test
+    fun `opening configured chat pane focuses chat input`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `toast auto dismiss does not steal focus from open chat input`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("keep focus")
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
     }
 
     @Test

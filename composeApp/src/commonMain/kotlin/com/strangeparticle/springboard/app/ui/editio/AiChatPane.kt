@@ -119,6 +119,11 @@ internal fun AiChatPane(
             historyListState.scrollToItem(state.scrollbackPanes.size)
         }
     }
+    LaunchedEffect(state.focusInputOnShow) {
+        if (state.focusInputOnShow && !state.isRunning) {
+            try { inputFocusRequester.requestFocus() } catch (_: Exception) {}
+        }
+    }
     LaunchedEffect(state.isRunning) {
         if (state.isRunning) {
             hasBeenRunning = true

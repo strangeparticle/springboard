@@ -139,7 +139,7 @@ internal fun SpringboardApp(
                     isAssistantConfigured = effectiveAiChatPaneState.isConfigured,
                     onToggleAssistant = { showAssistant.value = !showAssistant.value },
                     showAssistant = showAssistant.value,
-                    aiChatPaneState = effectiveAiChatPaneState,
+                    aiChatPaneState = effectiveAiChatPaneState.copy(focusInputOnShow = showAssistant.value),
                     onCloseAssistant = { showAssistant.value = false },
                     onOpenAiSettings = openAiSettings,
                 )
@@ -149,7 +149,7 @@ internal fun SpringboardApp(
                 tabToastState = viewModel.activeTabToast,
                 isTabVisible = !showSettings.value,
                 onToastDismissed = {
-                    viewModel.requestFocusAppDropdown()
+                    if (!showAssistant.value) viewModel.requestFocusAppDropdown()
                 },
             )
         }

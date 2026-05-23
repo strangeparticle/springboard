@@ -18,6 +18,8 @@ data class TabState(
     val gridZoomSelection: GridZoomSelection,
     val isLoading: Boolean,
     val isDirty: Boolean = false,
+    val s3AwsProfile: String? = null,
+    val s3LastEtag: String? = null,
 ) {
     val isEmpty: Boolean get() = springboardFilteredForRuntime == null
 
@@ -38,6 +40,8 @@ data class TabState(
             gridZoomSelection = GridZoomSelection.default(),
             isLoading = false,
             isDirty = false,
+            s3AwsProfile = null,
+            s3LastEtag = null,
         )
     }
 }

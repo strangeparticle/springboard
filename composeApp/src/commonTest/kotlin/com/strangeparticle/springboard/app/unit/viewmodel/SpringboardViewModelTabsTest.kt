@@ -237,7 +237,7 @@ class SpringboardViewModelTabsTest {
     }
 
     @Test
-    fun sourceLessUnsavedSpringboardCannotSaveInPlaceButCanSaveAs() {
+    fun sourceLessUnsavedSpringboardCannotSaveInPlaceButCanSaveAs() = kotlinx.coroutines.test.runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val viewModel = SpringboardViewModel(
             settingsManager = createSettingsManagerForTest(),

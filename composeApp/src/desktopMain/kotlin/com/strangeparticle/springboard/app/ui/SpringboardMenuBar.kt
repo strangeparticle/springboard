@@ -16,6 +16,8 @@ fun FrameWindowScope.SpringboardMenuBar(
     onOpenInNewTab: () -> Unit,
     onOpenFromNetworkInCurrentTab: () -> Unit,
     onOpenFromNetworkInNewTab: () -> Unit,
+    onOpenFromS3InCurrentTab: () -> Unit,
+    onOpenFromS3InNewTab: () -> Unit,
     onCopy: () -> Unit,
     onPaste: () -> Unit,
     onCloseCurrentTab: () -> Unit,
@@ -53,6 +55,16 @@ fun FrameWindowScope.SpringboardMenuBar(
                 shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true),
             ) {
                 onOpenFromNetworkInNewTab()
+            }
+            Item("Open from S3 in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true, ctrl = true)) {
+                onOpenFromS3InCurrentTab()
+            }
+            Item(
+                "Open from S3 in New Tab…",
+                enabled = canCreateNewTab,
+                shortcut = KeyShortcut(Key.O, meta = true, ctrl = true, shift = true),
+            ) {
+                onOpenFromS3InNewTab()
             }
 
             Separator()

@@ -11,6 +11,8 @@ fun buildTabsDto(tabs: List<TabState>, activeTabId: String): TabsDto {
                 tabId = tab.tabId,
                 source = tab.source,
                 zoomPercent = tab.gridZoomSelection.percent,
+                s3AwsProfile = tab.s3AwsProfile,
+                s3LastEtag = tab.s3LastEtag,
             )
         }
     val persistedActiveTabId = if (persistedTabs.any { it.tabId == activeTabId }) {

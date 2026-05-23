@@ -10,6 +10,7 @@ import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.viewmodel.SaveResult
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -34,7 +35,7 @@ class SaveActionTest {
     )
 
     @Test
-    fun `saveActiveTab on a local-file-sourced tab writes serialized output and clears dirty`() {
+    fun `saveActiveTab on a local-file-sourced tab writes serialized output and clears dirty`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = createViewModel(fileService)
         vm.loadConfig(TestFixtureJson.URL_ONLY, "/path/to/local.json")
@@ -53,7 +54,7 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab returns WriteFailed when fileService returns false`() {
+    fun `saveActiveTab returns WriteFailed when fileService returns false`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake().apply { writeReturnsOverride = false }
         val vm = createViewModel(fileService)
         vm.loadConfig(TestFixtureJson.URL_ONLY, "/path/to/local.json")
@@ -68,7 +69,7 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab returns WriteFailed when fileService throws`() {
+    fun `saveActiveTab returns WriteFailed when fileService throws`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake().apply {
             writeException = RuntimeException("disk full")
         }
@@ -82,7 +83,7 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab returns NotSupportedForSource for an http-sourced tab`() {
+    fun `saveActiveTab returns NotSupportedForSource for an http-sourced tab`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = createViewModel(fileService)
         vm.loadConfig(TestFixtureJson.URL_ONLY, "https://example.com/sb.json")
@@ -94,7 +95,7 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab returns NoSpringboard when active tab is empty`() {
+    fun `saveActiveTab returns NoSpringboard when active tab is empty`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = createViewModel(fileService)
 
@@ -173,7 +174,7 @@ class SaveActionTest {
     }
 
     @Test
-    fun `saveActiveTab on wasm writes unfiltered springboard command activators`() {
+    fun `saveActiveTab on wasm writes unfiltered springboard command activators`() = runTest {
         val fileService = PlatformFileContentServiceInMemoryFake()
         val vm = createViewModel(fileService, target = RuntimeEnvironment.WASM)
         vm.loadConfig(TestFixtureJson.COMMAND_ACTIVATOR, "/path/to/local.json")

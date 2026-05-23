@@ -44,6 +44,7 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 internal fun ListOfStringSettingRowComposable(
     item: ListOfStringSettingsItem,
     viewModel: SettingsViewModel,
+    itemAnnotation: ((String) -> String)? = null,
     extraContent: @Composable () -> Unit = {},
 ) {
     val effectiveSource = viewModel.getEffectiveSource(item)
@@ -83,7 +84,7 @@ internal fun ListOfStringSettingRowComposable(
                     color = LocalUiBrand.current.customColors.settingsDescriptionText,
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                ListOfStringValuesDisplay(values)
+                ListOfStringValuesDisplay(values, itemAnnotation)
                 extraContent()
                 Spacer(modifier = Modifier.height(6.dp))
                 ProvenanceLabel(
@@ -102,13 +103,18 @@ internal fun ListOfStringSettingRowComposable(
 }
 
 @Composable
-private fun ListOfStringValuesDisplay(values: List<String>) {
+private fun ListOfStringValuesDisplay(
+    values: List<String>,
+    itemAnnotation: ((String) -> String)? = null,
+) {
     val currentUiBrand = LocalUiBrand.current
     Column {
         if (values.isNotEmpty()) {
             for (item in values) {
+                val annotation = itemAnnotation?.invoke(item)
+                val displayText = if (annotation != null) "• [$annotation] $item" else "• $item"
                 Text(
-                    text = "• $item",
+                    text = displayText,
                     fontSize = 12.sp,
                     color = currentUiBrand.customColors.settingsValueText,
                 )

@@ -27,7 +27,9 @@ fun tabStatusIconsFor(tab: TabState): List<TabStatusIcon> {
     if (tab.springboardFilteredForRuntime == null) return emptyList()
     val icons = mutableListOf<TabStatusIcon>()
     val source = tab.source
-    if (source != null && isNonSaveableInPlaceSource(source)) icons += TabStatusIcon.NonSaveable
+    if (source != null && isNonSaveableInPlaceSource(source) && tab.s3AwsProfile == null) {
+        icons += TabStatusIcon.NonSaveable
+    }
     if (tab.isDirty) icons += TabStatusIcon.Dirty
     return icons
 }

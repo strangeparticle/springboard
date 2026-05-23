@@ -12,10 +12,13 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Resolves AWS credentials by shelling out to the AWS CLI:
  *
- *   - `aws configure export-credentials --profile <p> --format process-credentials`
- *     yields the standard JSON shape (AccessKeyId / SecretAccessKey /
+ *   - `aws configure export-credentials --profile <p>` yields the standard
+ *     process-credentials JSON shape (AccessKeyId / SecretAccessKey /
  *     SessionToken / Expiration). This handles SSO sessions, role assumption,
- *     and static profiles uniformly.
+ *     and static profiles uniformly. The `--format process-credentials` flag
+ *     is the default output and is omitted here because older but still
+ *     current CLI v2 releases (e.g. v2.32.19) reject the flag as an invalid
+ *     choice.
  *   - `aws configure get region --profile <p>` yields the region as plain text.
  *
  * Credentials are cached per profile in memory until 60 s before their declared
@@ -56,7 +59,7 @@ class AwsCliCredentialProvider internal constructor(
 
     private suspend fun resolveFromCli(profile: String): AwsCredentials? {
         val credentialsStdout = processRunner.run(
-            args = listOf("configure", "export-credentials", "--profile", profile, "--format", "process-credentials"),
+            args = listOf("configure", "export-credentials", "--profile", profile),
             timeoutSeconds = CLI_TIMEOUT_SECONDS,
         ) ?: return null
 

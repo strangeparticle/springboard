@@ -28,6 +28,9 @@ class GridNavTests {
     @Test fun `grid title updates when environment dropdown changes`() =
         GridNavTestScenarios.gridTitleUpdatesWhenEnvironmentDropdownChanges()
 
+    @Test fun `grid environment heading dropdown changes environment and clears keynav selections`() =
+        GridNavTestScenarios.gridEnvironmentHeadingDropdownChangesEnvironmentAndClearsKeyNavSelections()
+
     @Test fun `grid cells show and hide based on selected environment`() =
         GridNavTestScenarios.gridCellsShowAndHideBasedOnSelectedEnvironment()
 

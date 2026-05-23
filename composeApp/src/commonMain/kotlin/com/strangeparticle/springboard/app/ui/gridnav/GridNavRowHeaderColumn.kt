@@ -3,10 +3,19 @@ package com.strangeparticle.springboard.app.ui.gridnav
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusProperties
@@ -22,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
+import com.strangeparticle.springboard.app.domain.model.Environment
 import com.strangeparticle.springboard.app.domain.model.Resource
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
@@ -29,11 +39,14 @@ import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 @Composable
 fun GridNavRowHeaderColumn(
     sections: List<GridNavSection>,
+    environments: List<Environment>,
+    selectedEnvironmentId: String?,
     gridHeaderHeight: Dp,
     hoveredHeaderResourceId: String?,
     hoveredResourceId: String?,
     onHeaderResourceHover: (String?) -> Unit,
     onResourceClick: (environmentId: String, resourceId: String) -> Unit,
+    onEnvironmentHeadingSelect: (String) -> Unit,
 ) {
     // Header/data boundary divider is rendered by GridNavHeaderResizeBoundary in GridNav.
     Column(modifier = Modifier.width(CommonUiConstants.ResourceLabelWidth)) {
@@ -45,7 +58,10 @@ fun GridNavRowHeaderColumn(
             val headingHeight = if (section.isPrimaryHeading) gridHeaderHeight else CommonUiConstants.GridRowHeight
             SectionHeading(
                 section = section,
+                environments = environments,
+                selectedEnvironmentId = selectedEnvironmentId,
                 headingHeight = headingHeight,
+                onEnvironmentHeadingSelect = onEnvironmentHeadingSelect,
             )
 
             section.resources.forEach { resource ->
@@ -65,7 +81,10 @@ fun GridNavRowHeaderColumn(
 @Composable
 private fun SectionHeading(
     section: GridNavSection,
+    environments: List<Environment>,
+    selectedEnvironmentId: String?,
     headingHeight: Dp,
+    onEnvironmentHeadingSelect: (String) -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -73,18 +92,79 @@ private fun SectionHeading(
             .height(headingHeight),
         contentAlignment = Alignment.BottomStart,
     ) {
-        Text(
-            text = section.headingText,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Visible,
+        if (section.environmentId == ALL_ENVS_ENVIRONMENT_ID) {
+            Text(
+                text = section.headingText,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Visible,
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+                    .wrapContentWidth(align = Alignment.Start, unbounded = true)
+                    .testTag(TestTags.gridSectionHeading(section.sectionId)),
+            )
+        } else {
+            EnvironmentHeadingDropdown(
+                environments = environments,
+                selectedEnvironmentId = selectedEnvironmentId,
+                sectionId = section.sectionId,
+                onEnvironmentHeadingSelect = onEnvironmentHeadingSelect,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EnvironmentHeadingDropdown(
+    environments: List<Environment>,
+    selectedEnvironmentId: String?,
+    sectionId: String,
+    onEnvironmentHeadingSelect: (String) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedName = environments.firstOrNull { it.id == selectedEnvironmentId }?.name
+        ?: "Select environment..."
+
+    Box(
+        modifier = Modifier
+            .padding(bottom = 8.dp)
+            .wrapContentWidth(align = Alignment.Start, unbounded = true),
+    ) {
+        Row(
             modifier = Modifier
-                .padding(bottom = 8.dp)
-                .wrapContentWidth(align = Alignment.Start, unbounded = true)
-                .testTag(TestTags.gridSectionHeading(section.sectionId)),
-        )
+                .clickable { expanded = true }
+                .testTag(TestTags.gridSectionHeading(sectionId)),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedName,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Visible,
+            )
+            Icon(
+                imageVector = Icons.Default.ArrowDropDown,
+                contentDescription = null,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            environments.forEach { environment ->
+                DropdownMenuItem(
+                    text = { Text(environment.name) },
+                    onClick = {
+                        onEnvironmentHeadingSelect(environment.id)
+                        expanded = false
+                    },
+                )
+            }
+        }
     }
 }
 

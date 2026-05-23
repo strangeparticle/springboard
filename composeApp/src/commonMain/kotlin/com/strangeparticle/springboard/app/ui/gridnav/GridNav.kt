@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.testTag
 import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
 import com.strangeparticle.springboard.app.domain.model.AppColumn
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.model.Environment
 import com.strangeparticle.springboard.app.domain.model.SeparatorColumn
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.domain.model.appColumnLayout
@@ -28,12 +29,14 @@ import kotlin.math.roundToInt
 fun GridNav(
     springboard: Springboard,
     selectedEnvironmentId: String?,
+    environments: List<Environment>,
     multiSelectSet: Set<Coordinate>,
     keyNavCoordinate: Coordinate?,
     isShiftHeld: Boolean,
     onCellActivate: (Coordinate) -> Unit,
     onColumnActivate: (environmentId: String, appId: String) -> Unit,
     onRowActivate: (environmentId: String, resourceId: String) -> Unit,
+    onEnvironmentHeadingSelect: (String) -> Unit,
     onToggleMultiSelect: (Coordinate) -> Unit,
     onActivatorPreviewChange: (String?) -> Unit,
     zoomSelection: GridZoomSelection = GridZoomSelection.FixedZoom(100),
@@ -181,11 +184,14 @@ fun GridNav(
                 ) {
                     GridNavRowHeaderColumn(
                         sections = sections,
+                        environments = environments,
+                        selectedEnvironmentId = selectedEnvironmentId,
                         gridHeaderHeight = gridHeaderHeight,
                         hoveredHeaderResourceId = hoveredHeaderResourceId,
                         hoveredResourceId = hoveredResourceId,
                         onHeaderResourceHover = { hoveredHeaderResourceId = it },
                         onResourceClick = onRowActivate,
+                        onEnvironmentHeadingSelect = onEnvironmentHeadingSelect,
                     )
 
                     // Each layout slot gets a fixed-width column. AppColumn slots

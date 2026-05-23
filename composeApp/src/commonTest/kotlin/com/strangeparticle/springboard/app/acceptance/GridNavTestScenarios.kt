@@ -13,6 +13,7 @@ import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
@@ -192,7 +193,7 @@ object GridNavTestScenarios {
         // Default environment is the first in the list ("common" with name "Common" in this fixture)
         onNodeWithTag(TestTags.gridSectionHeading("common"))
             .assertExists()
-            .assertTextEquals("Common Environment")
+            .assertTextEquals("Common")
     }
 
     // --- Environment title follows dropdown changes ---
@@ -209,7 +210,35 @@ object GridNavTestScenarios {
 
         onNodeWithTag(TestTags.gridSectionHeading("prod"))
             .assertExists()
-            .assertTextEquals("Production Environment")
+            .assertTextEquals("Production")
+    }
+
+    fun gridEnvironmentHeadingDropdownChangesEnvironmentAndClearsKeyNavSelections() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        waitForIdle()
+
+        mainClock.autoAdvance = false
+        mainClock.advanceTimeBy(CommonUiConstants.ToastAutoDismissMs + 500)
+        waitForIdle()
+        mainClock.autoAdvance = true
+        waitForIdle()
+
+        onNodeWithTag(TestTags.gridSectionHeading("common")).performClick()
+        waitForIdle()
+        onAllNodes(hasText("Production") and hasClickAction())[0].performClick()
+        waitForIdle()
+
+        assertEquals("prod", components.viewModel.selectedEnvironmentId)
+        assertNull(components.viewModel.selectedAppId)
+        assertNull(components.viewModel.selectedResourceId)
+        onNodeWithTag(TestTags.gridSectionHeading("prod"))
+            .assertExists()
+            .assertTextEquals("Production")
     }
 
     // --- Activator visibility by environment ---

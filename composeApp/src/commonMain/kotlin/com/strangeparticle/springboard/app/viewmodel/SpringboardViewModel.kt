@@ -633,6 +633,16 @@ class SpringboardViewModel(
         updateActiveTab { it.copy(selectedEnvironmentId = environmentId) }
     }
 
+    fun selectEnvironmentFromGridHeading(environmentId: String) {
+        updateActiveTab {
+            it.copy(
+                selectedEnvironmentId = environmentId,
+                selectedAppId = null,
+                selectedResourceId = null,
+            )
+        }
+    }
+
     fun selectApp(appId: String?) {
         updateActiveTab { it.copy(selectedAppId = appId) }
     }

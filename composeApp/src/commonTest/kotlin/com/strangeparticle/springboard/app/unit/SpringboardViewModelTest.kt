@@ -298,6 +298,21 @@ class SpringboardViewModelTest {
     }
 
     @Test
+    fun `grid heading environment selection changes environment and clears app and resource`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+        vm.selectEnvironment("preprod")
+        vm.selectApp("app1")
+        vm.selectResource("res1")
+
+        vm.selectEnvironmentFromGridHeading("prod")
+
+        assertEquals("prod", vm.selectedEnvironmentId)
+        assertNull(vm.selectedAppId)
+        assertNull(vm.selectedResourceId)
+    }
+
+    @Test
     fun `get activator for cell returns correct activator`() {
         val vm = createViewModel()
         vm.loadConfig(validJson, "/test.json")

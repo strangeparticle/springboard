@@ -16,6 +16,9 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
+import com.strangeparticle.springboard.app.platform.S3ContentService
+import com.strangeparticle.springboard.app.platform.S3GetResult
+import com.strangeparticle.springboard.app.platform.S3PutResult
 import com.strangeparticle.springboard.app.runtime.filterSpringboardForRuntime
 import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowMultipleSetting
@@ -33,6 +36,7 @@ class SpringboardViewModel(
     private val platformActivationService: PlatformActivationService = PlatformActivationServiceDefaultImpl(),
     private val contentLoader: SpringboardContentLoader? = null,
     private val fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
+    private val s3ContentService: S3ContentService? = null,
 ) : ViewModel() {
 
     private var suppressAutosave: Boolean = false
@@ -74,6 +78,8 @@ class SpringboardViewModel(
         springboardConfig: Springboard,
         tabSource: String?,
         isDirty: Boolean,
+        s3AwsProfile: String? = null,
+        s3LastEtag: String? = null,
     ) {
         val initialEnvironmentId = springboardConfig.environments.firstOrNull()?.id
         val filteredSpringboard = filterSpringboardForRuntime(
@@ -93,6 +99,8 @@ class SpringboardViewModel(
                 hoveredActivatorPreview = null,
                 isLoading = false,
                 isDirty = isDirty,
+                s3AwsProfile = s3AwsProfile,
+                s3LastEtag = s3LastEtag,
             )
         }
     }
@@ -147,7 +155,8 @@ class SpringboardViewModel(
             val tab = activeTab ?: return false
             if (tab.springboardUnfiltered == null) return false
             val source = tab.source ?: return false
-            return !isNonSaveableInPlaceSource(source)
+            if (!isNonSaveableInPlaceSource(source)) return true
+            return tab.s3AwsProfile != null
         }
 
     /**
@@ -164,15 +173,41 @@ class SpringboardViewModel(
      * local-file source path. Clears dirty on success. Works for any tab, not only
      * the active one — no active-tab switch required.
      */
-    fun saveTab(tabId: String): SaveResult {
+    suspend fun saveTab(tabId: String): SaveResult {
         val tab = findTab(tabId) ?: return SaveResult.NoSpringboard
         val springboardUnfiltered = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
         val source = tab.source ?: return SaveResult.NotSupportedForSource
-        if (isNonSaveableInPlaceSource(source)) return SaveResult.NotSupportedForSource
+        if (isNonSaveableInPlaceSource(source)) {
+            return if (tab.s3AwsProfile != null) {
+                writeSpringboardToS3(tab, source, springboardUnfiltered, ifMatch = tab.s3LastEtag)
+            } else {
+                SaveResult.NotSupportedForSource
+            }
+        }
         return writeSpringboardTo(source, springboardUnfiltered, rewriteTabSource = false, tabId = tabId)
     }
 
-    fun saveActiveTab(): SaveResult = saveTab(activeTabId)
+    suspend fun saveActiveTab(): SaveResult = saveTab(activeTabId)
+
+    /**
+     * Like [saveTab] but ignores any previously-captured ETag and unconditionally
+     * overwrites the S3 object. Used by the modified-externally conflict dialog
+     * when the user picks "Overwrite". For non-S3 tabs the behaviour is identical
+     * to [saveTab].
+     */
+    suspend fun saveTabOverwriting(tabId: String): SaveResult {
+        val tab = findTab(tabId) ?: return SaveResult.NoSpringboard
+        val springboardUnfiltered = tab.springboardUnfiltered ?: return SaveResult.NoSpringboard
+        val source = tab.source ?: return SaveResult.NotSupportedForSource
+        if (isNonSaveableInPlaceSource(source)) {
+            return if (tab.s3AwsProfile != null) {
+                writeSpringboardToS3(tab, source, springboardUnfiltered, ifMatch = null)
+            } else {
+                SaveResult.NotSupportedForSource
+            }
+        }
+        return writeSpringboardTo(source, springboardUnfiltered, rewriteTabSource = false, tabId = tabId)
+    }
 
     /**
      * Re-serializes the active tab's springboard via [SpringboardJsonWriter] and writes
@@ -180,6 +215,9 @@ class SpringboardViewModel(
      * the tab's [TabState.source] is rewritten to [targetPath] so subsequent in-place
      * saves overwrite that file. Works for any active-tab source, including HTTP/HTTPS;
      * Save As is the supported way to take a network-loaded springboard to disk.
+     *
+     * Save As also drops any S3 association on the tab — the new source is a local
+     * path, so the s3 profile / etag from the previous source no longer apply.
      */
     fun saveActiveTabAs(targetPath: String): SaveResult {
         val tab = activeTab ?: return SaveResult.NoSpringboard
@@ -201,14 +239,45 @@ class SpringboardViewModel(
         }
         return if (ok) {
             updateTabById(tabId) { current ->
-                current.copy(
-                    isDirty = false,
-                    source = if (rewriteTabSource) targetPath else current.source,
-                )
+                if (rewriteTabSource) {
+                    current.copy(
+                        isDirty = false,
+                        source = targetPath,
+                        s3AwsProfile = null,
+                        s3LastEtag = null,
+                    )
+                } else {
+                    current.copy(isDirty = false)
+                }
             }
             SaveResult.Success(targetPath)
         } else {
             SaveResult.WriteFailed(targetPath, "writeFileContents returned false")
+        }
+    }
+
+    private suspend fun writeSpringboardToS3(
+        tab: TabState,
+        sourceUrl: String,
+        springboard: com.strangeparticle.springboard.app.domain.model.Springboard,
+        ifMatch: String?,
+    ): SaveResult {
+        val service = s3ContentService
+            ?: return SaveResult.WriteFailed(sourceUrl, "S3 content service is not available")
+        val profile = tab.s3AwsProfile
+            ?: return SaveResult.NotSupportedForSource
+        val json = SpringboardJsonWriter.toJson(springboard)
+        return when (val outcome = service.putObject(sourceUrl, profile, json, ifMatch)) {
+            is S3PutResult.Success -> {
+                updateTabById(tab.tabId) { current ->
+                    current.copy(isDirty = false, s3LastEtag = outcome.etag ?: current.s3LastEtag)
+                }
+                SaveResult.Success(sourceUrl)
+            }
+            is S3PutResult.Conflict -> SaveResult.Conflict(sourceUrl, outcome.message)
+            is S3PutResult.Denied -> SaveResult.Denied(sourceUrl, outcome.message)
+            is S3PutResult.CredentialsUnavailable -> SaveResult.WriteFailed(sourceUrl, outcome.message)
+            is S3PutResult.Failed -> SaveResult.WriteFailed(sourceUrl, outcome.message)
         }
     }
 
@@ -287,9 +356,9 @@ class SpringboardViewModel(
         onTabsChanged()
     }
 
-    fun loadConfigInNewTab(jsonString: String, source: String) {
+    fun loadConfigInNewTab(jsonString: String, source: String, s3AwsProfile: String? = null, s3LastEtag: String? = null) {
         createTab() ?: return
-        loadConfig(jsonString, source)
+        loadConfig(jsonString, source, s3AwsProfile, s3LastEtag)
     }
 
     fun selectPreviousTab() {
@@ -333,7 +402,13 @@ class SpringboardViewModel(
      * If the only tab is the initial empty one, it is reused in place. Otherwise a new tab is
      * appended. Returns the in-memory tabId of the restored tab.
      */
-    fun restoreTabFromPersistence(source: String, jsonContents: String, zoomPercent: Int): String {
+    fun restoreTabFromPersistence(
+        source: String,
+        jsonContents: String,
+        zoomPercent: Int,
+        s3AwsProfile: String? = null,
+        s3LastEtag: String? = null,
+    ): String {
         val targetIndex = if (_tabs.size == 1 && _tabs.first().isEmpty) {
             0
         } else {
@@ -342,7 +417,7 @@ class SpringboardViewModel(
             _tabs.size - 1
         }
         activeTabId = _tabs[targetIndex].tabId
-        loadConfig(jsonContents, source)
+        loadConfig(jsonContents, source, s3AwsProfile = s3AwsProfile, s3LastEtag = s3LastEtag)
         updateActiveTab { it.copy(gridZoomSelection = GridZoomSelection.fromPercent(zoomPercent)) }
         return activeTabId
     }
@@ -485,11 +560,11 @@ class SpringboardViewModel(
         currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate.containsKey(coordinate)
     }
 
-    fun loadConfig(jsonString: String, source: String) {
+    fun loadConfig(jsonString: String, source: String, s3AwsProfile: String? = null, s3LastEtag: String? = null) {
         try {
             isLoading = true
             val springboardConfig = SpringboardFactory.fromJson(jsonString, source)
-            applySpringboard(springboardConfig, source)
+            applySpringboard(springboardConfig, source, s3AwsProfile, s3LastEtag)
         } catch (e: Exception) {
             activeTabToast.error("Failed to load config: ${e.message}")
             isLoading = false
@@ -553,6 +628,76 @@ class SpringboardViewModel(
         return loadIntoActive(loader, source, activeTabId)
     }
 
+    /**
+     * Load a springboard from the S3 [url] authenticated with the named AWS CLI
+     * [profile]. When [inNewTab] is true creates a new tab first and loads into
+     * it. The tab's S3 association (profile + last ETag) is recorded so
+     * subsequent in-place saves PUT back to the same object with If-Match
+     * conflict detection.
+     */
+    suspend fun loadConfigFromS3(url: String, profile: String, inNewTab: Boolean): LoadResult {
+        val service = s3ContentService
+            ?: return LoadResult.Failure(
+                code = "s3_not_configured",
+                message = "Cannot load: SpringboardViewModel was constructed without an S3ContentService.",
+            )
+
+        val targetTabId = if (inNewTab) {
+            createTab() ?: return LoadResult.Failure(
+                code = "tab_limit_reached",
+                message = "Cannot create a new tab — tab limit reached.",
+            )
+        } else {
+            activeTabId
+        }
+
+        val result = when (val outcome = service.getObject(url, profile)) {
+            is S3GetResult.Success -> {
+                try {
+                    val springboardConfig = SpringboardFactory.fromJson(outcome.content, url)
+                    installSpringboardInTab(
+                        tabId = targetTabId,
+                        springboardConfig = springboardConfig,
+                        tabSource = url,
+                        isDirty = false,
+                        s3AwsProfile = profile,
+                        s3LastEtag = outcome.etag,
+                    )
+                    val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
+                    if (hasUnsafeActivators) {
+                        tabToastState(targetTabId).warning(
+                            "This Springboard contains activators that execute CLI commands or process template expressions. Be sure you trust it before using."
+                        )
+                    }
+                    tabToastState(targetTabId).info("Loaded from S3: ${springboardConfig.name}")
+                    if (targetTabId == activeTabId) requestFocusAppDropdown()
+                    onTabsChanged()
+                    LoadResult.Success(targetTabId)
+                } catch (e: Exception) {
+                    LoadResult.Failure(
+                        code = "parse_failed",
+                        message = "Failed to parse springboard at '$url': ${e.message ?: "unknown error"}",
+                    )
+                }
+            }
+            is S3GetResult.Denied -> LoadResult.Failure(
+                code = "s3_denied",
+                message = "Open from S3 failed — your AWS profile doesn't have read permission. ${outcome.message}",
+            )
+            is S3GetResult.CredentialsUnavailable -> LoadResult.Failure(
+                code = "s3_credentials_unavailable",
+                message = "AWS credentials may have expired. Re-run `aws sso login` and try again. ${outcome.message}",
+            )
+            is S3GetResult.Failed -> LoadResult.Failure(
+                code = "s3_failed",
+                message = "Open from S3 failed — ${outcome.message}",
+            )
+        }
+
+        if (inNewTab && result is LoadResult.Failure) closeTab(targetTabId)
+        return result
+    }
+
     private suspend fun loadIntoActive(
         loader: SpringboardContentLoader,
         source: String,
@@ -605,8 +750,20 @@ class SpringboardViewModel(
         focusAppDropdownRequested = true
     }
 
-    private fun applySpringboard(springboardConfig: Springboard, source: String) {
-        installSpringboardInTab(activeTabId, springboardConfig, tabSource = source, isDirty = false)
+    private fun applySpringboard(
+        springboardConfig: Springboard,
+        source: String,
+        s3AwsProfile: String? = null,
+        s3LastEtag: String? = null,
+    ) {
+        installSpringboardInTab(
+            tabId = activeTabId,
+            springboardConfig = springboardConfig,
+            tabSource = source,
+            isDirty = false,
+            s3AwsProfile = s3AwsProfile,
+            s3LastEtag = s3LastEtag,
+        )
 
         val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
         if (hasUnsafeActivators) {

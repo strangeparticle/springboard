@@ -27,7 +27,8 @@ internal class SaveSpringboardToolCallHandler : ToolCallHandler {
             return errorStatusResult("Save in place is not supported for this tab's source.", "not_supported_for_source")
         }
         val loweredSource = source.lowercase()
-        if (loweredSource.startsWith("http://") || loweredSource.startsWith("https://")) {
+        val isHttpSource = loweredSource.startsWith("http://") || loweredSource.startsWith("https://")
+        if (isHttpSource && targetTab.s3AwsProfile == null) {
             return errorStatusResult("Save in place is not supported for this tab's source.", "not_supported_for_source")
         }
         val approved = context.awaitUserApproval(toolCallId)
@@ -51,6 +52,14 @@ internal class SaveSpringboardToolCallHandler : ToolCallHandler {
             SaveResult.NoSpringboard -> errorStatusResult(
                 message = "Tab '${args.tab_id}' has no loaded springboard to save.",
                 code = "tab_empty",
+            )
+            is SaveResult.Conflict -> errorStatusResult(
+                message = "S3 conflict for '${saveOutcome.sourceUrl}': ${saveOutcome.message}",
+                code = "s3_conflict",
+            )
+            is SaveResult.Denied -> errorStatusResult(
+                message = "S3 access denied for '${saveOutcome.sourceUrl}': ${saveOutcome.message}",
+                code = "s3_denied",
             )
         }
     }

@@ -12,12 +12,14 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.aws.AwsCliCredentialProvider
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.OpenFromS3AwsProfileSetting
 import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting
 import com.strangeparticle.springboard.app.settings.items.core.SurfaceAppleScriptErrorsSetting
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
@@ -75,6 +77,10 @@ fun main(args: Array<String>) {
     // reach it through the standard SettingsItemContext.
     val aiHttpClient = HttpClient(CIO)
 
+    val s3HttpClient = HttpClient(CIO)
+    val awsCredentialProvider = AwsCliCredentialProvider()
+    val s3ContentService = S3ContentServiceDesktopImpl(s3HttpClient, awsCredentialProvider)
+
     val startupTabs = settingsManager.resolveValue(StartupTabsSetting)
 
     println("[Springboard] startup tabs: ${if (startupTabs.isEmpty()) "none" else startupTabs.joinToString(", ")}")
@@ -89,7 +95,13 @@ fun main(args: Array<String>) {
         )
 
         val viewModel = remember {
-            SpringboardViewModel(settingsManager, persistenceService, activationService, contentLoader)
+            SpringboardViewModel(
+                settingsManager = settingsManager,
+                persistenceService = persistenceService,
+                platformActivationService = activationService,
+                contentLoader = contentLoader,
+                s3ContentService = s3ContentService,
+            )
         }
         val settingsViewModel = remember {
             SettingsViewModel(settingsManager = settingsManager, httpClient = aiHttpClient)
@@ -100,6 +112,10 @@ fun main(args: Array<String>) {
         val showLicenseDialog = remember { mutableStateOf(false) }
         val showNetworkDialog = remember { mutableStateOf(false) }
         val networkOpenIntoNewTab = remember { mutableStateOf(false) }
+        val showS3Dialog = remember { mutableStateOf(false) }
+        val s3OpenIntoNewTab = remember { mutableStateOf(false) }
+        val s3ConflictSourceUrl = remember { mutableStateOf<String?>(null) }
+        val s3ConflictTabId = remember { mutableStateOf<String?>(null) }
         val activeSettingsOpenedFrom = remember { mutableStateOf<ActiveSettingsOpenedFrom?>(null) }
         val loadSpringboardConfig: (String, String) -> Unit = { path, contents ->
             println("[Springboard] config loading: $path")
@@ -177,6 +193,14 @@ fun main(args: Array<String>) {
                     networkOpenIntoNewTab.value = true
                     showNetworkDialog.value = true
                 },
+                onOpenFromS3InCurrentTab = {
+                    s3OpenIntoNewTab.value = false
+                    showS3Dialog.value = true
+                },
+                onOpenFromS3InNewTab = {
+                    s3OpenIntoNewTab.value = true
+                    showS3Dialog.value = true
+                },
                 onCopy = { sendMenuShortcut(KeyEvent.VK_C) },
                 onPaste = { sendMenuShortcut(KeyEvent.VK_V) },
                 onCloseCurrentTab = {
@@ -185,15 +209,24 @@ fun main(args: Array<String>) {
                 onPreviousTab = { viewModel.selectPreviousTab() },
                 onNextTab = { viewModel.selectNextTab() },
                 onSave = {
-                    when (val result = viewModel.saveActiveTab()) {
-                        is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
-                            ToastBroadcaster.info("Saved to ${result.path}")
-                        is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
-                            ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
-                        com.strangeparticle.springboard.app.viewmodel.SaveResult.NotSupportedForSource ->
-                            ToastBroadcaster.error("Save is not supported for this source. Use Save a Local Copy As… instead.")
-                        com.strangeparticle.springboard.app.viewmodel.SaveResult.NoSpringboard -> {
-                            // Menu item should be disabled in this state — defensive no-op.
+                    val tabId = viewModel.activeTabId
+                    kotlinx.coroutines.MainScope().launch {
+                        when (val result = viewModel.saveActiveTab()) {
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
+                                ToastBroadcaster.info("Saved to ${result.path}")
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
+                                ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
+                            com.strangeparticle.springboard.app.viewmodel.SaveResult.NotSupportedForSource ->
+                                ToastBroadcaster.error("Save is not supported for this source. Use Save a Local Copy As… instead.")
+                            com.strangeparticle.springboard.app.viewmodel.SaveResult.NoSpringboard -> {
+                                // Menu item should be disabled in this state — defensive no-op.
+                            }
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Conflict -> {
+                                s3ConflictSourceUrl.value = result.sourceUrl
+                                s3ConflictTabId.value = tabId
+                            }
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Denied ->
+                                ToastBroadcaster.error("Save failed — your AWS profile doesn't have write permission. ${result.message}")
                         }
                     }
                 },
@@ -214,6 +247,10 @@ fun main(args: Array<String>) {
                                 ToastBroadcaster.error("Save As is not supported for this tab.")
                             com.strangeparticle.springboard.app.viewmodel.SaveResult.NoSpringboard -> {
                                 // No-op; menu only fires when there's a springboard.
+                            }
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Conflict,
+                            is com.strangeparticle.springboard.app.viewmodel.SaveResult.Denied -> {
+                                // Save As writes to a local path; S3-specific outcomes don't apply here.
                             }
                         }
                     }
@@ -263,6 +300,92 @@ fun main(args: Array<String>) {
                 )
             }
 
+            if (showS3Dialog.value) {
+                val intoNewTab = s3OpenIntoNewTab.value
+                val defaultAwsProfile = settingsManager.resolveValue(OpenFromS3AwsProfileSetting)
+                com.strangeparticle.springboard.app.ui.openbutton.OpenFromS3Dialog(
+                    defaultAwsProfile = defaultAwsProfile,
+                    onConfirm = { request ->
+                        showS3Dialog.value = false
+                        kotlinx.coroutines.MainScope().launch {
+                            val outcome = viewModel.loadConfigFromS3(
+                                url = request.url,
+                                profile = request.awsProfile,
+                                inNewTab = intoNewTab,
+                            )
+                            if (outcome is com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel.LoadResult.Failure) {
+                                viewModel.activeTabToast.error(outcome.message)
+                            }
+                        }
+                    },
+                    onDismiss = { showS3Dialog.value = false },
+                )
+            }
+
+            val conflictUrl = s3ConflictSourceUrl.value
+            val conflictTabId = s3ConflictTabId.value
+            if (conflictUrl != null && conflictTabId != null) {
+                com.strangeparticle.springboard.app.ui.openbutton.S3ConflictDialog(
+                    sourceUrl = conflictUrl,
+                    onDismiss = {
+                        s3ConflictSourceUrl.value = null
+                        s3ConflictTabId.value = null
+                    },
+                    onOverwrite = {
+                        s3ConflictSourceUrl.value = null
+                        s3ConflictTabId.value = null
+                        kotlinx.coroutines.MainScope().launch {
+                            when (val result = viewModel.saveTabOverwriting(conflictTabId)) {
+                                is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
+                                    ToastBroadcaster.info("Saved to ${result.path}")
+                                is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
+                                    ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
+                                is com.strangeparticle.springboard.app.viewmodel.SaveResult.Denied ->
+                                    ToastBroadcaster.error("Save failed — your AWS profile doesn't have write permission. ${result.message}")
+                                else -> {
+                                    // Other variants shouldn't appear here for an S3-backed tab.
+                                }
+                            }
+                        }
+                    },
+                    onReload = {
+                        val tab = viewModel.findTab(conflictTabId)
+                        val profile = tab?.s3AwsProfile
+                        val source = tab?.source
+                        s3ConflictSourceUrl.value = null
+                        s3ConflictTabId.value = null
+                        if (profile != null && source != null) {
+                            kotlinx.coroutines.MainScope().launch {
+                                viewModel.loadConfigFromS3(url = source, profile = profile, inNewTab = false)
+                            }
+                        }
+                    },
+                    onSaveAs = {
+                        val tabIdForSaveAs = conflictTabId
+                        s3ConflictSourceUrl.value = null
+                        s3ConflictTabId.value = null
+                        val springboardFilteredForRuntime =
+                            viewModel.findTab(tabIdForSaveAs)?.springboardFilteredForRuntime
+                        if (springboardFilteredForRuntime != null) {
+                            val suggestedName = springboardFilteredForRuntime.name
+                                .replace(Regex("[^a-zA-Z0-9._\\- ]"), "") + ".json"
+                            val path = saveLocalCopyAsFileDialog(suggestedName)
+                            if (path != null) {
+                                when (val result = viewModel.saveActiveTabAs(path)) {
+                                    is com.strangeparticle.springboard.app.viewmodel.SaveResult.Success ->
+                                        ToastBroadcaster.info("Saved to ${result.path}")
+                                    is com.strangeparticle.springboard.app.viewmodel.SaveResult.WriteFailed ->
+                                        ToastBroadcaster.error("Failed to save to ${result.path}: ${result.errorMessage}")
+                                    else -> {
+                                        // No-op for non-applicable variants.
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+            }
+
             SpringboardApp(
                 viewModel = viewModel,
                 settingsViewModel = settingsViewModel,
@@ -281,7 +404,11 @@ fun main(args: Array<String>) {
             }
 
             LaunchedEffect(Unit) {
-                val tabRestorer = TabRestorer(persistenceService, contentLoader)
+                val tabRestorer = TabRestorer(
+                    persistenceService = persistenceService,
+                    loader = contentLoader,
+                    s3ContentService = s3ContentService,
+                )
                 tabRestorer.restoreInto(viewModel, startupTabs)
 
                 println("[Springboard] application ready")

@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.editio.help
 
 internal object AiAssistantFullHelpText {
-    const val title = "AI Editing Assistant help"
+    const val title = "AI Assistant help"
 
     val text: String = """
         $title
@@ -13,6 +13,7 @@ internal object AiAssistantFullHelpText {
         - Add URL, URL-template, or command activators for environment/app/resource cells.
         - Add or update guidance notes for specific cells.
         - Open, create, close, or save tabs when the request is clear.
+        - Open one or many entries — e.g. "open the prod dashboard for fretnaut", "open all the confluence links", "open everything for fretnaut in prod".
 
         Useful concepts:
         - Apps are the services or launchable applications this Springboard organizes.

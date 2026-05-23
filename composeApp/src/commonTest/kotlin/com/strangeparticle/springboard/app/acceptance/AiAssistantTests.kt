@@ -13,6 +13,10 @@ import com.strangeparticle.editio.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.editio.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.editio.SystemPromptBuilder
+import com.strangeparticle.springboard.app.editio.toolcall.ActivateColumnToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ActivateCoordinateToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ActivateCoordinatesToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ActivateRowToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddAppToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddEnvironmentToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddResourceToolCallHandler
@@ -41,7 +45,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
-internal class AiEditingTests {
+internal class AiAssistantTests {
 
     @Test
     fun `fake provider can add an activator through tools`() = runTest {
@@ -147,6 +151,251 @@ internal class AiEditingTests {
     }
 
     @Test
+    fun `activate_coordinate opens URL of URL activator`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate",
+                    "activate_coordinate",
+                    args(
+                        "tab_id" to tabId,
+                        "environment_id" to "dev",
+                        "app_id" to "app1",
+                        "resource_id" to "res1",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened.")
+
+        fixture.manager.submit("Open the dashboard").join()
+
+        assertEquals(listOf("https://example.com"), fixture.activationService.openedUrls)
+    }
+
+    @Test
+    fun `activate_coordinate runs command of command activator`() = runTest {
+        val fixture = createFixture(initialConfig = TestFixtureJson.COMMAND_ACTIVATOR)
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate",
+                    "activate_coordinate",
+                    args(
+                        "tab_id" to tabId,
+                        "environment_id" to "dev",
+                        "app_id" to "app1",
+                        "resource_id" to "res1",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Done.")
+
+        fixture.manager.submit("Run the command").join()
+
+        assertEquals(listOf("echo test"), fixture.activationService.executedCommands)
+        assertTrue(fixture.activationService.openedUrls.isEmpty())
+    }
+
+    @Test
+    fun `activate_coordinate returns no_activators_resolved when coordinate has no activator`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate",
+                    "activate_coordinate",
+                    args(
+                        "tab_id" to tabId,
+                        "environment_id" to "dev",
+                        "app_id" to "app1",
+                        "resource_id" to "nonexistent",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Nothing to open.")
+
+        fixture.manager.submit("Open the missing thing").join()
+
+        assertTrue(fixture.activationService.openedUrls.isEmpty())
+        val lastToolMessage = fixture.manager.history
+            .filterIsInstance<com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage>()
+            .last()
+        assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
+    }
+
+    @Test
+    fun `activate_row opens every URL in row using all-envs fallback`() = runTest {
+        val rowFixtureJson = """
+        {
+          "name": "Row Test",
+          "environments": [{ "id": "prod", "name": "Prod" }],
+          "apps": [
+            { "id": "app1", "name": "App One" },
+            { "id": "app2", "name": "App Two" }
+          ],
+          "resources": [{ "id": "res1", "name": "Dashboard" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "prod", "url": "https://prod.example.com/app1" },
+            { "type": "url", "appId": "app2", "resourceId": "res1", "environmentId": "ALL", "url": "https://all.example.com/app2" }
+          ]
+        }
+        """.trimIndent()
+        val fixture = createFixture(initialConfig = rowFixtureJson)
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate-row",
+                    "activate_row",
+                    args(
+                        "tab_id" to tabId,
+                        "environment_id" to "prod",
+                        "resource_id" to "res1",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened row.")
+
+        fixture.manager.submit("Open the row").join()
+
+        // app1 has a prod-specific URL, app2 falls back to its ALL-env activator.
+        assertEquals(
+            listOf(
+                "https://prod.example.com/app1",
+                "https://all.example.com/app2",
+            ),
+            fixture.activationService.openedUrls,
+        )
+    }
+
+    @Test
+    fun `activate_column opens every URL in column using all-envs fallback`() = runTest {
+        val fixture = createFixture(initialConfig = TestFixtureJson.COMMAND_STRICT_WITH_ALL_ENVS_URL_FALLBACK)
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate-column",
+                    "activate_column",
+                    args(
+                        "tab_id" to tabId,
+                        "environment_id" to "prod",
+                        "app_id" to "app1",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened column.")
+
+        fixture.manager.submit("Open the column").join()
+
+        // The prod (app1, res1) cell has a command, not a URL; that command should run.
+        assertEquals(listOf("echo prod"), fixture.activationService.executedCommands)
+    }
+
+    @Test
+    fun `activate_coordinates batches multiple URLs in a single call`() = runTest {
+        val fixture = createFixture(initialConfig = TestFixtureJson.MULTI_ENV_WITH_COMMON)
+        val tabId = fixture.viewModel.activeTabId
+        val argsJson = kotlinx.serialization.json.buildJsonObject {
+            put("tab_id", tabId)
+            put("coordinates", kotlinx.serialization.json.buildJsonArray {
+                add(kotlinx.serialization.json.buildJsonObject {
+                    put("environment_id", "common")
+                    put("app_id", "app1")
+                    put("resource_id", "res1")
+                })
+                add(kotlinx.serialization.json.buildJsonObject {
+                    put("environment_id", "common")
+                    put("app_id", "app1")
+                    put("resource_id", "res2")
+                })
+            })
+        }.toString()
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-activate-many", "activate_coordinates", argsJson))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened a batch.")
+
+        fixture.manager.submit("Open these two").join()
+
+        assertEquals(
+            listOf(
+                "https://example.com/common/app1/dash",
+                "https://example.com/common/app1/logs",
+            ),
+            fixture.activationService.openedUrls,
+        )
+    }
+
+    @Test
+    fun `activation tools target non-active tab without changing active tab`() = runTest {
+        val fixture = createFixture()
+        val firstTabId = fixture.viewModel.activeTabId
+        val secondTabId = fixture.viewModel.createTab()!!
+        fixture.viewModel.loadConfig(TestFixtureJson.ALTERNATIVE_URL_ONLY, "/other.json")
+        fixture.viewModel.selectTab(firstTabId)
+        assertEquals(firstTabId, fixture.viewModel.activeTabId)
+
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-cross",
+                    "activate_coordinate",
+                    args(
+                        "tab_id" to secondTabId,
+                        "environment_id" to "staging",
+                        "app_id" to "web",
+                        "resource_id" to "dashboard",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened.")
+
+        fixture.manager.submit("Open the other tab's dashboard").join()
+
+        assertEquals(listOf("https://alt.example.com"), fixture.activationService.openedUrls)
+        assertEquals(firstTabId, fixture.viewModel.activeTabId)
+    }
+
+    @Test
+    fun `activate_coordinate returns missing_tab for unknown tab id`() = runTest {
+        val fixture = createFixture()
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall(
+                    "call-activate",
+                    "activate_coordinate",
+                    args(
+                        "tab_id" to "no-such-tab",
+                        "environment_id" to "dev",
+                        "app_id" to "app1",
+                        "resource_id" to "res1",
+                    ),
+                )
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Could not find tab.")
+
+        fixture.manager.submit("Open on missing tab").join()
+
+        assertTrue(fixture.activationService.openedUrls.isEmpty())
+        val lastToolMessage = fixture.manager.history
+            .filterIsInstance<com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage>()
+            .last()
+        assertTrue(lastToolMessage.content.contains("missing_tab"))
+    }
+
+    @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
         fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
@@ -160,19 +409,27 @@ internal class AiEditingTests {
         assertEquals(ChatMessagePart.AssistantText("Recovered."), fixture.manager.transcriptParts.last())
     }
 
-    private fun TestScope.createFixture(source: String = "/test/springboard.json"): Fixture {
+    private fun TestScope.createFixture(
+        source: String = "/test/springboard.json",
+        initialConfig: String = TestFixtureJson.URL_ONLY,
+    ): Fixture {
         val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, com.strangeparticle.springboard.app.shared.createSettingsRegistryForTest(), PersistenceServiceInMemoryFake())
         settingsManager.loadSettingsAtStartup()
         val fileService = PlatformFileContentServiceInMemoryFake()
+        val activationService = PlatformActivationServiceInMemoryFake()
         val viewModel = SpringboardViewModel(
             settingsManager = settingsManager,
             persistenceService = PersistenceServiceInMemoryFake(),
-            platformActivationService = PlatformActivationServiceInMemoryFake(),
+            platformActivationService = activationService,
             fileContentService = fileService,
         )
-        viewModel.loadConfig(TestFixtureJson.URL_ONLY, source)
+        viewModel.loadConfig(initialConfig, source)
         val aiClient = AiProviderClientInMemoryFake()
         val registry = ToolCallRegistry().apply {
+            register(ActivateColumnToolCallHandler())
+            register(ActivateCoordinateToolCallHandler())
+            register(ActivateCoordinatesToolCallHandler())
+            register(ActivateRowToolCallHandler())
             register(AddAppToolCallHandler())
             register(AddEnvironmentToolCallHandler())
             register(AddResourceToolCallHandler())
@@ -200,7 +457,7 @@ internal class AiEditingTests {
             modelIdProvider = { "fake-model" },
             coroutineScope = this,
         )
-        return Fixture(viewModel, fileService, aiClient, registry, manager)
+        return Fixture(viewModel, fileService, activationService, aiClient, registry, manager)
     }
 
     private fun args(vararg pairs: Pair<String, String>): String = buildJsonObject {
@@ -211,6 +468,7 @@ internal class AiEditingTests {
     private data class Fixture(
         val viewModel: SpringboardViewModel,
         val fileService: PlatformFileContentServiceInMemoryFake,
+        val activationService: PlatformActivationServiceInMemoryFake,
         val aiClient: AiProviderClientInMemoryFake,
         val registry: ToolCallRegistry,
         val manager: AiSessionManager,

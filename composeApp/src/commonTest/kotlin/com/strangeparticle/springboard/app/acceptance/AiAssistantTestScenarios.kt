@@ -1,3 +1,3 @@
 package com.strangeparticle.springboard.app.acceptance
 
-internal object AiEditingTestScenarios
+internal object AiAssistantTestScenarios

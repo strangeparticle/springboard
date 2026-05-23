@@ -456,14 +456,14 @@ internal class AiChatPaneTest {
     }
 
     @Test
-    fun `chat header uses AI editing assistant title and secondary provider text`() = runComposeUiTest {
+    fun `chat header uses AI assistant title and secondary provider text`() = runComposeUiTest {
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
                 AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
             }
         }
 
-        onNodeWithText("AI Editing Assistant").assertExists()
+        onNodeWithText("AI Assistant").assertExists()
         onNodeWithText("OpenAI: gpt-5").assertExists()
         onNodeWithText("OpenAI · gpt-5").assertDoesNotExist()
         onNodeWithText("Assistant · OpenAI gpt-5").assertDoesNotExist()

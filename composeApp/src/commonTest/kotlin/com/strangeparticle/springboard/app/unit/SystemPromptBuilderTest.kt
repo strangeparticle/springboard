@@ -11,7 +11,7 @@ internal class SystemPromptBuilderTest {
     fun `prompt explains Springboard entities and reserved ALL environment`() {
         val prompt = SystemPromptBuilder.build()
 
-        assertContains(prompt, "AI Editing Assistant")
+        assertContains(prompt, "AI Assistant")
         assertContains(prompt, "tabs")
         assertContains(prompt, "tab_id")
         assertContains(prompt, "active tab")

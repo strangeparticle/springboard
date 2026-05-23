@@ -281,6 +281,10 @@ private fun rememberAiChatPaneState(
 
 
 private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegistry().apply {
+    register(ActivateColumnToolCallHandler())
+    register(ActivateCoordinateToolCallHandler())
+    register(ActivateCoordinatesToolCallHandler())
+    register(ActivateRowToolCallHandler())
     register(AddAppGroupToolCallHandler())
     register(AddAppToolCallHandler())
     register(AddCommandActivatorToolCallHandler())

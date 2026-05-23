@@ -202,7 +202,7 @@ internal fun AiChatPane(
                     ) {
                         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "AI Editing Assistant",
+                                text = "AI Assistant",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.alignBy(FirstBaseline),

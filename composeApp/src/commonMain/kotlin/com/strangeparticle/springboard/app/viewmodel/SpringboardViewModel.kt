@@ -686,7 +686,7 @@ class SpringboardViewModel(
             )
             is S3GetResult.CredentialsUnavailable -> LoadResult.Failure(
                 code = "s3_credentials_unavailable",
-                message = "AWS credentials may have expired. Re-run `aws sso login` and try again. ${outcome.message}",
+                message = "Open from S3 failed — ${outcome.message} If your SSO session expired, run `aws sso login` and try again.",
             )
             is S3GetResult.Failed -> LoadResult.Failure(
                 code = "s3_failed",

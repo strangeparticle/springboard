@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit.platform
 
 import com.strangeparticle.springboard.app.aws.AwsCredentialProvider
+import com.strangeparticle.springboard.app.aws.AwsCredentialResult
 import com.strangeparticle.springboard.app.aws.AwsCredentials
 import com.strangeparticle.springboard.app.platform.S3ContentServiceDesktopImpl
 import com.strangeparticle.springboard.app.platform.S3GetResult
@@ -31,8 +32,10 @@ class S3ContentServiceDesktopImplTest {
         expiration = null,
     )
 
-    private fun staticProvider(creds: AwsCredentials? = credentials) = object : AwsCredentialProvider {
-        override suspend fun resolve(profile: String): AwsCredentials? = creds
+    private fun staticProvider(
+        result: AwsCredentialResult = AwsCredentialResult.Success(credentials),
+    ) = object : AwsCredentialProvider {
+        override suspend fun resolve(profile: String): AwsCredentialResult = result
         override fun invalidate(profile: String) = Unit
     }
 
@@ -78,13 +81,25 @@ class S3ContentServiceDesktopImplTest {
     }
 
     @Test
-    fun `null credentials map to CredentialsUnavailable`() = runTest {
+    fun `failed credential resolution surfaces underlying cause in CredentialsUnavailable`() = runTest {
         val engine = MockEngine { _ -> respond("", HttpStatusCode.OK) }
-        val service = S3ContentServiceDesktopImpl(HttpClient(engine), staticProvider(creds = null))
+        val provider = staticProvider(AwsCredentialResult.Failed("argument --format: invalid choice"))
+        val service = S3ContentServiceDesktopImpl(HttpClient(engine), provider)
         val getResult = service.getObject("https://b.s3.us-east-1.amazonaws.com/k", "p")
         assertTrue(getResult is S3GetResult.CredentialsUnavailable)
+        assertTrue(
+            (getResult as S3GetResult.CredentialsUnavailable).message.contains(
+                "argument --format: invalid choice"
+            ),
+            "expected the underlying CLI error in the surfaced message: ${getResult.message}",
+        )
         val putResult = service.putObject("https://b.s3.us-east-1.amazonaws.com/k", "p", "{}", null)
         assertTrue(putResult is S3PutResult.CredentialsUnavailable)
+        assertTrue(
+            (putResult as S3PutResult.CredentialsUnavailable).message.contains(
+                "argument --format: invalid choice"
+            ),
+        )
     }
 
     @Test

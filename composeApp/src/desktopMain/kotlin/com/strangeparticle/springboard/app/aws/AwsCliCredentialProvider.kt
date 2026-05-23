@@ -25,9 +25,11 @@ import kotlin.time.Duration.Companion.seconds
  * Expiration, at which point the next [resolve] re-shells. Static credentials
  * (no Expiration field) are cached indefinitely for the process lifetime.
  *
- * Any non-zero exit or unparseable output collapses to a null return — the
- * caller surfaces a "re-run aws sso login" message rather than leaking parse
- * details.
+ * On failure, [AwsCredentialResult.Failed.message] carries the underlying
+ * cause text (CLI stderr for non-zero exits, "AWS CLI not found" when the
+ * binary is missing, a parse-error summary when the output is malformed)
+ * so the caller can surface it to the user instead of collapsing every
+ * failure into a generic message.
  */
 class AwsCliCredentialProvider internal constructor(
     private val processRunner: AwsCliProcessRunner,
@@ -40,11 +42,13 @@ class AwsCliCredentialProvider internal constructor(
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun resolve(profile: String): AwsCredentials? = mutex.withLock {
+    override suspend fun resolve(profile: String): AwsCredentialResult = mutex.withLock {
         val cached = cache[profile]
-        if (cached != null && isFresh(cached)) return cached
-        val resolved = resolveFromCli(profile) ?: return null
-        cache[profile] = resolved
+        if (cached != null && isFresh(cached)) return AwsCredentialResult.Success(cached)
+        val resolved = resolveFromCli(profile)
+        if (resolved is AwsCredentialResult.Success) {
+            cache[profile] = resolved.credentials
+        }
         return resolved
     }
 
@@ -57,35 +61,64 @@ class AwsCliCredentialProvider internal constructor(
         return expiration > clock().plus(EXPIRY_SAFETY_MARGIN)
     }
 
-    private suspend fun resolveFromCli(profile: String): AwsCredentials? {
-        val credentialsStdout = processRunner.run(
+    private suspend fun resolveFromCli(profile: String): AwsCredentialResult {
+        val credentialsStdout = when (val result = processRunner.run(
             args = listOf("configure", "export-credentials", "--profile", profile),
             timeoutSeconds = CLI_TIMEOUT_SECONDS,
-        ) ?: return null
+        )) {
+            is AwsCliRunResult.Success -> result.stdout
+            is AwsCliRunResult.Failed -> return AwsCredentialResult.Failed(
+                "`aws configure export-credentials` exited ${result.exitCode}: ${result.stderr.trim().ifEmpty { "(no stderr)" }}"
+            )
+            AwsCliRunResult.Unavailable -> return AwsCredentialResult.Failed(
+                "AWS CLI not found. Install it and ensure it is on PATH."
+            )
+            AwsCliRunResult.TimedOut -> return AwsCredentialResult.Failed(
+                "`aws configure export-credentials` timed out after $CLI_TIMEOUT_SECONDS seconds."
+            )
+        }
 
-        val regionStdout = processRunner.run(
+        val regionStdout = when (val result = processRunner.run(
             args = listOf("configure", "get", "region", "--profile", profile),
             timeoutSeconds = CLI_TIMEOUT_SECONDS,
-        ) ?: return null
+        )) {
+            is AwsCliRunResult.Success -> result.stdout
+            is AwsCliRunResult.Failed -> return AwsCredentialResult.Failed(
+                "`aws configure get region` exited ${result.exitCode}: ${result.stderr.trim().ifEmpty { "(no stderr)" }}"
+            )
+            AwsCliRunResult.Unavailable -> return AwsCredentialResult.Failed(
+                "AWS CLI not found. Install it and ensure it is on PATH."
+            )
+            AwsCliRunResult.TimedOut -> return AwsCredentialResult.Failed(
+                "`aws configure get region` timed out after $CLI_TIMEOUT_SECONDS seconds."
+            )
+        }
 
         val region = regionStdout.trim()
-        if (region.isEmpty()) return null
+        if (region.isEmpty()) {
+            return AwsCredentialResult.Failed("Profile '$profile' has no region configured.")
+        }
 
         return try {
-            val parsed = json.parseToJsonElement(credentialsStdout) as? JsonObject ?: return null
-            val accessKeyId = parsed["AccessKeyId"]?.jsonPrimitive?.content ?: return null
-            val secretAccessKey = parsed["SecretAccessKey"]?.jsonPrimitive?.content ?: return null
+            val parsed = json.parseToJsonElement(credentialsStdout) as? JsonObject
+                ?: return AwsCredentialResult.Failed("export-credentials output was not a JSON object.")
+            val accessKeyId = parsed["AccessKeyId"]?.jsonPrimitive?.content
+                ?: return AwsCredentialResult.Failed("export-credentials output is missing AccessKeyId.")
+            val secretAccessKey = parsed["SecretAccessKey"]?.jsonPrimitive?.content
+                ?: return AwsCredentialResult.Failed("export-credentials output is missing SecretAccessKey.")
             val sessionToken = parsed["SessionToken"]?.jsonPrimitive?.content
             val expiration = parsed["Expiration"]?.jsonPrimitive?.content?.let { Instant.parse(it) }
-            AwsCredentials(
-                accessKeyId = accessKeyId,
-                secretAccessKey = secretAccessKey,
-                sessionToken = sessionToken,
-                region = region,
-                expiration = expiration,
+            AwsCredentialResult.Success(
+                AwsCredentials(
+                    accessKeyId = accessKeyId,
+                    secretAccessKey = secretAccessKey,
+                    sessionToken = sessionToken,
+                    region = region,
+                    expiration = expiration,
+                )
             )
         } catch (e: Exception) {
-            null
+            AwsCredentialResult.Failed("Failed to parse export-credentials output: ${e.message ?: e::class.simpleName}")
         }
     }
 

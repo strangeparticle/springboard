@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.platform
 
 import com.strangeparticle.springboard.app.aws.AwsCredentialProvider
+import com.strangeparticle.springboard.app.aws.AwsCredentialResult
 import com.strangeparticle.springboard.app.aws.AwsSigV4Signer
 import com.strangeparticle.springboard.app.aws.S3UrlParser
 import io.ktor.client.HttpClient
@@ -23,10 +24,12 @@ class S3ContentServiceDesktopImpl(
         if (S3UrlParser.region(url) == null) {
             return S3GetResult.Failed("Not a virtual-hosted S3 URL: $url")
         }
-        val credentials = credentialProvider.resolve(profile)
-            ?: return S3GetResult.CredentialsUnavailable(
-                "AWS credentials are not available for profile '$profile'."
+        val credentials = when (val result = credentialProvider.resolve(profile)) {
+            is AwsCredentialResult.Success -> result.credentials
+            is AwsCredentialResult.Failed -> return S3GetResult.CredentialsUnavailable(
+                credentialFailureMessage(profile, result.message)
             )
+        }
         val signedHeaders = AwsSigV4Signer.sign(
             method = "GET",
             url = url,
@@ -59,10 +62,12 @@ class S3ContentServiceDesktopImpl(
         if (S3UrlParser.region(url) == null) {
             return S3PutResult.Failed("Not a virtual-hosted S3 URL: $url")
         }
-        val credentials = credentialProvider.resolve(profile)
-            ?: return S3PutResult.CredentialsUnavailable(
-                "AWS credentials are not available for profile '$profile'."
+        val credentials = when (val result = credentialProvider.resolve(profile)) {
+            is AwsCredentialResult.Success -> result.credentials
+            is AwsCredentialResult.Failed -> return S3PutResult.CredentialsUnavailable(
+                credentialFailureMessage(profile, result.message)
             )
+        }
 
         val bodyBytes = content.toByteArray(Charsets.UTF_8)
         val additionalHeaders = buildMap {
@@ -97,6 +102,9 @@ class S3ContentServiceDesktopImpl(
             else -> S3PutResult.Failed("HTTP $status: ${extractS3ErrorMessage(response, response.status.description)}")
         }
     }
+
+    private fun credentialFailureMessage(profile: String, underlying: String): String =
+        "Couldn't resolve AWS credentials for profile '$profile': $underlying"
 
     private fun extractEtag(response: HttpResponse): String? = response.headers["ETag"]
 

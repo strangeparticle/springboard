@@ -7,27 +7,31 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 internal class AwsCliProcessRunnerDefaultImpl : AwsCliProcessRunner {
-    override suspend fun run(args: List<String>, timeoutSeconds: Long): String? = withContext(Dispatchers.IO) {
+    override suspend fun run(args: List<String>, timeoutSeconds: Long): AwsCliRunResult = withContext(Dispatchers.IO) {
         val command = listOf(resolveAwsCommand()) + args
         val process = try {
             ProcessBuilder(command).redirectErrorStream(false).start()
         } catch (e: IOException) {
-            return@withContext null
+            return@withContext AwsCliRunResult.Unavailable
         }
         val finished = try {
             process.waitFor(timeoutSeconds, TimeUnit.SECONDS)
         } catch (e: InterruptedException) {
             process.destroyForcibly()
-            return@withContext null
+            return@withContext AwsCliRunResult.TimedOut
         }
         if (!finished) {
             process.destroyForcibly()
-            return@withContext null
+            return@withContext AwsCliRunResult.TimedOut
         }
-        if (process.exitValue() != 0) {
-            return@withContext null
+        val stdout = process.inputStream.bufferedReader().use { it.readText() }
+        val stderr = process.errorStream.bufferedReader().use { it.readText() }
+        val exitCode = process.exitValue()
+        return@withContext if (exitCode == 0) {
+            AwsCliRunResult.Success(stdout)
+        } else {
+            AwsCliRunResult.Failed(stderr = stderr, exitCode = exitCode)
         }
-        return@withContext process.inputStream.bufferedReader().use { it.readText() }
     }
 
     // Packaged macOS .app bundles inherit a minimal PATH from launchd, so a bare

@@ -5,13 +5,14 @@ package com.strangeparticle.springboard.app.aws
  * platform-specific because credential discovery requires shelling out to the
  * AWS CLI on desktop and has no in-browser equivalent on WASM.
  *
- * Returns null when the underlying resolver cannot produce credentials for any
- * reason (missing profile, expired SSO session, AWS CLI not on PATH, parse
- * failure). Callers surface a user-facing message instructing the user to run
- * `aws sso login`.
+ * Returns [AwsCredentialResult.Failed] (carrying the underlying cause text)
+ * when the resolver cannot produce credentials. Callers surface that text to
+ * the user — often with an SSO-login hint appended — so the user sees the
+ * actual failure (missing profile, unsupported CLI flag, parse error, etc.)
+ * rather than a generic "credentials unavailable" message.
  */
 interface AwsCredentialProvider {
-    suspend fun resolve(profile: String): AwsCredentials?
+    suspend fun resolve(profile: String): AwsCredentialResult
 
     /**
      * Drops any cached entry for [profile] so the next [resolve] re-fetches

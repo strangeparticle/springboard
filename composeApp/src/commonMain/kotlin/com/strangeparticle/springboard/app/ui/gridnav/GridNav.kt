@@ -89,6 +89,10 @@ fun GridNav(
         mutableStateOf(headerSizing.initialHeaderHeight)
     }
 
+    var resourceLabelWidth by remember {
+        mutableStateOf(CommonUiConstants.ResourceLabelWidth)
+    }
+
     // Re-derive each app's visible header text whenever the header height changes.
     // Shorter headers truncate long app names; taller headers reveal more text.
     val visibleHeaderNamesByAppId = remember(springboard.apps, gridHeaderHeight) {
@@ -110,8 +114,15 @@ fun GridNav(
     // include the rotated header overflow — that extends past the right edge
     // visually but is not part of the scrollable content width. Separator slots
     // count toward the width since they each occupy one full GridColumnWidth.
-    val totalGridWidth = CommonUiConstants.ResourceLabelWidth +
+    val totalGridWidth = resourceLabelWidth +
         CommonUiConstants.GridColumnWidth * columnLayout.size
+
+    val renderedGridHeight = remember(sections, gridHeaderHeight) {
+        val resourceRowCount = sections.sumOf { it.resources.size }
+        val secondarySectionExtraRows = (sections.size - 1).coerceAtLeast(0) * 2
+        gridHeaderHeight + CommonUiConstants.GridRowHeight * (resourceRowCount + secondarySectionExtraRows)
+    }
+    val renderedDataHeight = renderedGridHeight - gridHeaderHeight
 
     val scale = zoomSelection.let { (it as GridZoomSelection.FixedZoom).percent / 100f }
 
@@ -186,6 +197,7 @@ fun GridNav(
                         sections = sections,
                         environments = environments,
                         selectedEnvironmentId = selectedEnvironmentId,
+                        resourceLabelWidth = resourceLabelWidth,
                         gridHeaderHeight = gridHeaderHeight,
                         hoveredHeaderResourceId = hoveredHeaderResourceId,
                         hoveredResourceId = hoveredResourceId,
@@ -266,6 +278,21 @@ fun GridNav(
                         y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
                     ),
                 )
+
+                GridNavColumnResizeBoundary(
+                    height = renderedDataHeight,
+                    onDragDelta = { deltaPx ->
+                        val deltaDp = with(density) { deltaPx.toDp() }
+                        resourceLabelWidth = (resourceLabelWidth + deltaDp).coerceIn(
+                            GridNavSizingConstants.MinResourceLabelWidth,
+                            GridNavSizingConstants.MaxResourceLabelWidth,
+                        )
+                    },
+                    modifier = Modifier.offset(
+                        x = resourceLabelWidth - GridNavSizingConstants.ColumnResizeThumbWidth / 2,
+                        y = gridHeaderHeight,
+                    ),
+                )
             }
 
             // Transparent overlay that sits on top of the header area and provides
@@ -279,7 +306,7 @@ fun GridNav(
             GridNavAppColumnHeadingHoverDetectionOverlay(
                 columnLayout = columnLayout,
                 gridHeaderHeight = gridHeaderHeight,
-                horizontalOffset = CommonUiConstants.ResourceLabelWidth,
+                horizontalOffset = resourceLabelWidth,
                 onHoveredAppChange = { hoveredHeaderAppId = it },
                 onColumnClick = { appId -> onColumnActivate(selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID, appId) },
             )

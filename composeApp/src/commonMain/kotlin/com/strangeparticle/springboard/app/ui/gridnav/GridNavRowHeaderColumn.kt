@@ -41,6 +41,7 @@ fun GridNavRowHeaderColumn(
     sections: List<GridNavSection>,
     environments: List<Environment>,
     selectedEnvironmentId: String?,
+    resourceLabelWidth: Dp,
     gridHeaderHeight: Dp,
     hoveredHeaderResourceId: String?,
     hoveredResourceId: String?,
@@ -49,7 +50,7 @@ fun GridNavRowHeaderColumn(
     onEnvironmentHeadingSelect: (String) -> Unit,
 ) {
     // Header/data boundary divider is rendered by GridNavHeaderResizeBoundary in GridNav.
-    Column(modifier = Modifier.width(CommonUiConstants.ResourceLabelWidth)) {
+    Column(modifier = Modifier.width(resourceLabelWidth)) {
         sections.forEachIndexed { index, section ->
             if (index > 0) {
                 Box(modifier = Modifier.fillMaxWidth().height(CommonUiConstants.GridRowHeight))

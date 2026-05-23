@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.unit.ui.gridnav
 
+import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,5 +18,17 @@ class GridNavSizingConstantsTest {
     fun `resize thumb hit area encloses grip icon`() {
         assertTrue(GridNavSizingConstants.HeaderResizeThumbWidth >= GridNavSizingConstants.HeaderResizeGripWidth)
         assertTrue(GridNavSizingConstants.HeaderResizeThumbHeight >= GridNavSizingConstants.HeaderResizeGripHeight)
+    }
+
+    @Test
+    fun `resource label resize bounds contain default width`() {
+        assertTrue(GridNavSizingConstants.MinResourceLabelWidth <= CommonUiConstants.ResourceLabelWidth)
+        assertTrue(GridNavSizingConstants.MaxResourceLabelWidth > CommonUiConstants.ResourceLabelWidth)
+    }
+
+    @Test
+    fun `column resize thumb hit area encloses grip icon`() {
+        assertTrue(GridNavSizingConstants.ColumnResizeThumbWidth >= GridNavSizingConstants.ColumnResizeGripWidth)
+        assertTrue(GridNavSizingConstants.ColumnResizeThumbHeight >= GridNavSizingConstants.ColumnResizeGripHeight)
     }
 }

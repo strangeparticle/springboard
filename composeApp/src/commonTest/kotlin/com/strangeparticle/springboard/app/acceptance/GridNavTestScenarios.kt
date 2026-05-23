@@ -183,6 +183,149 @@ object GridNavTestScenarios {
         )
     }
 
+    fun columnResizeThumbHasTestTag() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).assertExists()
+    }
+
+    fun columnResizeGripGlyphHasTestTag() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_GRIP_GLYPH, useUnmergedTree = true)
+            .assertExists()
+    }
+
+    fun draggingColumnResizeThumbRightGrowsResourceLabelColumn() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        val initialWidth = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(40f, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val newWidth = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+        assertTrue(
+            newWidth > initialWidth,
+            "Expected resource label width to increase after dragging right: was $initialWidth, now $newWidth",
+        )
+    }
+
+    fun draggingColumnResizeThumbLeftShrinksResourceLabelColumn() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(60f, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val afterGrow = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(-40f, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val afterShrink = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+        assertTrue(
+            afterShrink < afterGrow,
+            "Expected resource label width to decrease after dragging left: was $afterGrow, now $afterShrink",
+        )
+    }
+
+    fun draggingColumnResizeThumbClampsAtMaxWidth() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        val excessivePx = with(density) {
+            (GridNavSizingConstants.MaxResourceLabelWidth + 200.dp).toPx()
+        }
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(excessivePx, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val afterFirstDrag = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(50f, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val afterSecondDrag = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+        assertEquals(
+            afterFirstDrag,
+            afterSecondDrag,
+            "Expected resource label width to remain clamped after additional right drag",
+        )
+    }
+
+    fun draggingColumnResizeThumbClampsAtMinWidth() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        val initialWidth = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+
+        val excessivePx = with(density) {
+            (CommonUiConstants.ResourceLabelWidth + 200.dp).toPx()
+        }
+        onNodeWithTag(TestTags.GRID_COLUMN_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(-excessivePx, 0f))
+            up()
+        }
+        waitForIdle()
+
+        val afterFirstDrag = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode().boundsInRoot.width
+        assertEquals(
+            initialWidth,
+            afterFirstDrag,
+            "Expected resource label width not to shrink below the default heading-safe width",
+        )
+    }
+
     fun selectedEnvironmentShowsAsTitleInGridHeader() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)

@@ -22,6 +22,24 @@ class GridNavTests {
     @Test fun `dragging header resize thumb clamps at max height`() =
         GridNavTestScenarios.draggingHeaderResizeThumbClampsAtMaxHeight()
 
+    @Test fun `column resize thumb has test tag`() =
+        GridNavTestScenarios.columnResizeThumbHasTestTag()
+
+    @Test fun `column resize grip glyph has test tag`() =
+        GridNavTestScenarios.columnResizeGripGlyphHasTestTag()
+
+    @Test fun `dragging column resize thumb right grows resource label column`() =
+        GridNavTestScenarios.draggingColumnResizeThumbRightGrowsResourceLabelColumn()
+
+    @Test fun `dragging column resize thumb left shrinks resource label column`() =
+        GridNavTestScenarios.draggingColumnResizeThumbLeftShrinksResourceLabelColumn()
+
+    @Test fun `dragging column resize thumb clamps at max width`() =
+        GridNavTestScenarios.draggingColumnResizeThumbClampsAtMaxWidth()
+
+    @Test fun `dragging column resize thumb clamps at min width`() =
+        GridNavTestScenarios.draggingColumnResizeThumbClampsAtMinWidth()
+
     @Test fun `selected environment shows as title in grid header`() =
         GridNavTestScenarios.selectedEnvironmentShowsAsTitleInGridHeader()
 

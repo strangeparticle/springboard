@@ -121,6 +121,7 @@ private fun SettingsGroupSectionComposable(
             ListOfStringSettingRowComposable(
                 item = item as ListOfStringSettingsItem,
                 viewModel = viewModel,
+                itemAnnotation = ::classifyStartupTabSourceType,
                 extraContent = {
                     if (currentTabSources.isNotEmpty()) {
                         TextButton(
@@ -190,5 +191,13 @@ private fun SettingsHeaderBar(
                 fontSize = 13.sp,
             )
         }
+    }
+}
+
+private fun classifyStartupTabSourceType(source: String): String {
+    val lowered = source.trimStart().lowercase()
+    return when {
+        lowered.startsWith("http://") || lowered.startsWith("https://") -> "network"
+        else -> "file"
     }
 }

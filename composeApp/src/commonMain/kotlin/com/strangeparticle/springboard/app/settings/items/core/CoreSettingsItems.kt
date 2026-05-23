@@ -21,4 +21,5 @@ fun coreSettingsItems(): List<SettingsItem<*>> = listOf(
     HideAppAfterActivationSetting,
     AiProviderSetting,
     ShowFullChatTranscriptSetting,
+    OpenFromS3AwsProfileSetting,
 )

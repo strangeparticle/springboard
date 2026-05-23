@@ -75,6 +75,28 @@ class TabStatusIconTest {
     }
 
     @Test
+    fun `S3-backed https tab does not show the NonSaveable icon`() {
+        assertEquals(
+            emptyList(),
+            tabStatusIconsFor(
+                loadedTab(source = "https://b.s3.us-east-1.amazonaws.com/k", isDirty = false)
+                    .copy(s3AwsProfile = "dev", s3LastEtag = "\"e\""),
+            ),
+        )
+    }
+
+    @Test
+    fun `dirty S3-backed https tab shows only the Dirty icon`() {
+        assertEquals(
+            listOf(TabStatusIcon.Dirty),
+            tabStatusIconsFor(
+                loadedTab(source = "https://b.s3.us-east-1.amazonaws.com/k", isDirty = true)
+                    .copy(s3AwsProfile = "dev", s3LastEtag = "\"e\""),
+            ),
+        )
+    }
+
+    @Test
     fun `tab with non-null source but no springboard loaded shows no status icon`() {
         // A tab that was opened with a path but failed to load — no springboard yet.
         assertEquals(

@@ -26,4 +26,17 @@ sealed class SaveResult {
 
     /** No springboard is loaded in the active tab. */
     object NoSpringboard : SaveResult()
+
+    /**
+     * S3 PUT was rejected because the object's ETag no longer matches the one
+     * captured at load time (412 Precondition Failed). The user should be
+     * offered Overwrite / Reload / Save As.
+     */
+    data class Conflict(val sourceUrl: String, val message: String) : SaveResult()
+
+    /**
+     * S3 PUT was rejected because the resolved AWS profile lacks write
+     * permission for this object (403 Forbidden).
+     */
+    data class Denied(val sourceUrl: String, val message: String) : SaveResult()
 }

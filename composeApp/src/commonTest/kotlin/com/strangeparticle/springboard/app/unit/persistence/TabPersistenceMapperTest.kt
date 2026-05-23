@@ -76,4 +76,27 @@ class TabPersistenceMapperTest {
         assertTrue(dto.tabs.isEmpty())
         assertNull(dto.activeTabId)
     }
+
+    @Test
+    fun s3FieldsRoundTripWhenPresent() {
+        val tabs = listOf(
+            loadedTab("tab-1", "https://b.s3.us-east-1.amazonaws.com/k").copy(
+                s3AwsProfile = "dev",
+                s3LastEtag = "\"abc123\"",
+            )
+        )
+        val dto = buildTabsDto(tabs, activeTabId = "tab-1")
+        val entry = dto.tabs.single()
+        assertEquals("dev", entry.s3AwsProfile)
+        assertEquals("\"abc123\"", entry.s3LastEtag)
+    }
+
+    @Test
+    fun s3FieldsAreNullWhenAbsent() {
+        val tabs = listOf(loadedTab("tab-1", "/a.json"))
+        val dto = buildTabsDto(tabs, activeTabId = "tab-1")
+        val entry = dto.tabs.single()
+        assertNull(entry.s3AwsProfile)
+        assertNull(entry.s3LastEtag)
+    }
 }

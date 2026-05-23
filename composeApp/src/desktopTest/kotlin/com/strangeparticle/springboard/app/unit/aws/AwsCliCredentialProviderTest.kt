@@ -115,4 +115,43 @@ class AwsCliCredentialProviderTest {
         }
         assertNull(provider(runner).resolve("p"))
     }
+
+    @Test
+    fun `invalidate forces the next resolve to re-shell`() = runTest {
+        val runner = FakeRunner().apply {
+            credentialsResponse = """{"Version": 1, "AccessKeyId": "A1", "SecretAccessKey": "s"}"""
+            regionResponse = "us-east-1"
+        }
+        val p = provider(runner)
+        assertEquals("A1", p.resolve("dev")?.accessKeyId)
+        // Cached: a second resolve doesn't re-shell.
+        val invocationsAfterFirst = runner.invocations
+        assertEquals("A1", p.resolve("dev")?.accessKeyId)
+        assertEquals(invocationsAfterFirst, runner.invocations)
+
+        // Invalidate then re-resolve: the CLI is called again and the new value is returned.
+        p.invalidate("dev")
+        runner.credentialsResponse = """{"Version": 1, "AccessKeyId": "A2", "SecretAccessKey": "s"}"""
+        assertEquals("A2", p.resolve("dev")?.accessKeyId)
+    }
+
+    @Test
+    fun `invalidate only affects the named profile`() = runTest {
+        val runner = FakeRunner().apply {
+            credentialsResponse = """{"Version": 1, "AccessKeyId": "A1", "SecretAccessKey": "s"}"""
+            regionResponse = "us-east-1"
+        }
+        val p = provider(runner)
+        p.resolve("dev")
+        p.resolve("prod")
+        val invocationsAfterWarm = runner.invocations
+        p.invalidate("dev")
+
+        // 'prod' is still cached → no new CLI calls.
+        p.resolve("prod")
+        assertEquals(invocationsAfterWarm, runner.invocations)
+        // 'dev' is invalidated → two new CLI calls (creds + region).
+        p.resolve("dev")
+        assertEquals(invocationsAfterWarm + 2, runner.invocations)
+    }
 }

@@ -12,4 +12,13 @@ package com.strangeparticle.springboard.app.aws
  */
 interface AwsCredentialProvider {
     suspend fun resolve(profile: String): AwsCredentials?
+
+    /**
+     * Drops any cached entry for [profile] so the next [resolve] re-fetches
+     * from the underlying source. Use after an auth failure (e.g. an S3 403
+     * shortly after the user ran `aws sso login`) so the next attempt picks
+     * up the freshly-issued credentials without waiting for the safety-margin
+     * timer to expire.
+     */
+    fun invalidate(profile: String)
 }

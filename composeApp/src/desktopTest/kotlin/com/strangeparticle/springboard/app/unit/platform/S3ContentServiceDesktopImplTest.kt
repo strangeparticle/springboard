@@ -33,6 +33,7 @@ class S3ContentServiceDesktopImplTest {
 
     private fun staticProvider(creds: AwsCredentials? = credentials) = object : AwsCredentialProvider {
         override suspend fun resolve(profile: String): AwsCredentials? = creds
+        override fun invalidate(profile: String) = Unit
     }
 
     @Test

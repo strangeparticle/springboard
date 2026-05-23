@@ -45,6 +45,10 @@ class AwsCliCredentialProvider internal constructor(
         return resolved
     }
 
+    override fun invalidate(profile: String) {
+        cache.remove(profile)
+    }
+
     private fun isFresh(credentials: AwsCredentials): Boolean {
         val expiration = credentials.expiration ?: return true
         return expiration > clock().plus(EXPIRY_SAFETY_MARGIN)

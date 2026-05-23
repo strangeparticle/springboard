@@ -21,6 +21,9 @@ internal object AiAssistantFullHelpText {
         - Activators connect an environment, app, and resource to a URL, URL template, or command action.
         - Guidance stores notes for a specific environment/app/resource coordinate.
 
+        Not supported:
+        - The assistant cannot activate, launch, or open URLs or commands from the grid. Activation is done directly through the Springboard grid UI.
+
         Slash commands:
         - /help shows this help locally. It is included in the visible transcript, but it is not sent to the AI provider.
 

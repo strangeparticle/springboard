@@ -209,13 +209,14 @@ internal fun AiChatPane(
                             )
                             if (state.isConfigured) {
                                 Spacer(Modifier.width(8.dp))
-                                Text(
-                                    text = "${state.providerLabel}: ${state.modelLabel}",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.alignBy(FirstBaseline),
-                                )
+                                SelectionContainer(modifier = Modifier.alignBy(FirstBaseline)) {
+                                    Text(
+                                        text = "${state.providerLabel}: ${state.modelLabel}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Normal,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
                             }
                         }
                         if (!state.isConfigured) {

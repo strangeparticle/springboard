@@ -122,6 +122,7 @@ internal fun SpringboardApp(
                         onBack = {
                             aiSettingsFirst = false
                             showSettings.value = false
+                            viewModel.requestFocusAppDropdown()
                         },
                         onShowActiveSettings = onOpenActiveSettingsFromSettings,
                         currentTabSources = viewModel.currentTabSources,
@@ -140,7 +141,10 @@ internal fun SpringboardApp(
                     onToggleAssistant = { showAssistant.value = !showAssistant.value },
                     showAssistant = showAssistant.value,
                     aiChatPaneState = effectiveAiChatPaneState.copy(focusInputOnShow = showAssistant.value),
-                    onCloseAssistant = { showAssistant.value = false },
+                    onCloseAssistant = {
+                        showAssistant.value = false
+                        viewModel.requestFocusAppDropdown()
+                    },
                     onOpenAiSettings = openAiSettings,
                 )
             }

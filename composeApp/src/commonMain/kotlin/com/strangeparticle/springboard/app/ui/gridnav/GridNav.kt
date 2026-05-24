@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.zIndex
 import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
 import com.strangeparticle.springboard.app.domain.model.AppColumn
 import com.strangeparticle.springboard.app.domain.model.Coordinate
@@ -115,7 +116,7 @@ fun GridNav(
     // visually but is not part of the scrollable content width. Separator slots
     // count toward the width since they each occupy one full GridColumnWidth.
     val totalGridWidth = resourceLabelWidth +
-        CommonUiConstants.GridColumnWidth * columnLayout.size
+        CommonUiConstants.GridColumnWidth * columnLayout.slots.size
 
     val renderedGridHeight = remember(sections, gridHeaderHeight) {
         val resourceRowCount = sections.sumOf { it.resources.size }
@@ -212,7 +213,7 @@ fun GridNav(
                     // groups. A column is highlighted when either a data cell in
                     // that column is hovered (hoveredAppId) or the column header
                     // itself is hovered via the overlay (hoveredHeaderAppId).
-                    columnLayout.forEachIndexed { slotIndex, slot ->
+                    columnLayout.slots.forEachIndexed { slotIndex, slot ->
                         when (slot) {
                             is AppColumn -> {
                                 val app = slot.app
@@ -223,6 +224,7 @@ fun GridNav(
                                         appId = app.id,
                                         displayName = visibleHeaderNamesByAppId[app.id] ?: app.name,
                                         gridHeaderHeight = gridHeaderHeight,
+                                        groupLabelStripHeight = GridNavSizingConstants.GroupLabelStripHeight,
                                         isHeaderHighlighted = isHeaderHighlighted,
                                         isHeaderHovered = hoveredHeaderAppId == app.id,
                                     )
@@ -276,7 +278,7 @@ fun GridNav(
                     },
                     modifier = Modifier.offset(
                         y = gridHeaderHeight - GridNavSizingConstants.HeaderResizeThumbHeight / 2
-                    ),
+                    ).zIndex(2f),
                 )
 
                 GridNavColumnResizeBoundary(
@@ -293,6 +295,18 @@ fun GridNav(
                         y = gridHeaderHeight,
                     ),
                 )
+
+                GridNavGroupLabelStrip(
+                    slots = columnLayout.slots,
+                    groupSpans = columnLayout.groupSpans,
+                    resourceLabelWidth = resourceLabelWidth,
+                    gridHeaderHeight = gridHeaderHeight,
+                    groupLabelStripHeight = GridNavSizingConstants.GroupLabelStripHeight,
+                    hoveredAppId = hoveredAppId,
+                    hoveredHeaderAppId = hoveredHeaderAppId,
+                    onHoveredAppChange = { hoveredHeaderAppId = it },
+                    onColumnClick = { appId -> onColumnActivate(selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID, appId) },
+                )
             }
 
             // Transparent overlay that sits on top of the header area and provides
@@ -304,8 +318,9 @@ fun GridNav(
             // It must be a sibling of the vertical-scroll Box (not inside it) so
             // it stays fixed at the top while data cells scroll underneath.
             GridNavAppColumnHeadingHoverDetectionOverlay(
-                columnLayout = columnLayout,
+                columnLayout = columnLayout.slots,
                 gridHeaderHeight = gridHeaderHeight,
+                groupLabelStripHeight = GridNavSizingConstants.GroupLabelStripHeight,
                 horizontalOffset = resourceLabelWidth,
                 onHoveredAppChange = { hoveredHeaderAppId = it },
                 onColumnClick = { appId -> onColumnActivate(selectedEnvironmentId ?: ALL_ENVS_ENVIRONMENT_ID, appId) },

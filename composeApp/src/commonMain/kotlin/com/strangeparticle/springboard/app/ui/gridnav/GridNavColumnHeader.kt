@@ -25,6 +25,7 @@ fun GridNavColumnHeader(
     appId: String,
     displayName: String,
     gridHeaderHeight: Dp,
+    groupLabelStripHeight: Dp,
     isHeaderHighlighted: Boolean,
     isHeaderHovered: Boolean,
 ) {
@@ -40,12 +41,13 @@ fun GridNavColumnHeader(
             .zIndex(if (isHeaderHighlighted) 1f else 0f)
             .graphicsLayer { clip = false }
             .drawBehind {
+                val activeHeight = computeActiveHeaderHeightPx(size.height, groupLabelStripHeight.toPx())
                 if (isHeaderHighlighted) {
                     val path = Path().apply {
-                        moveTo(0f, size.height)
-                        lineTo(size.width, size.height)
-                        lineTo(size.width + size.height, 0f)
-                        lineTo(size.height, 0f)
+                        moveTo(0f, activeHeight)
+                        lineTo(size.width, activeHeight)
+                        lineTo(size.width + activeHeight, 0f)
+                        lineTo(activeHeight, 0f)
                         close()
                     }
                     drawPath(path, color = headerHighlightColor)
@@ -61,10 +63,12 @@ fun GridNavColumnHeader(
                     )
                     val rotatedBottomY = (placeable.width + placeable.height) * Sin45 / 2f
                     val uniformShift = placeable.height * Sin45 / 4f
+                    val stripHeightPx = groupLabelStripHeight.roundToPx()
+                    val paddingPx = HeaderRotationVerticalPadding.roundToPx()
                     layout(constraints.maxWidth, constraints.maxHeight) {
                         placeable.place(
-                            x = (constraints.maxWidth / 2f + rotatedBottomY - placeable.width / 2f - uniformShift).toInt(),
-                            y = (constraints.maxHeight - placeable.height / 2f - rotatedBottomY + uniformShift).toInt()
+                            x = (constraints.maxWidth / 2f + rotatedBottomY - placeable.width / 2f - uniformShift + paddingPx).toInt(),
+                            y = (constraints.maxHeight - stripHeightPx - paddingPx - placeable.height / 2f - rotatedBottomY + uniformShift).toInt()
                         )
                     }
                 }

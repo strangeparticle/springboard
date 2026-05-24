@@ -32,7 +32,7 @@ fun estimateHeaderHeightDp(springboard: Springboard): Int {
     val estimatedHeaderTextWidthDp = longestAppNameLength * HeaderTextAvgCharWidthDp
     val rotatedHeight = (computeRotatedHeaderHeightPx(estimatedHeaderTextWidthDp, HeaderTextHeightDp) *
         HeaderEstimationSafetyFactor).toInt()
-    return rotatedHeight + HeaderRotationVerticalPadding.value.toInt()
+    return rotatedHeight + GridNavSizingConstants.GroupLabelStripHeight.value.toInt()
 }
 
 /**
@@ -44,7 +44,7 @@ fun estimateGridContentWidthDp(springboard: Springboard): Int {
     val gridColumnWidthDp = CommonUiConstants.GridColumnWidth.value.toInt()
     val resourceLabelWidthDp = CommonUiConstants.ResourceLabelWidth.value.toInt()
 
-    val columnSlotCount = springboard.appColumnLayout().size
+    val columnSlotCount = springboard.appColumnLayout().slots.size
     return resourceLabelWidthDp +
         (columnSlotCount * gridColumnWidthDp) +
         headerOverhangDp +

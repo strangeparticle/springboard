@@ -35,6 +35,15 @@ val HeaderIdTextStyle = TextStyle(
     ),
 )
 
+val GroupLabelTextStyle = TextStyle(
+    fontSize = GroupLabelTextSizeSp.sp,
+    lineHeight = GroupLabelTextSizeSp.sp,
+    lineHeightStyle = LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.Both,
+    ),
+)
+
 /**
  * Holds pre-computed header sizing derived from the app list and font metrics.
  * Created via [rememberGridNavHeaderSizing].
@@ -73,7 +82,7 @@ fun rememberGridNavHeaderSizing(apps: List<App>): GridNavHeaderSizing {
             val rotatedHeightPx = computeRotatedHeaderHeightPx(
                 measuredWidth.toFloat(), stackedTextHeightPx
             )
-            rotatedHeightPx.toDp() + HeaderRotationVerticalPadding
+            rotatedHeightPx.toDp() + GridNavSizingConstants.GroupLabelStripHeight
         }
         computedHeight.coerceIn(
             GridNavSizingConstants.MinHeaderHeight,
@@ -98,7 +107,7 @@ fun computeVisibleHeaderNames(
     density: Density,
 ): Map<String, String> {
     val availableRotatedHeightPx = with(density) {
-        (gridHeaderHeight - HeaderRotationVerticalPadding).toPx().coerceAtLeast(0f)
+        (gridHeaderHeight - GridNavSizingConstants.GroupLabelStripHeight).toPx().coerceAtLeast(0f)
     }
     val maxNameWidthPx = (availableRotatedHeightPx / Sin45) - stackedTextHeightPx
     return apps.associate { app ->

@@ -10,6 +10,21 @@ sealed class AppColumnSlot
 data class AppColumn(val app: App) : AppColumnSlot()
 data object SeparatorColumn : AppColumnSlot()
 
+data class AppGroupColumnSpan(
+    val groupId: String,
+    val description: String,
+    val startSlotIndex: Int,
+    val columnCount: Int,
+)
+
+fun AppGroupColumnSpan.containsSlotIndex(index: Int): Boolean =
+    index >= startSlotIndex && index < startSlotIndex + columnCount
+
+data class AppColumnLayoutResult(
+    val slots: List<AppColumnSlot>,
+    val groupSpans: List<AppGroupColumnSpan>,
+)
+
 /**
  * Visual order of grid columns. When `appGroups` is empty, this is just one
  * AppColumn per app in declaration order — fully backwards-compatible with
@@ -21,18 +36,28 @@ data object SeparatorColumn : AppColumnSlot()
  * declaration order. Declared groups with no apps are silently skipped — they do
  * not produce orphan separators.
  */
-fun Springboard.appColumnLayout(): List<AppColumnSlot> {
-    if (appGroups.isEmpty()) return apps.map { AppColumn(it) }
+fun Springboard.appColumnLayout(): AppColumnLayoutResult {
+    if (appGroups.isEmpty()) return AppColumnLayoutResult(
+        slots = apps.map { AppColumn(it) },
+        groupSpans = emptyList(),
+    )
 
     val groupedBlocks = appGroups
-        .map { group -> apps.filter { it.appGroupId == group.id } }
-        .filter { it.isNotEmpty() }
+        .map { group -> group to apps.filter { it.appGroupId == group.id } }
+        .filter { (_, groupApps) -> groupApps.isNotEmpty() }
 
     val ungroupedApps = apps.filter { it.appGroupId == null }
 
-    return buildList {
-        groupedBlocks.forEachIndexed { index, groupApps ->
+    val groupSpans = mutableListOf<AppGroupColumnSpan>()
+    val slots = buildList {
+        groupedBlocks.forEachIndexed { index, (group, groupApps) ->
             if (index > 0) add(SeparatorColumn)
+            groupSpans += AppGroupColumnSpan(
+                groupId = group.id,
+                description = group.description,
+                startSlotIndex = size,
+                columnCount = groupApps.size,
+            )
             groupApps.forEach { add(AppColumn(it)) }
         }
         if (ungroupedApps.isNotEmpty()) {
@@ -40,4 +65,6 @@ fun Springboard.appColumnLayout(): List<AppColumnSlot> {
             ungroupedApps.forEach { add(AppColumn(it)) }
         }
     }
+
+    return AppColumnLayoutResult(slots = slots, groupSpans = groupSpans)
 }

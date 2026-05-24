@@ -5,11 +5,13 @@ import com.strangeparticle.springboard.app.settings.SettingsItem
 import com.strangeparticle.springboard.app.settings.items.base.BooleanSettingsItem
 import com.strangeparticle.springboard.app.settings.items.base.DropDownFromApiCallSettingsItem
 import com.strangeparticle.springboard.app.settings.items.base.DropDownSettingsItem
+import com.strangeparticle.springboard.app.settings.items.base.IntSettingsItem
 import com.strangeparticle.springboard.app.settings.items.base.ListOfStringSettingsItem
 import com.strangeparticle.springboard.app.settings.items.base.StringSettingsItem
 import com.strangeparticle.springboard.app.ui.settings.widget.BooleanSettingRowComposable
 import com.strangeparticle.springboard.app.ui.settings.widget.DropDownFromApiCallSettingRowComposable
 import com.strangeparticle.springboard.app.ui.settings.widget.DropDownSettingRowComposable
+import com.strangeparticle.springboard.app.ui.settings.widget.IntSettingRowComposable
 import com.strangeparticle.springboard.app.ui.settings.widget.ListOfStringSettingRowComposable
 import com.strangeparticle.springboard.app.ui.settings.widget.StringSettingRowComposable
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
@@ -28,6 +30,7 @@ fun SettingRowComposable(
         is BooleanSettingsItem -> BooleanSettingRowComposable(item, viewModel)
         is DropDownFromApiCallSettingsItem -> DropDownFromApiCallSettingRowComposable(item, viewModel)
         is DropDownSettingsItem -> DropDownSettingRowComposable(item, viewModel)
+        is IntSettingsItem -> IntSettingRowComposable(item, viewModel)
         is ListOfStringSettingsItem -> ListOfStringSettingRowComposable(item, viewModel)
         is StringSettingsItem -> StringSettingRowComposable(item, viewModel)
         else -> error("No SettingRowComposable for ${item::class.simpleName}")

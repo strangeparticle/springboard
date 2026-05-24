@@ -10,11 +10,11 @@ import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
-import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
-import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
-import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
+import com.strangeparticle.editio.session.event.AssistantRespondedChatHistoryItem
+import com.strangeparticle.editio.session.event.StateSnapshotAddedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallCompletedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallStartedChatHistoryItem
+import com.strangeparticle.editio.session.event.UserSubmittedChatHistoryItem
 import com.strangeparticle.editio.toolcall.ToolCall
 import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
 import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
@@ -50,11 +50,11 @@ internal class AiSessionManagerTest {
 
         assertEquals(
             listOf(
-                StateSnapshotAddedAiChatEvent("{\"tabs\":[]}"),
-                UserSubmittedAiChatEvent("Add Chrome"),
-                AssistantRespondedAiChatEvent(text = "done", toolCalls = emptyList()),
+                StateSnapshotAddedChatHistoryItem("{\"tabs\":[]}"),
+                UserSubmittedChatHistoryItem("Add Chrome"),
+                AssistantRespondedChatHistoryItem(text = "done", toolCalls = emptyList()),
             ),
-            manager.events,
+            manager.items,
         )
     }
 
@@ -70,9 +70,9 @@ internal class AiSessionManagerTest {
 
         manager.submit("Run tool").join()
 
-        assertTrue(manager.events.contains(AssistantRespondedAiChatEvent(text = null, toolCalls = listOf(toolCall))))
-        assertTrue(manager.events.contains(ToolCallStartedAiChatEvent(toolCall)))
-        assertTrue(manager.events.any { it is ToolCallCompletedAiChatEvent && it.toolCallId == "call-1" })
+        assertTrue(manager.items.contains(AssistantRespondedChatHistoryItem(text = null, toolCalls = listOf(toolCall))))
+        assertTrue(manager.items.contains(ToolCallStartedChatHistoryItem(toolCall)))
+        assertTrue(manager.items.any { it is ToolCallCompletedChatHistoryItem && it.toolCallId == "call-1" })
     }
 
     @Test
@@ -86,8 +86,8 @@ internal class AiSessionManagerTest {
         manager.submit("a".repeat(200)).join()
         manager.submit("b".repeat(200)).join()
 
-        assertTrue(manager.events.filterIsInstance<UserSubmittedAiChatEvent>().any { it.text.startsWith("a") })
-        assertTrue(manager.events.filterIsInstance<AssistantRespondedAiChatEvent>().any { it.text == "first" })
+        assertTrue(manager.items.filterIsInstance<UserSubmittedChatHistoryItem>().any { it.text.startsWith("a") })
+        assertTrue(manager.items.filterIsInstance<AssistantRespondedChatHistoryItem>().any { it.text == "first" })
     }
 
     @Test

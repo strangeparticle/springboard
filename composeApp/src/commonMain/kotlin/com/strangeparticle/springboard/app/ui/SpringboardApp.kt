@@ -9,12 +9,15 @@ import com.strangeparticle.editio.client.provider.AiProviderRegistry
 import com.strangeparticle.editio.session.AiSessionManager
 import com.strangeparticle.editio.session.AiSessionSnapshotProvider
 import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
-import com.strangeparticle.editio.session.event.LocalCommandRespondedAiChatEvent
+import com.strangeparticle.editio.session.ChatHistoryGroup
+import com.strangeparticle.editio.session.ChatHistoryGroupType
+import com.strangeparticle.editio.session.event.LocalCommandRespondedChatHistoryItem
 import com.strangeparticle.editio.session.event.LocalCommandResponseKind
 import com.strangeparticle.editio.session.event.LocalCommandSource
-import com.strangeparticle.editio.session.event.LocalCommandSubmittedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandSubmittedChatHistoryItem
 import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
 import com.strangeparticle.editio.toolcall.ToolCallRegistry
+import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.editio.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.editio.SystemPromptBuilder
@@ -31,7 +34,7 @@ import com.strangeparticle.springboard.app.ui.editio.AiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
 import com.strangeparticle.springboard.app.ui.editio.buildDebugScrollbackPanes
 import com.strangeparticle.springboard.app.ui.editio.buildSlimScrollbackPanes
-import com.strangeparticle.springboard.app.ui.editio.initialTerseHelpEvents
+import com.strangeparticle.springboard.app.ui.editio.initialTerseHelpHistory
 import com.strangeparticle.springboard.app.ui.editio.parseAiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
@@ -180,8 +183,8 @@ private fun rememberAiChatPaneState(
     var runningJob by remember { mutableStateOf<Job?>(null) }
     // TODO: what's this change doing here?  Seems like this should be part of a different commit?
     val latestModelId by rememberUpdatedState(modelId)
-    var chatEvents by remember(aiClient, viewModel) {
-        mutableStateOf(initialTerseHelpEvents())
+    var chatHistory by remember(aiClient, viewModel) {
+        mutableStateOf(initialTerseHelpHistory())
     }
 
     if (provider == null || aiClient == null || modelId.isBlank()) {
@@ -208,17 +211,17 @@ private fun rememberAiChatPaneState(
             systemPromptProvider = { SystemPromptBuilder.build() },
             modelIdProvider = { latestModelId },
             coroutineScope = coroutineScope,
-            eventsProvider = { chatEvents },
-            appendEvents = { events -> chatEvents = chatEvents + events },
+            groupsProvider = { chatHistory },
+            updateGroups = { groups -> chatHistory = groups },
             onTranscriptChanged = { transcriptVersion++ },
         )
     }
     transcriptVersion
     val showFullChatTranscript = settingsViewModel.getResolvedValue(ShowFullChatTranscriptSetting)
     val effectiveScrollbackPanes = if (showFullChatTranscript) {
-        buildDebugScrollbackPanes(chatEvents)
+        buildDebugScrollbackPanes(chatHistory)
     } else {
-        buildSlimScrollbackPanes(chatEvents)
+        buildSlimScrollbackPanes(chatHistory)
     }
 
     return AiChatPaneState.configured(
@@ -230,30 +233,53 @@ private fun rememberAiChatPaneState(
         onSubmit = { text ->
             when (val command = parseAiChatLocalCommand(text)) {
                 is AiChatLocalCommand.HelpTerse -> {
-                    chatEvents = chatEvents + listOf(
-                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
-                        LocalCommandRespondedAiChatEvent(command.originalText, AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
-                    )
+                    chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help)
                     transcriptVersion++
                     return@configured
                 }
                 is AiChatLocalCommand.HelpFull -> {
-                    chatEvents = chatEvents + listOf(
-                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
-                        LocalCommandRespondedAiChatEvent(command.originalText, AiAssistantFullHelpText.text, LocalCommandResponseKind.Help),
-                    )
+                    chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, AiAssistantFullHelpText.text, LocalCommandResponseKind.Help)
+                    transcriptVersion++
+                    return@configured
+                }
+                is AiChatLocalCommand.Undo -> {
+                    if (runningJob?.isActive == true) {
+                        chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, "Cannot undo while the assistant is processing.", LocalCommandResponseKind.Error)
+                        transcriptVersion++
+                        return@configured
+                    }
+                    val lastAiIndex = chatHistory.indexOfLast { it.type == ChatHistoryGroupType.AI_INTERACTION }
+                    if (lastAiIndex < 0) {
+                        chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, "Nothing to undo.", LocalCommandResponseKind.Error)
+                        transcriptVersion++
+                        return@configured
+                    }
+                    val undoGroup = chatHistory[lastAiIndex]
+                    val snapshotJson = undoGroup.preSnapshotJson
+                    if (snapshotJson != null) {
+                        try {
+                            val snapshot = SpringboardAppSnapshot.fromJson(snapshotJson)
+                            val tabSnapshot = snapshot.tabs.firstOrNull { it.tabId == viewModel.activeTabId }
+                            if (tabSnapshot?.springboard != null) {
+                                val springboard = SpringboardFactory.fromDto(tabSnapshot.springboard, tabSnapshot.source ?: "")
+                                viewModel.suppressWindowGrow = true
+                                viewModel.restoreTabFromUndoSnapshot(
+                                    tabId = tabSnapshot.tabId,
+                                    springboard = springboard,
+                                    label = tabSnapshot.label,
+                                    isDirty = tabSnapshot.isDirty,
+                                )
+                                viewModel.suppressWindowGrow = false
+                            }
+                        } catch (_: Exception) { }
+                    }
+                    chatHistory = chatHistory.filterIndexed { index, _ -> index != lastAiIndex }
+                    manager.markExternalStateChange()
                     transcriptVersion++
                     return@configured
                 }
                 is AiChatLocalCommand.Unknown -> {
-                    chatEvents = chatEvents + listOf(
-                        LocalCommandSubmittedAiChatEvent(command.originalText, LocalCommandSource.User),
-                        LocalCommandRespondedAiChatEvent(
-                            command.originalText,
-                            "Unknown command: ${command.originalText}. Try /help.",
-                            LocalCommandResponseKind.Error,
-                        ),
-                    )
+                    chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, "Unknown command: ${command.originalText}. Try /help.", LocalCommandResponseKind.Error)
                     transcriptVersion++
                     return@configured
                 }
@@ -323,3 +349,16 @@ private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegi
     register(UpdateGuidanceToolCallHandler())
     register(UpdateResourceToolCallHandler())
 }
+
+private fun localCommandGroup(
+    commandText: String,
+    source: LocalCommandSource,
+    responseText: String,
+    responseKind: LocalCommandResponseKind,
+): ChatHistoryGroup = ChatHistoryGroup(
+    type = ChatHistoryGroupType.LOCAL_COMMAND,
+    items = listOf(
+        LocalCommandSubmittedChatHistoryItem(commandText, source),
+        LocalCommandRespondedChatHistoryItem(commandText, responseText, responseKind),
+    ),
+)

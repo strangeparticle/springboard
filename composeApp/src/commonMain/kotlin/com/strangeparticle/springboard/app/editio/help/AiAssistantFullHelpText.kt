@@ -24,6 +24,7 @@ internal object AiAssistantFullHelpText {
 
         Slash commands:
         - /help shows this help locally. It is included in the visible transcript, but it is not sent to the AI provider.
+        - /undo removes the most recent AI interaction and reverts the springboard to its prior state. Can be called multiple times.
 
         Tips:
         - Refer to existing things by their visible names when possible.

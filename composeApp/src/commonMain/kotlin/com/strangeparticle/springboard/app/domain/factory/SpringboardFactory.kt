@@ -31,7 +31,7 @@ object SpringboardFactory {
         return fromDto(dto, source, jsonSource = jsonString)
     }
 
-    private fun fromDto(dto: SpringboardDto, source: String, jsonSource: String): Springboard {
+    internal fun fromDto(dto: SpringboardDto, source: String, jsonSource: String = ""): Springboard {
         require(dto.environments.none { it.id.equals(ALL_ENVS_ENVIRONMENT_ID, ignoreCase = true) }) {
             "Environment id '$ALL_ENVS_ENVIRONMENT_ID' is reserved for non-environment-specific activators and cannot be used as a configured environment id."
         }

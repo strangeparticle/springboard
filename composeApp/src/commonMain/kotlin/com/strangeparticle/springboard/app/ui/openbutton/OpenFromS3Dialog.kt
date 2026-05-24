@@ -81,6 +81,11 @@ fun OpenFromS3Dialog(
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
+                Text(
+                    "Enter the HTTPS path to the S3 object, NOT an s3:// URL",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Spacer(Modifier.height(6.dp))
                 BasicTextField(
                     value = url,
@@ -126,6 +131,11 @@ fun OpenFromS3Dialog(
                     "AWS Profile",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    "Requires at least read access to the bucket. Write access allows saving changes back.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(4.dp))
                 BasicTextField(

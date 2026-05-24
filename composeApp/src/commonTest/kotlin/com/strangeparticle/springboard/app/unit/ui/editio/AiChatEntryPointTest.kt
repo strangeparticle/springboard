@@ -1,14 +1,17 @@
 package com.strangeparticle.springboard.app.unit.ui.editio
 
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.runtime.mutableStateOf
 import com.strangeparticle.editio.client.provider.AiProviderRegistry
@@ -146,6 +149,142 @@ internal class AiChatEntryPointTest {
         waitForIdle()
 
         onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `tab from chat input focuses keynav app dropdown`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+    }
+
+    @Test
+    fun `tab from environment dropdown focuses chat input when assistant is open`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+        onNodeWithTag(TestTags.APP_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).assertIsFocused()
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).assertIsFocused()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `shift tab from app dropdown focuses chat input when assistant is open`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Tab)
+            keyUp(Key.ShiftLeft)
+        }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `shift tab from chat input focuses environment dropdown when assistant is open`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Tab)
+            keyUp(Key.ShiftLeft)
+        }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).assertIsFocused()
+    }
+
+    @Test
+    fun `tab from environment dropdown wraps to app dropdown when assistant is closed`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+        waitForIdle()
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
+        onNodeWithTag(TestTags.APP_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).assertIsFocused()
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).assertIsFocused()
+
+        onNodeWithTag(TestTags.ENVIRONMENT_DROPDOWN).performKeyInput { pressKey(Key.Tab) }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
     }
 
     @Test

@@ -103,11 +103,15 @@ internal fun AiChatPane(
     onClose: () -> Unit,
     onOpenSettings: () -> Unit,
     onCopyTranscript: (String) -> Unit = { copyToClipboard(it) },
+    onTabOut: () -> Unit = {},
+    onShiftTabOut: () -> Unit = {},
+    inputFocusRequester: FocusRequester? = null,
     height: androidx.compose.ui.unit.Dp = AiChatPaneDefaults.DefaultHeight,
 ) {
     var inputValue by remember { mutableStateOf(TextFieldValue("")) }
     var hasBeenRunning by remember { mutableStateOf(false) }
-    val inputFocusRequester = remember { FocusRequester() }
+    val fallbackInputFocusRequester = remember { FocusRequester() }
+    val activeInputFocusRequester = inputFocusRequester ?: fallbackInputFocusRequester
     val inputInteractionSource = remember { MutableInteractionSource() }
     val isInputFocused by inputInteractionSource.collectIsFocusedAsState()
     val inputBorderColor = if (isInputFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
@@ -121,7 +125,7 @@ internal fun AiChatPane(
     }
     LaunchedEffect(state.focusInputOnShow) {
         if (state.focusInputOnShow && !state.isRunning) {
-            try { inputFocusRequester.requestFocus() } catch (_: Exception) {}
+            try { activeInputFocusRequester.requestFocus() } catch (_: Exception) {}
         }
     }
     LaunchedEffect(state.isRunning) {
@@ -129,7 +133,7 @@ internal fun AiChatPane(
             hasBeenRunning = true
             state.onProcessingFocusFallback()
         } else if (hasBeenRunning) {
-            try { inputFocusRequester.requestFocus() } catch (_: Exception) {}
+            try { activeInputFocusRequester.requestFocus() } catch (_: Exception) {}
         }
     }
     fun sendInput() {
@@ -139,13 +143,13 @@ internal fun AiChatPane(
             inputValue = TextFieldValue("")
         }
     }
-    fun insertLineBreak() {
+    fun insertTextAtSelection(text: String) {
         val selectionStart = inputValue.selection.min
         val selectionEnd = inputValue.selection.max
-        val newText = inputValue.text.replaceRange(selectionStart, selectionEnd, "\n")
+        val newText = inputValue.text.replaceRange(selectionStart, selectionEnd, text)
         inputValue = TextFieldValue(
             text = newText,
-            selection = TextRange(selectionStart + 1),
+            selection = TextRange(selectionStart + text.length),
         )
     }
 
@@ -166,9 +170,19 @@ internal fun AiChatPane(
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                             if (state.isRunning) return@onPreviewKeyEvent true
                             if (event.isShiftPressed) {
-                                insertLineBreak()
+                                insertTextAtSelection("\n")
                             } else {
                                 sendInput()
+                            }
+                            true
+                        }
+                        Key.Tab -> {
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            if (state.isRunning) return@onPreviewKeyEvent true
+                            if (event.isShiftPressed) {
+                                onShiftTabOut()
+                            } else {
+                                onTabOut()
                             }
                             true
                         }
@@ -310,7 +324,7 @@ internal fun AiChatPane(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .requiredHeight(76.dp)
-                                        .focusRequester(inputFocusRequester)
+                                        .focusRequester(activeInputFocusRequester)
                                         .border(inputBorderWidth, inputBorderColor, MaterialTheme.shapes.small)
                                         .padding(horizontal = 8.dp, vertical = 6.dp)
                                         .testTag(TestTags.AI_CHAT_INPUT),

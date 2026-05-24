@@ -480,7 +480,7 @@ class SpringboardViewModel(
     val environments by derivedStateOf { springboardFilteredForRuntime?.environments ?: emptyList() }
     val apps by derivedStateOf {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyList()
-        currentSpringboardFilteredForRuntime.appColumnLayout()
+        currentSpringboardFilteredForRuntime.appColumnLayout().slots
             .filterIsInstance<AppColumn>()
             .map { it.app }
     }

@@ -9,7 +9,7 @@ const val Sin45 = 0.7071f
  * Vertical padding added after the rotated header height calculation. Accounts for
  * the gap between the bottom of the rotated text stack and the header/data boundary.
  */
-val HeaderRotationVerticalPadding = 12.dp
+val HeaderRotationVerticalPadding = (-4).dp
 
 /**
  * Horizontal offset applied to the app-id text line before rotation. After the -45°
@@ -27,3 +27,6 @@ const val GuidanceDismissDelayMs = 300L
  */
 fun computeRotatedHeaderHeightPx(textWidthPx: Float, stackedTextHeightPx: Float): Float =
     (textWidthPx + stackedTextHeightPx) * Sin45
+
+fun computeActiveHeaderHeightPx(headerHeightPx: Float, reservedBottomPx: Float): Float =
+    (headerHeightPx - reservedBottomPx).coerceAtLeast(0f)

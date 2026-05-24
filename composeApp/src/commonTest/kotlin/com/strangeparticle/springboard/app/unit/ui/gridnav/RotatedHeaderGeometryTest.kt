@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit.ui.gridnav
 
 import com.strangeparticle.springboard.app.ui.gridnav.Sin45
+import com.strangeparticle.springboard.app.ui.gridnav.computeActiveHeaderHeightPx
 import com.strangeparticle.springboard.app.ui.gridnav.computeRotatedHeaderHeightPx
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,5 +31,15 @@ class RotatedHeaderGeometryTest {
     @Test
     fun computeRotatedHeaderHeightPx_withBothZero_returnsZero() {
         assertEquals(0f, computeRotatedHeaderHeightPx(0f, 0f))
+    }
+
+    @Test
+    fun computeActiveHeaderHeightPx_subtractsReservedHeight() {
+        assertEquals(86f, computeActiveHeaderHeightPx(100f, 14f))
+    }
+
+    @Test
+    fun computeActiveHeaderHeightPx_clampsToZero() {
+        assertEquals(0f, computeActiveHeaderHeightPx(10f, 20f))
     }
 }

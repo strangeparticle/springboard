@@ -18,43 +18,21 @@
       "name": "Prod"
     }
   ],
+  "appGroups": [
+    { "id": "frontend", "description": "Frontend" },
+    { "id": "backend", "description": "Backend" },
+    { "id": "infra", "description": "Infrastructure" }
+  ],
   "apps": [
-    {
-      "id": "springboard",
-      "name": "Springboard"
-    },
-    {
-      "id": "dervish",
-      "name": "Dervish"
-    },
-    {
-      "id": "fretnaut",
-      "name": "Fretnaut"
-    },
-    {
-      "id": "keelson",
-      "name": "Keelson"
-    },
-    {
-      "id": "wayfinder",
-      "name": "Wayfinder"
-    },
-    {
-      "id": "bramble",
-      "name": "Bramble"
-    },
-    {
-      "id": "halyard",
-      "name": "Halyard"
-    },
-    {
-      "id": "quarry",
-      "name": "Quarry"
-    },
-    {
-      "id": "nimbus",
-      "name": "Nimbus"
-    }
+    { "id": "springboard", "name": "Springboard", "appGroupId": "frontend" },
+    { "id": "dervish", "name": "Dervish", "appGroupId": "frontend" },
+    { "id": "fretnaut", "name": "Fretnaut", "appGroupId": "frontend" },
+    { "id": "keelson", "name": "Keelson", "appGroupId": "backend" },
+    { "id": "wayfinder", "name": "Wayfinder", "appGroupId": "backend" },
+    { "id": "bramble", "name": "Bramble", "appGroupId": "backend" },
+    { "id": "halyard", "name": "Halyard", "appGroupId": "infra" },
+    { "id": "quarry", "name": "Quarry", "appGroupId": "infra" },
+    { "id": "nimbus", "name": "Nimbus" }
   ],
   "resources": [
     {

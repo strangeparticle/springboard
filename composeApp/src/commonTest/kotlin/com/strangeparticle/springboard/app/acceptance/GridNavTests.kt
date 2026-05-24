@@ -111,4 +111,7 @@ class GridNavTests {
 
     @Test fun `clicking column header in app-groups layout activates all resources in column`() =
         GridNavTestScenarios.clickingColumnHeaderInAppGroupsLayoutActivatesAllResourcesInColumn()
+
+    @Test fun `header resize drag still works with group label strip present`() =
+        GridNavTestScenarios.headerResizeDragStillWorksWithGroupLabelStripPresent()
 }

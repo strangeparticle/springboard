@@ -767,10 +767,11 @@ object GridNavTestScenarios {
         val app1Cell = onNodeWithTag(TestTags.gridCell("app1", "res1")).fetchSemanticsNode()
         val app1CenterX = app1Cell.boundsInRoot.left + app1Cell.size.width / 2
 
-        // Click on the header overlay at app1's column-x, at the bottom of the header.
-        // Use the cell's column-x; pick a y inside the header area (above the cell row).
+        // Click on the header overlay at app1's column-x, inside the active rotated-header
+        // area above the reserved group-label strip.
         onRoot().performMouseInput {
-            val y = app1Cell.boundsInRoot.top - 4f
+            val stripHeightPx = with(density) { GridNavSizingConstants.GroupLabelStripHeight.toPx() }
+            val y = app1Cell.boundsInRoot.top - stripHeightPx - 4f
             click(androidx.compose.ui.geometry.Offset(app1CenterX, y))
         }
         waitForIdle()
@@ -800,7 +801,8 @@ object GridNavTestScenarios {
         val app2Cell = onNodeWithTag(TestTags.gridCell("app2", "res1")).fetchSemanticsNode()
         val app2CenterX = app2Cell.boundsInRoot.left + app2Cell.size.width / 2
         onRoot().performMouseInput {
-            val y = app2Cell.boundsInRoot.top - 4f
+            val stripHeightPx = with(density) { GridNavSizingConstants.GroupLabelStripHeight.toPx() }
+            val y = app2Cell.boundsInRoot.top - stripHeightPx - 4f
             click(androidx.compose.ui.geometry.Offset(app2CenterX, y))
         }
         waitForIdle()
@@ -808,6 +810,31 @@ object GridNavTestScenarios {
         assertTrue(
             components.activationService.openedUrls.contains("https://example.com/app2"),
             "expected app2/res1 URL to be opened, got: ${components.activationService.openedUrls}",
+        )
+    }
+
+    fun headerResizeDragStillWorksWithGroupLabelStripPresent() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.APP_GROUPS_WITH_SEPARATORS, "/test/springboard.json")
+        waitForIdle()
+
+        val thumb = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+        val initialTop = thumb.fetchSemanticsNode().boundsInRoot.top
+
+        thumb.performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 40f))
+            up()
+        }
+        waitForIdle()
+
+        val newTop = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            newTop > initialTop,
+            "Expected resize thumb to move down with group label strip present: was $initialTop, now $newTop",
         )
     }
 

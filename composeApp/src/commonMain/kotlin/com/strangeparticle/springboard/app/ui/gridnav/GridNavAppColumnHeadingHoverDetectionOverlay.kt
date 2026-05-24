@@ -40,15 +40,17 @@ import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 fun GridNavAppColumnHeadingHoverDetectionOverlay(
     columnLayout: List<AppColumnSlot>,
     gridHeaderHeight: Dp,
+    groupLabelStripHeight: Dp,
     horizontalOffset: Dp,
     onHoveredAppChange: (String?) -> Unit,
     onColumnClick: (String) -> Unit,
 ) {
+    val overlayHeight = gridHeaderHeight - groupLabelStripHeight
     Box(
         modifier = Modifier
             .offset(x = horizontalOffset)
-            .width(CommonUiConstants.GridColumnWidth * columnLayout.size + gridHeaderHeight)
-            .height(gridHeaderHeight)
+            .width(CommonUiConstants.GridColumnWidth * columnLayout.size + overlayHeight)
+            .height(overlayHeight)
             .pointerInput(columnLayout) {
                 val columnWidthPx = CommonUiConstants.GridColumnWidth.toPx()
 

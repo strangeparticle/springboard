@@ -3,6 +3,7 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.springboard.app.domain.model.App
 import com.strangeparticle.springboard.app.domain.model.AppColumn
 import com.strangeparticle.springboard.app.domain.model.AppGroup
+import com.strangeparticle.springboard.app.domain.model.AppGroupColumnSpan
 import com.strangeparticle.springboard.app.domain.model.Environment
 import com.strangeparticle.springboard.app.domain.model.SeparatorColumn
 import com.strangeparticle.springboard.app.domain.model.Springboard
@@ -10,6 +11,7 @@ import com.strangeparticle.springboard.app.domain.model.SpringboardIndexes
 import com.strangeparticle.springboard.app.domain.model.appColumnLayout
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SpringboardAppColumnLayoutTest {
 
@@ -45,8 +47,9 @@ class SpringboardAppColumnLayoutTest {
 
         assertEquals(
             listOf(AppColumn(App("app1", "One")), AppColumn(App("app2", "Two")), AppColumn(App("app3", "Three"))),
-            layout,
+            layout.slots,
         )
+        assertTrue(layout.groupSpans.isEmpty())
     }
 
     @Test
@@ -74,7 +77,14 @@ class SpringboardAppColumnLayoutTest {
                 AppColumn(App("app2", "Two", appGroupId = "groupB")),
                 AppColumn(App("app4", "Four", appGroupId = "groupB")),
             ),
-            layout,
+            layout.slots,
+        )
+        assertEquals(
+            listOf(
+                AppGroupColumnSpan("groupA", "Group A", startSlotIndex = 0, columnCount = 2),
+                AppGroupColumnSpan("groupB", "Group B", startSlotIndex = 3, columnCount = 2),
+            ),
+            layout.groupSpans,
         )
     }
 
@@ -104,7 +114,14 @@ class SpringboardAppColumnLayoutTest {
                 AppColumn(App("app2", "Two")),
                 AppColumn(App("app4", "Four")),
             ),
-            layout,
+            layout.slots,
+        )
+        assertEquals(
+            listOf(
+                AppGroupColumnSpan("groupA", "Group A", startSlotIndex = 0, columnCount = 1),
+                AppGroupColumnSpan("groupB", "Group B", startSlotIndex = 2, columnCount = 1),
+            ),
+            layout.groupSpans,
         )
     }
 
@@ -130,7 +147,14 @@ class SpringboardAppColumnLayoutTest {
                 SeparatorColumn,
                 AppColumn(App("app2", "Two", appGroupId = "groupC")),
             ),
-            layout,
+            layout.slots,
+        )
+        assertEquals(
+            listOf(
+                AppGroupColumnSpan("groupA", "Group A", startSlotIndex = 0, columnCount = 1),
+                AppGroupColumnSpan("groupC", "Group C", startSlotIndex = 2, columnCount = 1),
+            ),
+            layout.groupSpans,
         )
     }
 
@@ -145,7 +169,8 @@ class SpringboardAppColumnLayoutTest {
 
         assertEquals(
             listOf(AppColumn(App("app1", "One")), AppColumn(App("app2", "Two"))),
-            layout,
+            layout.slots,
         )
+        assertTrue(layout.groupSpans.isEmpty())
     }
 }

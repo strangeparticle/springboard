@@ -11,6 +11,9 @@ object GridNavSizingConstants {
     val MinHeaderHeight = 60.dp
     val MaxHeaderHeight = 320.dp
 
+    /** Height of the group label strip rendered below rotated column headers. */
+    val GroupLabelStripHeight = 14.dp
+
     val MinResourceLabelWidth = CommonUiConstants.ResourceLabelWidth
     val MaxResourceLabelWidth = 400.dp
 

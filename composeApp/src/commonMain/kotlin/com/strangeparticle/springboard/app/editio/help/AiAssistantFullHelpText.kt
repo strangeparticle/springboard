@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.editio.help
 
 internal object AiAssistantFullHelpText {
-    const val title = "AI Editing Assistant help"
+    const val title = "AI Assistant help"
 
     val text: String = """
         $title
@@ -13,6 +13,7 @@ internal object AiAssistantFullHelpText {
         - Add URL, URL-template, or command activators for environment/app/resource cells.
         - Add or update guidance notes for specific cells.
         - Open, create, close, or save tabs when the request is clear.
+        - Open one or many entries — e.g. "open the prod dashboard for fretnaut", "open all the confluence links", "open everything for fretnaut in prod".
 
         Useful concepts:
         - Apps are the services or launchable applications this Springboard organizes.
@@ -20,9 +21,6 @@ internal object AiAssistantFullHelpText {
         - Environments represent contexts such as sandbox, staging, and prod. The reserved environment id "ALL" applies to every environment.
         - Activators connect an environment, app, and resource to a URL, URL template, or command action.
         - Guidance stores notes for a specific environment/app/resource coordinate.
-
-        Not supported:
-        - The assistant cannot activate, launch, or open URLs or commands from the grid. Activation is done directly through the Springboard grid UI.
 
         Slash commands:
         - /help shows this help locally. It is included in the visible transcript, but it is not sent to the AI provider.

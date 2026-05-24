@@ -17,14 +17,14 @@ internal class AiAssistantHelpTextTest {
 
     @Test
     fun `full user-facing help is available from common help package`() {
-        assertContains(AiAssistantFullHelpText.title, "AI Editing Assistant help")
+        assertContains(AiAssistantFullHelpText.title, "AI Assistant help")
         assertContains(AiAssistantFullHelpText.text, AiAssistantFullHelpText.title)
         assertContains(AiAssistantFullHelpText.text, "Common requests:")
     }
 
     @Test
     fun `system prompt text is available from common help package`() {
-        assertContains(AiAssistantSystemPromptText.text, "You are the AI Editing Assistant")
+        assertContains(AiAssistantSystemPromptText.text, "You are the AI Assistant")
         assertContains(AiAssistantSystemPromptText.text, "Editing rules:")
         assertContains(AiAssistantSystemPromptText.text, "Communication rules:")
     }

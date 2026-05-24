@@ -842,14 +842,7 @@ class SpringboardViewModel(
      */
     fun activateColumn(environmentId: String, appId: String) {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
-        val activators = buildList {
-            currentSpringboardFilteredForRuntime.resources.forEach { resource ->
-                val activator = findActivatorWithAllEnvsFallback(environmentId, appId, resource.id)
-                if (activator != null) {
-                    add(activator)
-                }
-            }
-        }
+        val activators = resolveColumnActivators(currentSpringboardFilteredForRuntime, environmentId, appId)
         executeActivators(activators, isSingleSelection = false)
         if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
@@ -868,17 +861,36 @@ class SpringboardViewModel(
      */
     fun activateRow(environmentId: String, resourceId: String) {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
-        val activators = buildList {
-            currentSpringboardFilteredForRuntime.apps.forEach { app ->
-                val activator = findActivatorWithAllEnvsFallback(environmentId, app.id, resourceId)
-                if (activator != null) {
-                    add(activator)
-                }
-            }
-        }
+        val activators = resolveRowActivators(currentSpringboardFilteredForRuntime, environmentId, resourceId)
         executeActivators(activators, isSingleSelection = false)
         if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
+        }
+    }
+
+    private fun resolveColumnActivators(
+        springboard: Springboard,
+        environmentId: String,
+        appId: String,
+    ): List<Activator> = buildList {
+        springboard.resources.forEach { resource ->
+            val activator = findActivatorWithAllEnvsFallback(springboard, environmentId, appId, resource.id)
+            if (activator != null) {
+                add(activator)
+            }
+        }
+    }
+
+    private fun resolveRowActivators(
+        springboard: Springboard,
+        environmentId: String,
+        resourceId: String,
+    ): List<Activator> = buildList {
+        springboard.apps.forEach { app ->
+            val activator = findActivatorWithAllEnvsFallback(springboard, environmentId, app.id, resourceId)
+            if (activator != null) {
+                add(activator)
+            }
         }
     }
 
@@ -889,11 +901,12 @@ class SpringboardViewModel(
      * Returns null when neither yields an activator.
      */
     private fun findActivatorWithAllEnvsFallback(
+        springboard: Springboard,
         environmentId: String,
         appId: String,
         resourceId: String,
     ): Activator? {
-        val activators = springboardFilteredForRuntime?.indexes?.activatorByCoordinate ?: return null
+        val activators = springboard.indexes.activatorByCoordinate
         val strictCoordinate = Coordinate(environmentId, appId, resourceId)
         activators[strictCoordinate]?.let { return it }
         if (environmentId != ALL_ENVS_ENVIRONMENT_ID) {
@@ -907,6 +920,63 @@ class SpringboardViewModel(
         val current = multiSelectSet
         multiSelectSet = if (coordinate in current) current - coordinate else current + coordinate
     }
+
+    // -- AI assistant activation entry points -------------------------------
+    //
+    // These mirror the four user-facing activation surfaces (cell, row, column,
+    // multi-coordinate) but take an explicit tab_id, return a structured
+    // outcome, and do NOT change which tab the user is viewing. They reuse the
+    // same activator-resolution helpers and platform executor as the UI paths.
+
+    internal fun activateCoordinateFromAssistant(tabId: String, coordinate: Coordinate): AssistantActivationOutcome {
+        val springboard = findTab(tabId)?.springboardFilteredForRuntime
+            ?: return outcomeForMissingOrEmpty(tabId)
+        val activator = springboard.indexes.activatorByCoordinate[coordinate]
+            ?: return AssistantActivationOutcome.NoActivatorsResolved
+        executeActivators(listOf(activator), isSingleSelection = true)
+        return AssistantActivationOutcome.Success(1)
+    }
+
+    internal fun activateRowFromAssistant(
+        tabId: String,
+        environmentId: String,
+        resourceId: String,
+    ): AssistantActivationOutcome {
+        val springboard = findTab(tabId)?.springboardFilteredForRuntime
+            ?: return outcomeForMissingOrEmpty(tabId)
+        val activators = resolveRowActivators(springboard, environmentId, resourceId)
+        if (activators.isEmpty()) return AssistantActivationOutcome.NoActivatorsResolved
+        executeActivators(activators, isSingleSelection = activators.size == 1)
+        return AssistantActivationOutcome.Success(activators.size)
+    }
+
+    internal fun activateColumnFromAssistant(
+        tabId: String,
+        environmentId: String,
+        appId: String,
+    ): AssistantActivationOutcome {
+        val springboard = findTab(tabId)?.springboardFilteredForRuntime
+            ?: return outcomeForMissingOrEmpty(tabId)
+        val activators = resolveColumnActivators(springboard, environmentId, appId)
+        if (activators.isEmpty()) return AssistantActivationOutcome.NoActivatorsResolved
+        executeActivators(activators, isSingleSelection = activators.size == 1)
+        return AssistantActivationOutcome.Success(activators.size)
+    }
+
+    internal fun activateCoordinatesFromAssistant(
+        tabId: String,
+        coordinates: List<Coordinate>,
+    ): AssistantActivationOutcome {
+        val springboard = findTab(tabId)?.springboardFilteredForRuntime
+            ?: return outcomeForMissingOrEmpty(tabId)
+        val activators = coordinates.mapNotNull { springboard.indexes.activatorByCoordinate[it] }
+        if (activators.isEmpty()) return AssistantActivationOutcome.NoActivatorsResolved
+        executeActivators(activators, isSingleSelection = activators.size == 1)
+        return AssistantActivationOutcome.Success(activators.size)
+    }
+
+    private fun outcomeForMissingOrEmpty(tabId: String): AssistantActivationOutcome =
+        if (findTab(tabId) == null) AssistantActivationOutcome.MissingTab else AssistantActivationOutcome.TabEmpty
 
     /** Activated via grid-nav (shift-release after multi-select). */
     fun activateMultiSelect() {

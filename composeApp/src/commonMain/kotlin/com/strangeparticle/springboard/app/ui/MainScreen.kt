@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
@@ -47,6 +48,8 @@ internal fun MainScreen(
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
     var pendingCloseTabId by remember { mutableStateOf<String?>(null) }
+    val assistantInputFocusRequester = remember { FocusRequester() }
+    val environmentDropdownFocusRequester = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
 
     val openFromNetwork: (() -> Unit)? = if (networkContentService != null) {
@@ -83,7 +86,20 @@ internal fun MainScreen(
     val activeTab = viewModel.activeTab
 
     Column(modifier = Modifier.fillMaxSize()) {
-        NavBar(viewModel = viewModel)
+        NavBar(
+            viewModel = viewModel,
+            onTabOutForward = if (showAssistant) {
+                { try { assistantInputFocusRequester.requestFocus() } catch (_: Exception) {} }
+            } else {
+                null
+            },
+            onTabOutBackward = if (showAssistant) {
+                { try { assistantInputFocusRequester.requestFocus() } catch (_: Exception) {} }
+            } else {
+                null
+            },
+            environmentDropdownFocusRequester = environmentDropdownFocusRequester,
+        )
 
         if (activeTab == null || activeTab.isEmpty) {
             Box(modifier = Modifier.weight(1f)) {
@@ -184,6 +200,9 @@ internal fun MainScreen(
                 state = aiChatPaneState,
                 onClose = onCloseAssistant,
                 onOpenSettings = onOpenAiSettings,
+                onTabOut = { viewModel.requestFocusAppDropdown() },
+                onShiftTabOut = { try { environmentDropdownFocusRequester.requestFocus() } catch (_: Exception) {} },
+                inputFocusRequester = assistantInputFocusRequester,
                 height = chatPaneHeightDp.dp,
             )
         }

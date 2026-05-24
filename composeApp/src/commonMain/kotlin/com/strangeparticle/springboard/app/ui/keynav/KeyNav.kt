@@ -18,10 +18,14 @@ private const val MaxWeightChars = 30
 fun KeyNav(
     viewModel: SpringboardViewModel,
     modifier: Modifier = Modifier,
+    onTabOutForward: (() -> Unit)? = null,
+    onTabOutBackward: (() -> Unit)? = null,
+    environmentDropdownFocusRequester: FocusRequester? = null,
 ) {
     val appDropdownFocusRequester = remember { FocusRequester() }
     val resourceFocusRequester = remember { FocusRequester() }
-    val environmentFocusRequester = remember { FocusRequester() }
+    val fallbackEnvironmentFocusRequester = remember { FocusRequester() }
+    val environmentFocusRequester = environmentDropdownFocusRequester ?: fallbackEnvironmentFocusRequester
 
     // Observe the view-model-owned focus-request flag and route it to the app dropdown's
     // FocusRequester. Startup load, toast dismissal, escape reset, and window-refocus all
@@ -73,7 +77,7 @@ fun KeyNav(
                 )
             },
             onShiftTab = {
-                requestFocusForDropDown(
+                onTabOutBackward?.invoke() ?: requestFocusForDropDown(
                     determineNextFocusDropDownForTabKeypress(KeyNavDropDown.APP, isShiftPressed = true)
                 )
             },
@@ -116,7 +120,7 @@ fun KeyNav(
             onSelect = { viewModel.selectEnvironment(it) },
             focusRequester = environmentFocusRequester,
             onTab = {
-                requestFocusForDropDown(
+                onTabOutForward?.invoke() ?: requestFocusForDropDown(
                     determineNextFocusDropDownForTabKeypress(KeyNavDropDown.ENVIRONMENT, isShiftPressed = false)
                 )
             },

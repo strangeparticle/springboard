@@ -248,6 +248,20 @@ internal class AiChatPaneTest {
     }
 
     @Test
+    fun `pasting tabs preserves tab characters`() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = configuredState(), onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        val input = onNodeWithTag(TestTags.AI_CHAT_INPUT)
+        input.performTextInput("before\tafter")
+
+        input.assertTextEquals("before\tafter")
+    }
+
+    @Test
     fun `stop button stops when running`() = runComposeUiTest {
         var stopCount = 0
         val state = configuredState(isRunning = true, onStop = { stopCount += 1 })

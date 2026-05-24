@@ -19,7 +19,9 @@ fun coreSettingsItems(): List<SettingsItem<*>> = listOf(
     ResetKeyNavAfterGridNavActivationSetting,
     ActiveBrandSetting,
     HideAppAfterActivationSetting,
+    HttpContentTimeoutSecondsSetting,
     AiProviderSetting,
+    HttpAiProviderTimeoutSecondsSetting,
     ShowFullChatTranscriptSetting,
     OpenFromS3AwsProfileSetting,
 )

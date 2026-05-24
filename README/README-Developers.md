@@ -80,6 +80,24 @@ Turn it off to return to the standard view.
 This shows the conversation as the session manager sees it. It does **not** show the wire-level
 request/response bytes — for those, use the ktor logging below.
 
+### AI provider timeout tuning
+
+AI provider calls use the first-class **AI Provider HTTP Timeout** setting. The default is `180`
+seconds, which is intentionally longer than content reads because provider calls can take longer
+before returning a non-streaming response.
+
+For local testing, launch with a higher value:
+
+```shell
+./gradlew :composeApp:run --args="--http-ai-provider-timeout-seconds 300"
+```
+
+Network content reads use **Content HTTP Timeout**, defaulting to `30` seconds:
+
+```shell
+./gradlew :composeApp:run --args="--http-content-timeout-seconds 45"
+```
+
 **2. Ktor request/response logging (rebuild required)**
 
 The AI providers all share the single `HttpClient` constructed in

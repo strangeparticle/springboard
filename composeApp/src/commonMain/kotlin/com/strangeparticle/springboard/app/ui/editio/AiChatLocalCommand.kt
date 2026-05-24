@@ -6,6 +6,7 @@ internal sealed class AiChatLocalCommand {
     data class HelpTerse(override val originalText: String) : AiChatLocalCommand()
     data class HelpFull(override val originalText: String) : AiChatLocalCommand()
     data class Unknown(override val originalText: String) : AiChatLocalCommand()
+    data class Undo(override val originalText: String) : AiChatLocalCommand()
 }
 
 internal fun parseAiChatLocalCommand(input: String): AiChatLocalCommand? {
@@ -14,6 +15,7 @@ internal fun parseAiChatLocalCommand(input: String): AiChatLocalCommand? {
     return when (text.lowercase()) {
         "/help_terse" -> AiChatLocalCommand.HelpTerse(originalText = text)
         "/help", "/help_full", "/help_verbose" -> AiChatLocalCommand.HelpFull(originalText = text)
+        "/undo" -> AiChatLocalCommand.Undo(originalText = text)
         else -> AiChatLocalCommand.Unknown(originalText = text)
     }
 }

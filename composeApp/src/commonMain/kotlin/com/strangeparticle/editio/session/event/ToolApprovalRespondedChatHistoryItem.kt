@@ -1,6 +1,6 @@
 package com.strangeparticle.editio.session.event
 
-internal data class ToolApprovalRespondedAiChatEvent(
+internal data class ToolApprovalRespondedChatHistoryItem(
     val toolCallId: String,
     val approved: Boolean,
-) : AiChatEvent
+) : ChatHistoryItem

@@ -6,17 +6,17 @@ import com.strangeparticle.editio.conversation.AiConversationMessage
 import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.editio.conversation.AiConversationMessageForUser
-import com.strangeparticle.editio.session.event.AiChatEvent
-import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
-import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
-import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolApprovalRequestedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolApprovalRespondedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallDeniedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallFailedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
-import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
+import com.strangeparticle.editio.session.event.ChatHistoryItem
+import com.strangeparticle.editio.session.event.AssistantErroredChatHistoryItem
+import com.strangeparticle.editio.session.event.AssistantRespondedChatHistoryItem
+import com.strangeparticle.editio.session.event.StateSnapshotAddedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolApprovalRequestedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolApprovalRespondedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallCompletedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallDeniedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallFailedChatHistoryItem
+import com.strangeparticle.editio.session.event.ToolCallStartedChatHistoryItem
+import com.strangeparticle.editio.session.event.UserSubmittedChatHistoryItem
 import com.strangeparticle.editio.session.projection.buildProviderHistory
 import com.strangeparticle.editio.session.projection.buildTranscriptParts
 import com.strangeparticle.editio.toolcall.ToolCallDispatcher
@@ -46,69 +46,85 @@ internal class AiSessionManager(
      * (repeating until under the budget). Estimation uses `text.length / 4`.
      */
     private val maxHistoryTokens: Int = DEFAULT_MAX_HISTORY_TOKENS,
-    // TODO: why is done?  function assigned to params can reduce readability
-    eventsProvider: (() -> List<AiChatEvent>)? = null,
-    appendEvents: ((List<AiChatEvent>) -> Unit)? = null,
+    groupsProvider: (() -> List<ChatHistoryGroup>)? = null,
+    updateGroups: ((List<ChatHistoryGroup>) -> Unit)? = null,
     private val onTranscriptChanged: () -> Unit = {},
 ) {
-    private val mutableEvents = mutableListOf<AiChatEvent>()
-    private val resolvedEventsProvider: () -> List<AiChatEvent> = eventsProvider ?: { mutableEvents.toList() }
-    private val resolvedAppendEvents: (List<AiChatEvent>) -> Unit = appendEvents ?: { mutableEvents += it }
+    private val mutableGroups = mutableListOf<ChatHistoryGroup>()
+    private val resolvedGroupsProvider: () -> List<ChatHistoryGroup> = groupsProvider ?: { mutableGroups.toList() }
+    private val resolvedUpdateGroups: (List<ChatHistoryGroup>) -> Unit = updateGroups ?: { newGroups ->
+        mutableGroups.clear()
+        mutableGroups.addAll(newGroups)
+    }
     private val pendingApprovals = mutableMapOf<String, CompletableDeferred<Boolean>>()
     private val approvalDecisions = mutableMapOf<String, Boolean>()
     private val toolCallDispatcher = ToolCallDispatcher(toolCallRegistry)
 
-    val events: List<AiChatEvent> get() = resolvedEventsProvider()
-    val transcriptParts: List<ChatMessagePart> get() = buildTranscriptParts(events)
-    val history: List<AiConversationMessage> get() = buildProviderHistory(events)
+    val groups: List<ChatHistoryGroup> get() = resolvedGroupsProvider()
+    val items: List<ChatHistoryItem> get() = groups.flatMap { it.items }
+    val transcriptParts: List<ChatMessagePart> get() = buildTranscriptParts(items)
+    val history: List<AiConversationMessage> get() = buildProviderHistory(items)
 
     private var currentRequestJob: Job? = null
     var stateChangedSinceLastSnapshotSent = true
         private set
+
+    fun markExternalStateChange() {
+        stateChangedSinceLastSnapshotSent = true
+    }
 
     fun submit(userText: String): Job {
         check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
 
         val job = coroutineScope.launch {
             try {
+                startNewAiInteractionGroup()
                 appendSnapshotIfChanged()
-                appendChatEvent(UserSubmittedAiChatEvent(userText))
+                appendItemToCurrentGroup(UserSubmittedChatHistoryItem(userText))
 
                 runRequestLoop()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                appendChatEvent(AssistantErroredAiChatEvent(e.message ?: "AI request failed"))
+                appendItemToCurrentGroup(AssistantErroredChatHistoryItem(e.message ?: "AI request failed"))
             }
         }
         currentRequestJob = job
         return job
     }
 
-    /**
-     * Resolve a pending approval for [toolCallId]. UI calls this when the user clicks
-     * Apply / Cancel on the inline approval card. Unknown approval ids are ignored;
-     * only tools that have already requested approval can be resolved.
-     */
     fun onApprovalDecision(toolCallId: String, approved: Boolean) {
         val deferred = pendingApprovals[toolCallId] ?: return
         approvalDecisions[toolCallId] = approved
-        appendChatEvent(ToolApprovalRespondedAiChatEvent(toolCallId, approved))
+        appendItemToCurrentGroup(ToolApprovalRespondedChatHistoryItem(toolCallId, approved))
         deferred.complete(approved)
     }
 
-    /**
-     * Cancel the in-flight request job (if any). Already-applied tool mutations are
-     * NOT rolled back — the user can ask the AI to undo them in a subsequent turn.
-     * Pending approvals for this job are cleared so a future submit starts clean.
-     */
     fun stop() {
         currentRequestJob?.cancel()
         for (toolCallId in pendingApprovals.keys) {
-            appendChatEvent(ToolCallDeniedAiChatEvent(toolCallId))
+            appendItemToCurrentGroup(ToolCallDeniedChatHistoryItem(toolCallId))
         }
         pendingApprovals.clear()
         approvalDecisions.clear()
+    }
+
+    private fun startNewAiInteractionGroup() {
+        val currentGroups = resolvedGroupsProvider().toMutableList()
+        currentGroups += ChatHistoryGroup(ChatHistoryGroupType.AI_INTERACTION, emptyList())
+        resolvedUpdateGroups(currentGroups)
+    }
+
+    private fun appendItemToCurrentGroup(item: ChatHistoryItem) {
+        val currentGroups = resolvedGroupsProvider().toMutableList()
+        if (currentGroups.isEmpty()) {
+            currentGroups += ChatHistoryGroup(ChatHistoryGroupType.AI_INTERACTION, listOf(item))
+        } else {
+            val lastGroup = currentGroups.last()
+            currentGroups[currentGroups.lastIndex] = lastGroup.copy(items = lastGroup.items + item)
+        }
+        resolvedUpdateGroups(currentGroups)
+        onTranscriptChanged()
     }
 
     private suspend fun runRequestLoop() {
@@ -126,12 +142,12 @@ internal class AiSessionManager(
 
             if (response.toolCalls.isEmpty()) {
                 response.text?.let { text ->
-                    appendChatEvent(AssistantRespondedAiChatEvent(text = text, toolCalls = emptyList()))
+                    appendItemToCurrentGroup(AssistantRespondedChatHistoryItem(text = text, toolCalls = emptyList()))
                 }
                 return
             }
 
-            appendChatEvent(AssistantRespondedAiChatEvent(
+            appendItemToCurrentGroup(AssistantRespondedChatHistoryItem(
                 text = response.text,
                 toolCalls = response.toolCalls,
             ))
@@ -139,13 +155,13 @@ internal class AiSessionManager(
             val context = toolCallExecutionContextFactory.createToolCallExecutionContext(
                 onStateChanged = { stateChangedSinceLastSnapshotSent = true },
                 awaitUserApproval = { toolCallId ->
-                    appendChatEvent(ToolApprovalRequestedAiChatEvent(toolCallId))
+                    appendItemToCurrentGroup(ToolApprovalRequestedChatHistoryItem(toolCallId))
                     val deferred = pendingApprovals.getOrPut(toolCallId) { CompletableDeferred() }
                     deferred.await()
                 },
             )
             for (toolCall in response.toolCalls) {
-                appendChatEvent(ToolCallStartedAiChatEvent(toolCall))
+                appendItemToCurrentGroup(ToolCallStartedChatHistoryItem(toolCall))
 
                 val result = toolCallDispatcher.execute(
                     toolCallId = toolCall.toolCallId,
@@ -157,7 +173,7 @@ internal class AiSessionManager(
                 pendingApprovals.remove(toolCall.toolCallId)
                 val approvalDecision = approvalDecisions.remove(toolCall.toolCallId)
                 if (result.endsTurn) {
-                    appendChatEvent(ToolCallCompletedAiChatEvent(
+                    appendItemToCurrentGroup(ToolCallCompletedChatHistoryItem(
                         toolCallId = toolCall.toolCallId,
                         providerContent = content,
                         transcriptOutput = result.toTranscriptOutput(content),
@@ -165,25 +181,25 @@ internal class AiSessionManager(
                     ))
                     return
                 }
-                appendToolResultEvent(toolCall.toolCallId, result, content, approvalDecision)
+                appendToolResultItem(toolCall.toolCallId, result, content, approvalDecision)
             }
         }
     }
 
-    private fun appendToolResultEvent(
+    private fun appendToolResultItem(
         toolCallId: String,
         result: ToolCallHandlerResponse,
         content: String,
         approvalDecision: Boolean?,
     ) {
-        appendChatEvent(when {
-            approvalDecision == false -> ToolCallDeniedAiChatEvent(toolCallId)
-            result is ToolCallExecutionResult && !result.success -> ToolCallFailedAiChatEvent(
+        appendItemToCurrentGroup(when {
+            approvalDecision == false -> ToolCallDeniedChatHistoryItem(toolCallId)
+            result is ToolCallExecutionResult && !result.success -> ToolCallFailedChatHistoryItem(
                 toolCallId,
                 providerContent = content,
                 message = result.message ?: result.toTranscriptOutput(content),
             )
-            else -> ToolCallCompletedAiChatEvent(
+            else -> ToolCallCompletedChatHistoryItem(
                 toolCallId = toolCallId,
                 providerContent = content,
                 transcriptOutput = result.toTranscriptOutput(content),
@@ -192,27 +208,14 @@ internal class AiSessionManager(
         })
     }
 
-    private fun appendChatEvent(event: AiChatEvent) = appendChatEvents(listOf(event))
-
-    private fun appendChatEvents(events: List<AiChatEvent>) {
-        resolvedAppendEvents(events)
-        onTranscriptChanged()
-    }
-
     private fun appendSnapshotIfChanged() {
         if (!stateChangedSinceLastSnapshotSent) {
             return
         }
-        appendChatEvent(StateSnapshotAddedAiChatEvent(snapshotProvider.getSnapshotJson()))
+        appendItemToCurrentGroup(StateSnapshotAddedChatHistoryItem(snapshotProvider.getSnapshotJson()))
         stateChangedSinceLastSnapshotSent = false
     }
 
-    /**
-     * Evict the oldest complete turn group while estimated history tokens exceed
-     * [maxHistoryTokens]. Never evicts the only remaining turn (we always send at
-     * least the current turn even if it's individually over budget — that's a
-     * provider-side context-length problem, not a history-management problem).
-     */
     private fun evictHistoryIfNeeded(history: List<AiConversationMessage>): List<AiConversationMessage> {
         val requestHistory = history.toMutableList()
         while (estimateHistoryTokens(requestHistory) > maxHistoryTokens) {
@@ -238,14 +241,6 @@ internal class AiSessionManager(
 
     private fun estimateTokens(text: String): Int = (text.length + 3) / 4
 
-    /**
-     * Indices in history where a turn group starts. A turn is anchored on
-     * a user message; if that user message is immediately preceded by a snapshot
-     * injection (which is the typical "fresh-state" pattern), the snapshot is the
-     * start of the turn (it belongs to the user message that follows). Snapshots
-     * that appear mid-turn (between tool results and the follow-up assistant
-     * response) are part of the surrounding turn, not their own turn.
-     */
     private fun turnStartIndices(history: List<AiConversationMessage>): List<Int> {
         val starts = mutableListOf<Int>()
         for (i in history.indices) {
@@ -258,10 +253,6 @@ internal class AiSessionManager(
     }
 
     companion object {
-        /**
-         * Default ~75k tokens — about 75% of a 100k context window, leaving room for
-         * the system prompt, tool definitions, and the assistant's next response.
-         */
         const val DEFAULT_MAX_HISTORY_TOKENS: Int = 75_000
     }
 }

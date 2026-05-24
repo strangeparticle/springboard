@@ -1,8 +1,8 @@
 package com.strangeparticle.editio.session.event
 
-internal data class ToolCallCompletedAiChatEvent(
+internal data class ToolCallCompletedChatHistoryItem(
     val toolCallId: String,
     val providerContent: String,
     val transcriptOutput: String,
     val endsTurn: Boolean,
-) : AiChatEvent
+) : ChatHistoryItem

@@ -398,9 +398,10 @@ fun main(args: Array<String>) {
                 networkContentService = networkContentService,
             )
 
-            // Grow the window to fit the largest springboard across all tabs (never shrink).
             LaunchedEffect(viewModel.tabs.mapNotNull { it.springboardFilteredForRuntime }) {
-                growWindowToFitLargestTab(viewModel, windowState)
+                if (!viewModel.suppressWindowGrow) {
+                    growWindowToFitLargestTab(viewModel, windowState)
+                }
             }
 
             LaunchedEffect(Unit) {

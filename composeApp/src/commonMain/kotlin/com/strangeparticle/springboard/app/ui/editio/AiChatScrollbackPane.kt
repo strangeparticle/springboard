@@ -1,22 +1,13 @@
 package com.strangeparticle.springboard.app.ui.editio
 
+import com.strangeparticle.editio.session.ChatHistoryGroup
+import com.strangeparticle.editio.session.ChatHistoryGroupType
 import com.strangeparticle.editio.session.ChatMessagePart
 import com.strangeparticle.editio.session.ToolCallState
-import com.strangeparticle.editio.session.event.AiChatEvent
-import com.strangeparticle.editio.session.event.AssistantErroredAiChatEvent
-import com.strangeparticle.editio.session.event.AssistantRespondedAiChatEvent
-import com.strangeparticle.editio.session.event.LocalCommandRespondedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandRespondedChatHistoryItem
 import com.strangeparticle.editio.session.event.LocalCommandResponseKind
 import com.strangeparticle.editio.session.event.LocalCommandSource
-import com.strangeparticle.editio.session.event.LocalCommandSubmittedAiChatEvent
-import com.strangeparticle.editio.session.event.StateSnapshotAddedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolApprovalRequestedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolApprovalRespondedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallCompletedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallDeniedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallFailedAiChatEvent
-import com.strangeparticle.editio.session.event.ToolCallStartedAiChatEvent
-import com.strangeparticle.editio.session.event.UserSubmittedAiChatEvent
+import com.strangeparticle.editio.session.event.LocalCommandSubmittedChatHistoryItem
 import com.strangeparticle.editio.session.projection.buildProviderHistory
 import com.strangeparticle.editio.session.projection.buildTranscriptParts
 import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
@@ -85,48 +76,49 @@ internal fun initialTerseHelpScrollbackPane(): AiChatScrollbackPane.LocalCommand
     style = LocalCommandResponseStyle.Help,
 )
 
-internal fun initialTerseHelpEvents(): List<AiChatEvent> = listOf(
-    LocalCommandSubmittedAiChatEvent("/help_terse", LocalCommandSource.System),
-    LocalCommandRespondedAiChatEvent("/help_terse", AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
+internal fun initialTerseHelpHistory(): List<ChatHistoryGroup> = listOf(
+    ChatHistoryGroup(
+        type = ChatHistoryGroupType.LOCAL_COMMAND,
+        items = listOf(
+            LocalCommandSubmittedChatHistoryItem("/help_terse", LocalCommandSource.System),
+            LocalCommandRespondedChatHistoryItem("/help_terse", AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
+        ),
+    ),
 )
 
-internal fun buildSlimScrollbackPanes(events: List<AiChatEvent>): List<AiChatScrollbackPane> {
+internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
     val panes = mutableListOf<AiChatScrollbackPane>()
-    val transcriptParts = buildTranscriptParts(events)
-    val aiPanes = buildAiInteractionPanes(transcriptParts)
-    var aiPaneIndex = 0
-    var pendingCommand: LocalCommandSubmittedAiChatEvent? = null
-
-    for (event in events) {
-        when (event) {
-            is LocalCommandSubmittedAiChatEvent -> pendingCommand = event
-            is LocalCommandRespondedAiChatEvent -> {
-                val submitted = pendingCommand?.takeIf { it.commandText == event.commandText }
-                panes += AiChatScrollbackPane.LocalCommand(
-                    commandText = event.commandText,
-                    commandAttribution = submitted?.source.toCommandAttribution(),
-                    responseText = event.responseText,
-                    style = event.kind.toLocalCommandResponseStyle(),
-                )
-                pendingCommand = null
+    for (group in groups) {
+        when (group.type) {
+            ChatHistoryGroupType.LOCAL_COMMAND -> {
+                val submitted = group.items.filterIsInstance<LocalCommandSubmittedChatHistoryItem>().firstOrNull()
+                val responded = group.items.filterIsInstance<LocalCommandRespondedChatHistoryItem>().firstOrNull()
+                if (responded != null) {
+                    panes += AiChatScrollbackPane.LocalCommand(
+                        commandText = responded.commandText,
+                        commandAttribution = submitted?.source.toCommandAttribution(),
+                        responseText = responded.responseText,
+                        style = responded.kind.toLocalCommandResponseStyle(),
+                    )
+                }
             }
-            is UserSubmittedAiChatEvent -> panes += aiPanes[aiPaneIndex++]
-            is AssistantErroredAiChatEvent,
-            is AssistantRespondedAiChatEvent,
-            is StateSnapshotAddedAiChatEvent,
-            is ToolCallCompletedAiChatEvent,
-            is ToolCallFailedAiChatEvent,
-            is ToolApprovalRequestedAiChatEvent,
-            is ToolApprovalRespondedAiChatEvent,
-            is ToolCallDeniedAiChatEvent,
-            is ToolCallStartedAiChatEvent -> Unit
+            ChatHistoryGroupType.AI_INTERACTION -> {
+                val transcriptParts = buildTranscriptParts(group.items)
+                val userText = transcriptParts.filterIsInstance<ChatMessagePart.UserText>().firstOrNull() ?: continue
+                val responseParts = transcriptParts.filter { it !is ChatMessagePart.UserText }
+                panes += AiChatScrollbackPane.Interaction(
+                    requestText = userText.text,
+                    responseParts = responseParts,
+                )
+            }
         }
     }
     return panes.ifEmpty { listOf(initialTerseHelpScrollbackPane()) }
 }
 
-internal fun buildDebugScrollbackPanes(events: List<AiChatEvent>): List<AiChatScrollbackPane> =
-    buildProviderHistory(events).mapIndexedNotNull { index, message ->
+internal fun buildDebugScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
+    val allItems = groups.flatMap { it.items }
+    return buildProviderHistory(allItems).mapIndexedNotNull { index, message ->
         when (message) {
             is AiConversationMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, index)
             is AiConversationMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, index)
@@ -135,36 +127,6 @@ internal fun buildDebugScrollbackPanes(events: List<AiChatEvent>): List<AiChatSc
             else -> null
         }
     }
-
-internal fun buildAiInteractionPanes(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane.Interaction> {
-    val panes = mutableListOf<AiChatScrollbackPane.Interaction>()
-    var startIndex: Int? = null
-    var requestText: String? = null
-    val responseParts = mutableListOf<ChatMessagePart>()
-
-    fun flush() {
-        val request = requestText ?: return
-        panes += AiChatScrollbackPane.Interaction(
-            requestText = request,
-            responseParts = responseParts.toList(),
-            transcriptStartIndex = startIndex,
-        )
-        startIndex = null
-        requestText = null
-        responseParts.clear()
-    }
-
-    transcriptParts.forEachIndexed { index, part ->
-        if (part is ChatMessagePart.UserText) {
-            flush()
-            startIndex = index
-            requestText = part.text
-        } else if (requestText != null) {
-            responseParts += part
-        }
-    }
-    flush()
-    return panes
 }
 
 private fun LocalCommandSource?.toCommandAttribution(): CommandAttribution = when (this) {

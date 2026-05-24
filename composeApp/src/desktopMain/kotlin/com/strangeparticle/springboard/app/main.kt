@@ -19,6 +19,8 @@ import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.detectRuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.HttpAiProviderTimeoutSecondsSetting
+import com.strangeparticle.springboard.app.settings.items.core.HttpContentTimeoutSecondsSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenFromS3AwsProfileSetting
 import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting
 import com.strangeparticle.springboard.app.settings.items.core.SurfaceAppleScriptErrorsSetting
@@ -31,8 +33,6 @@ import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardContentLoaderDesktopImpl
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import com.strangeparticle.springboard.app.viewmodel.TabRestorer
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.launch
 import java.awt.KeyboardFocusManager
 import java.awt.Toolkit
@@ -69,17 +69,23 @@ fun main(args: Array<String>) {
         surfaceAppleScriptErrors = resolvedSurfaceAppleScriptErrors,
     )
 
-    val networkContentService = NetworkContentServiceDesktopImpl()
+    val contentTimeoutSeconds = settingsManager.resolveValue(HttpContentTimeoutSecondsSetting)
+    val aiProviderTimeoutSeconds = settingsManager.resolveValue(HttpAiProviderTimeoutSecondsSetting)
+    val contentHttpClient = HttpClientFactory.createCioClient(
+        HttpClientTimeoutConfig.fromSeconds(contentTimeoutSeconds),
+    )
+    val aiHttpClient = HttpClientFactory.createCioClient(
+        HttpClientTimeoutConfig.fromSeconds(aiProviderTimeoutSeconds),
+    )
+
+    val networkContentService = NetworkContentServiceDesktopImpl(contentHttpClient)
     val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
 
     // Shared Ktor client for any AI provider call. Plugged into the SettingsViewModel
     // so DropDownFromApiCallSettingsItem.loadOptions and AiProvider.createClient can
     // reach it through the standard SettingsItemContext.
-    val aiHttpClient = HttpClient(CIO)
-
-    val s3HttpClient = HttpClient(CIO)
     val awsCredentialProvider = AwsCliCredentialProvider()
-    val s3ContentService = S3ContentServiceDesktopImpl(s3HttpClient, awsCredentialProvider)
+    val s3ContentService = S3ContentServiceDesktopImpl(contentHttpClient, awsCredentialProvider)
 
     val startupTabs = settingsManager.resolveValue(StartupTabsSetting)
 

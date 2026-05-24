@@ -1,13 +1,12 @@
 package com.strangeparticle.springboard.app.platform
 
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 
-class NetworkContentServiceDesktopImpl : NetworkContentService {
-
-    private val client = HttpClient(CIO)
+class NetworkContentServiceDesktopImpl(
+    private val client: HttpClient,
+) : NetworkContentService {
 
     override suspend fun fetchText(url: String): String {
         val response = client.get(url)

@@ -168,6 +168,7 @@ fun main(args: Array<String>) {
                 canSaveActiveTabInPlace = viewModel.canSaveActiveTabInPlace,
                 isActiveTabDirty = viewModel.activeTab?.isDirty == true,
                 canCreateNewTab = viewModel.canCreateNewTab,
+                onCreateNewTab = { viewModel.createTab() },
                 onOpenInCurrentTab = {
                     val path = openFileDialog(null)
                     if (path != null) {

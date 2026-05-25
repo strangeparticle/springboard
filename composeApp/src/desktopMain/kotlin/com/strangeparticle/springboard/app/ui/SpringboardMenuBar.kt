@@ -12,6 +12,7 @@ fun FrameWindowScope.SpringboardMenuBar(
     canSaveActiveTabInPlace: Boolean,
     isActiveTabDirty: Boolean,
     canCreateNewTab: Boolean,
+    onCreateNewTab: () -> Unit,
     onOpenInCurrentTab: () -> Unit,
     onOpenInNewTab: () -> Unit,
     onOpenFromNetworkInCurrentTab: () -> Unit,
@@ -35,36 +36,47 @@ fun FrameWindowScope.SpringboardMenuBar(
 ) {
     MenuBar {
         Menu("File") {
+            val fileMenuItems = springboardFileMenuItems(
+                hasActiveSpringboard = hasActiveSpringboard,
+                canSaveActiveTabInPlace = canSaveActiveTabInPlace,
+                isActiveTabDirty = isActiveTabDirty,
+                canCreateNewTab = canCreateNewTab,
+                onCreateNewTab = onCreateNewTab,
+                onOpenInCurrentTab = onOpenInCurrentTab,
+                onOpenInNewTab = onOpenInNewTab,
+                onOpenFromNetworkInCurrentTab = onOpenFromNetworkInCurrentTab,
+                onOpenFromNetworkInNewTab = onOpenFromNetworkInNewTab,
+                onOpenFromS3InCurrentTab = onOpenFromS3InCurrentTab,
+                onOpenFromS3InNewTab = onOpenFromS3InNewTab,
+                onCloseCurrentTab = onCloseCurrentTab,
+                onPreviousTab = onPreviousTab,
+                onNextTab = onNextTab,
+                onSave = onSave,
+                onSaveLocalCopyAs = onSaveLocalCopyAs,
+                onReload = onReload,
+            )
+
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.TAB_CREATION }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
+            }
+
+            Separator()
+
             // ── Open ────────────────────────────────────────────
-            Item("Open from File in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true)) {
-                onOpenInCurrentTab()
-            }
-            Item(
-                "Open from File in New Tab…",
-                enabled = canCreateNewTab,
-                shortcut = KeyShortcut(Key.O, meta = true, alt = true),
-            ) {
-                onOpenInNewTab()
-            }
-            Item("Open from Network in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true, shift = true)) {
-                onOpenFromNetworkInCurrentTab()
-            }
-            Item(
-                "Open from Network in New Tab…",
-                enabled = canCreateNewTab,
-                shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true),
-            ) {
-                onOpenFromNetworkInNewTab()
-            }
-            Item("Open from S3 in Current Tab…", shortcut = KeyShortcut(Key.O, meta = true, ctrl = true)) {
-                onOpenFromS3InCurrentTab()
-            }
-            Item(
-                "Open from S3 in New Tab…",
-                enabled = canCreateNewTab,
-                shortcut = KeyShortcut(Key.O, meta = true, ctrl = true, shift = true),
-            ) {
-                onOpenFromS3InNewTab()
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.OPEN }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
             }
 
             Separator()
@@ -74,43 +86,53 @@ fun FrameWindowScope.SpringboardMenuBar(
             // to save when the in-memory model matches what's on disk / on the wire.
             // Save a Local Copy As… stays enabled whenever there is an active springboard;
             // it supports the "open then export a copy immediately" workflow on a clean tab.
-            Item(
-                "Save",
-                enabled = canSaveActiveTabInPlace && isActiveTabDirty,
-                shortcut = KeyShortcut(Key.S, meta = true),
-            ) {
-                onSave()
-            }
-            Item(
-                "Save a Local Copy As…",
-                enabled = hasActiveSpringboard,
-                shortcut = KeyShortcut(Key.S, meta = true, shift = true),
-            ) {
-                onSaveLocalCopyAs()
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.SAVE }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
             }
 
             Separator()
 
             // ── Reload ──────────────────────────────────────────
-            Item("Reload", shortcut = KeyShortcut(Key.R, meta = true)) {
-                onReload()
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.RELOAD }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
             }
 
             Separator()
 
             // ── Tab navigation ──────────────────────────────────
-            Item("Previous Tab", shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true)) {
-                onPreviousTab()
-            }
-            Item("Next Tab", shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true)) {
-                onNextTab()
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.TAB_NAVIGATION }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
             }
 
             Separator()
 
             // ── Close ───────────────────────────────────────────
-            Item("Close Tab", shortcut = KeyShortcut(Key.W, meta = true)) {
-                onCloseCurrentTab()
+            for (fileMenuItem in fileMenuItems.filter { it.section == SpringboardFileMenuSection.CLOSE }) {
+                Item(
+                    fileMenuItem.label,
+                    enabled = fileMenuItem.enabled,
+                    shortcut = fileMenuItem.shortcut,
+                ) {
+                    fileMenuItem.onClick()
+                }
             }
         }
         Menu("Edit") {

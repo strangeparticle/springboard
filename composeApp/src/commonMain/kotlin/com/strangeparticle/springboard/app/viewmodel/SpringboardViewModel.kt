@@ -674,6 +674,7 @@ class SpringboardViewModel(
                         s3AwsProfile = profile,
                         s3LastEtag = outcome.etag,
                     )
+                    tabToastState(targetTabId).clearAll()
                     val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
                     if (hasUnsafeActivators) {
                         tabToastState(targetTabId).warning(
@@ -720,6 +721,7 @@ class SpringboardViewModel(
             // Write directly to targetTabId — applySpringboard targets the active tab and
             // would corrupt a different tab if the user switches while the load is in flight.
             installSpringboardInTab(targetTabId, springboardConfig, tabSource = source, isDirty = false)
+            tabToastState(targetTabId).clearAll()
             val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
             if (hasUnsafeActivators) {
                 tabToastState(targetTabId).warning(
@@ -776,6 +778,7 @@ class SpringboardViewModel(
             s3LastEtag = s3LastEtag,
         )
 
+        activeTabToast.clearAll()
         val hasUnsafeActivators = hasUnsafeActivatorsForRuntime(springboardConfig)
         if (hasUnsafeActivators) {
             activeTabToast.warning(

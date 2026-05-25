@@ -301,8 +301,15 @@ class SpringboardViewModel(
         get() = _tabs.size < MAX_OPEN_TABS
 
     fun createTab(): String? {
+        return createTabWithLabel(nextUntitledTabName())
+    }
+
+    private fun createTabWithLabel(label: String): String? {
         if (!canCreateNewTab) return null
-        val newTab = TabState.createEmpty(generateTabId())
+        val newTab = TabState.createEmpty(
+            tabId = generateTabId(),
+            label = label,
+        )
         _tabs.add(newTab)
         activeTabId = newTab.tabId
         onTabsChanged()
@@ -310,12 +317,13 @@ class SpringboardViewModel(
     }
 
     fun createUnsavedSpringboardTab(): LoadResult {
-        val newTabId = createTab()
+        val springboardName = nextUntitledTabName()
+        val newTabId = createTabWithLabel(springboardName)
             ?: return LoadResult.Failure(
                 code = "tab_limit_reached",
                 message = "Cannot create a new tab — tab limit reached.",
             )
-        val springboardConfig = SpringboardFactory.createEmpty(nextUntitledSpringboardName())
+        val springboardConfig = SpringboardFactory.createEmpty(springboardName)
         installSpringboardInTab(
             tabId = newTabId,
             springboardConfig = springboardConfig,
@@ -328,8 +336,17 @@ class SpringboardViewModel(
         return LoadResult.Success(newTabId)
     }
 
-    private fun nextUntitledSpringboardName(): String {
-        val existingNames = _tabs.mapNotNull { it.springboardFilteredForRuntime?.name }.toSet()
+    private fun nextUntitledTabName(excludingTabId: String? = null): String {
+        val existingNames = _tabs
+            .filter { it.tabId != excludingTabId }
+            .flatMap { tab ->
+                listOfNotNull(
+                    tab.label,
+                    tab.springboardFilteredForRuntime?.name,
+                    tab.springboardUnfiltered?.name,
+                )
+            }
+            .toSet()
         var index = 1
         while ("Untitled-$index" in existingNames) {
             index++
@@ -350,7 +367,10 @@ class SpringboardViewModel(
         val wasActive = activeTabId == tabId
 
         if (_tabs.size == 1) {
-            val replacement = TabState.createEmpty(generateTabId())
+            val replacement = TabState.createEmpty(
+                tabId = generateTabId(),
+                label = nextUntitledTabName(excludingTabId = tabId),
+            )
             _tabs[0] = replacement
             activeTabId = replacement.tabId
             onTabsChanged()

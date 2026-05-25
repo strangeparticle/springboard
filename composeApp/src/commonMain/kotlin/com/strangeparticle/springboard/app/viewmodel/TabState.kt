@@ -24,11 +24,11 @@ data class TabState(
     val isEmpty: Boolean get() = springboardFilteredForRuntime == null
 
     companion object {
-        const val DEFAULT_EMPTY_LABEL: String = "New Tab"
+        const val DEFAULT_EMPTY_LABEL: String = "Untitled-1"
 
-        fun createEmpty(tabId: String): TabState = TabState(
+        fun createEmpty(tabId: String, label: String = DEFAULT_EMPTY_LABEL): TabState = TabState(
             tabId = tabId,
-            label = DEFAULT_EMPTY_LABEL,
+            label = label,
             source = null,
             springboardFilteredForRuntime = null,
             springboardUnfiltered = null,

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -32,6 +33,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
+import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import io.ktor.client.HttpClient
@@ -40,6 +42,7 @@ import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.CompletableDeferred
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -361,6 +364,47 @@ internal class AiChatEntryPointTest {
 
         onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertDoesNotExist()
         onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `plus button and assistant-created tabs share sequential untitled labels`() = runComposeUiTest {
+        val components = createComponents()
+        val showAssistant = mutableStateOf(false)
+        val aiChatPaneState = AiChatPaneState.configured(
+            providerLabel = "Test",
+            modelLabel = "test-model",
+            transcriptParts = emptyList(),
+            onSubmit = { components.viewModel.createUnsavedSpringboardTab() },
+            onStop = {},
+            onApprovalDecision = { _, _ -> },
+        )
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showAssistant = showAssistant,
+                aiChatPaneState = aiChatPaneState,
+                showFileOpen = false,
+            )
+        }
+
+        onNodeWithText("Untitled-1").assertExists()
+        onNodeWithTag(TestTags.TAB_NEW_BUTTON).performClick()
+        onNodeWithText("Untitled-2").assertExists()
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Create a new springboard")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+
+        waitUntil { components.viewModel.tabs.size == 3 }
+        waitForIdle()
+
+        onNodeWithText("Untitled-3").assertExists()
+        assertEquals(
+            listOf("Untitled-1", "Untitled-2", "Untitled-3"),
+            components.viewModel.tabs.map { it.label },
+        )
+        assertEquals("Untitled-3", components.viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     private fun createComponents(

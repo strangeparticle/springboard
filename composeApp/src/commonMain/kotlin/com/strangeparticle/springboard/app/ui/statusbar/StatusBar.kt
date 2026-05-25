@@ -95,12 +95,12 @@ fun StatusBar(
         if (onOpenFromNetwork != null) {
             TooltipBox(
                 positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text("Open from Network…") } },
+                tooltip = { PlainTooltip { Text("Open from network in current tab") } },
                 state = rememberTooltipState(),
             ) {
                 IconButton(
                     onClick = onOpenFromNetwork,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp).testTag(TestTags.OPEN_FROM_NETWORK_BUTTON)
                 ) {
                     Icon(
                         imageVector = Icons.Default.CloudDownload,

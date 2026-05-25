@@ -38,6 +38,7 @@ class SpringboardViewModelTabsTest {
         assertEquals(1, viewModel.tabs.size)
         assertEquals(viewModel.tabs.first().tabId, viewModel.activeTabId)
         assertTrue(viewModel.tabs.first().isEmpty)
+        assertEquals("Untitled-1", viewModel.tabs.first().label)
     }
 
     @Test
@@ -49,6 +50,7 @@ class SpringboardViewModelTabsTest {
         assertEquals(2, viewModel.tabs.size)
         assertEquals(newId, viewModel.activeTabId)
         assertNotEquals(originalActive, newId)
+        assertEquals("Untitled-2", viewModel.activeTab?.label)
     }
 
     @Test
@@ -129,6 +131,7 @@ class SpringboardViewModelTabsTest {
         assertTrue(remaining.isEmpty)
         assertEquals(remaining.tabId, viewModel.activeTabId)
         assertNotEquals(firstId, remaining.tabId)
+        assertEquals("Untitled-1", remaining.label)
     }
 
     @Test
@@ -203,8 +206,8 @@ class SpringboardViewModelTabsTest {
         assertTrue(result is SpringboardViewModel.LoadResult.Success)
         val activeTab = viewModel.activeTab
         assertNotNull(activeTab)
-        assertEquals("Untitled-1", activeTab.springboardFilteredForRuntime?.name)
-        assertEquals("Untitled-1", activeTab.label)
+        assertEquals("Untitled-2", activeTab.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-2", activeTab.label)
         assertNull(activeTab.source)
         assertTrue(activeTab.isDirty)
         assertNull(activeTab.selectedEnvironmentId)
@@ -223,17 +226,17 @@ class SpringboardViewModelTabsTest {
         viewModel.createUnsavedSpringboardTab()
         viewModel.createUnsavedSpringboardTab()
 
-        assertEquals("Untitled-2", viewModel.activeTab?.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-3", viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test
-    fun createUnsavedSpringboardTabIgnoresEmptyTabsWhenGeneratingName() {
+    fun createUnsavedSpringboardTabIncludesEmptyTabsWhenGeneratingName() {
         val viewModel = createViewModel()
 
         viewModel.createTab()
         viewModel.createUnsavedSpringboardTab()
 
-        assertEquals("Untitled-1", viewModel.activeTab?.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-3", viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test

@@ -59,6 +59,7 @@ internal class TabManagementToolsTest {
         val activeTab = ctx.viewModel.activeTab
         assertNotNull(activeTab)
         assertNull(activeTab.springboardFilteredForRuntime, "newly created tab has no springboard yet")
+        assertEquals("Untitled-2", activeTab.label)
         assertEquals(1, ctx.stateChangedCount)
     }
 
@@ -76,7 +77,8 @@ internal class TabManagementToolsTest {
         assertEquals(initialCount + 1, ctx.viewModel.tabs.size)
         val activeTab = ctx.viewModel.activeTab
         assertNotNull(activeTab)
-        assertEquals("Untitled-1", activeTab.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-2", activeTab.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-2", activeTab.label)
         assertNull(activeTab.source)
         assertTrue(activeTab.isDirty)
         assertEquals("", activeTab.springboardUnfiltered?.jsonSource)
@@ -94,7 +96,7 @@ internal class TabManagementToolsTest {
         )
 
         assertTrue(result.success)
-        assertEquals("Untitled-2", ctx.viewModel.activeTab?.springboardFilteredForRuntime?.name)
+        assertEquals("Untitled-3", ctx.viewModel.activeTab?.springboardFilteredForRuntime?.name)
     }
 
     @Test

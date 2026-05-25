@@ -281,6 +281,67 @@ class SpringboardFactoryTest {
     }
 
     @Test
+    fun `activator guidance lines are parsed as guidance data`() {
+        val jsonWithActivatorGuidance = """
+        {
+          "name": "With Activator Guidance",
+          "environments": [
+            { "id": "staging", "name": "Staging" }
+          ],
+          "apps": [
+            { "id": "app1", "name": "App One" }
+          ],
+          "resources": [
+            { "id": "res1", "name": "Dashboard" }
+          ],
+          "activators": [
+            {
+              "type": "url",
+              "appId": "app1",
+              "resourceId": "res1",
+              "environmentId": "staging",
+              "url": "https://example.com/dash",
+              "guidanceLines": ["Open staging.", "Check health."]
+            }
+          ]
+        }
+        """.trimIndent()
+
+        val sb = SpringboardFactory.fromJson(jsonWithActivatorGuidance, "/test")
+
+        assertEquals(1, sb.guidanceData.size)
+        assertEquals(
+            GuidanceData(
+                environmentId = "staging",
+                appId = "app1",
+                resourceId = "res1",
+                guidanceLines = listOf("Open staging.", "Check health."),
+            ),
+            sb.guidanceData.single(),
+        )
+        assertEquals(
+            listOf("Open staging.", "Check health."),
+            sb.indexes.guidanceByCoordinate[Coordinate("staging", "app1", "res1")]?.guidanceLines,
+        )
+    }
+
+    @Test
+    fun `legacy top-level guidance data still loads`() {
+        val sb = SpringboardFactory.fromJson(jsonWithGuidance, "/test")
+
+        assertEquals(1, sb.guidanceData.size)
+        assertEquals(
+            GuidanceData(
+                environmentId = "staging",
+                appId = "app1",
+                resourceId = "res1",
+                guidanceLines = listOf("Step one.", "Step two."),
+            ),
+            sb.guidanceData.single(),
+        )
+    }
+
+    @Test
     fun `guidance index construction`() {
         val sb = SpringboardFactory.fromJson(jsonWithGuidance, "/test")
         val coord = Coordinate("staging", "app1", "res1")

@@ -60,44 +60,42 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `activators[].environmentId` | yes | Must match a declared `environments[].id`, or `"ALL"` for all environments |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
-| `guidanceData` | optional | List of per-coordinate guidance entries (see below) |
-| `guidanceData[].environmentId` | yes | Must match a declared `environments[].id`, or `"ALL"` for all environments |
-| `guidanceData[].appId` | yes | Must match a declared `apps[].id` |
-| `guidanceData[].resourceId` | yes | Must match a declared `resources[].id` |
-| `guidanceData[].guidanceLines` | yes | Ordered list of plain-text strings shown in the guidance tooltip |
+| `activators[].guidanceLines` | optional | Ordered list of plain-text strings shown in the guidance tooltip |
+| `guidanceData` | optional | Legacy per-coordinate guidance entries; still accepted when loading existing files |
 | `appGroups` | optional | Ordered list of app groups used to cluster app columns visually |
 | `appGroups[].id` | yes | Unique identifier, referenced by `apps[].appGroupId` |
 | `appGroups[].description` | yes | Free-text description (not currently shown in the UI) |
 
 ## Guidance Data
 
-Guidance data provides optional, per-coordinate instructional text that appears in a tooltip-style overlay when the user hovers a populated cell. It is stored separately from activators to keep both sections compact and easy to hand-edit.
+Guidance data provides optional instructional text that appears in a tooltip-style overlay when the user hovers a populated cell. Put `guidanceLines` directly on the activator whose cell should show the guidance.
 
-Each guidance entry is associated with a coordinate (environment + app + resource) that **must** have a corresponding activator — guidance for empty cells is rejected at load time.
+Each guidance entry is associated with the activator's coordinate (environment + app + resource). Guidance for empty cells is rejected at load time when using the legacy top-level `guidanceData` field.
 
 ```json
-"guidanceData": [
-  {
-    "environmentId": "prod",
-    "appId": "my-service",
-    "resourceId": "grafana",
-    "guidanceLines": [
-      "Use the prod AWS account before opening this link.",
-      "Select the us-west-2 region.",
-      "Open the Log Groups section after landing."
-    ]
-  }
-]
+{
+  "type": "url",
+  "appId": "my-service",
+  "resourceId": "grafana",
+  "environmentId": "prod",
+  "url": "https://grafana.example.com/...",
+  "guidanceLines": [
+    "Use the prod AWS account before opening this link.",
+    "Select the us-west-2 region.",
+    "Open the Log Groups section after landing."
+  ]
+}
 ```
 
 - `guidanceLines` are rendered as plain text. Formatting (markdown, etc.) is not supported.
 - The tooltip is selectable and includes a copy icon for easy clipboard access.
-- Guidance data is entirely optional — files without the `guidanceData` field continue to work unchanged.
-- Guidance data is maintained by hand-editing the JSON file, just like activators.
+- Guidance data is entirely optional — activators without `guidanceLines` continue to work unchanged.
+- Existing files that use the old top-level `guidanceData` array still load correctly, but Springboard writes guidance back as `activators[].guidanceLines`.
+- Guidance data is maintained by hand-editing the JSON file, just like the rest of each activator.
 
 ## All-envs Environment
 
-Use `"environmentId": "ALL"` on an activator (or guidance entry) to make it apply to every environment. `ALL` is a reserved environment id — it cannot be declared in the `environments` array (the id is matched case-insensitively, so `"all"`, `"All"`, etc. are all rejected).
+Use `"environmentId": "ALL"` on an activator to make it apply to every environment. `ALL` is a reserved environment id — it cannot be declared in the `environments` array (the id is matched case-insensitively, so `"all"`, `"All"`, etc. are all rejected).
 
 ```json
 "activators": [
@@ -108,7 +106,7 @@ Use `"environmentId": "ALL"` on an activator (or guidance entry) to make it appl
 - All-envs activators are grouped under a dedicated "All envs" section in the grid, separate from the per-environment grid.
 - The `ALL` environment does not appear in the environment dropdown.
 - All-envs activators activate regardless of which environment is selected.
-- Guidance data supports `"environmentId": "ALL"` with the same rules.
+- Guidance attached to an ALL-envs activator follows the same rules.
 
 ## App Groups
 

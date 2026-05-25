@@ -74,26 +74,39 @@ object SpringboardFactory {
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
                     environmentId = normalizedEnvironmentId,
-                    url = activatorDto.url
+                    url = activatorDto.url,
                 )
                 is UrlTemplateActivatorDto -> UrlTemplateActivator(
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
                     environmentId = normalizedEnvironmentId,
-                    urlTemplate = activatorDto.urlTemplate
+                    urlTemplate = activatorDto.urlTemplate,
                 )
                 is CommandActivatorDto -> CommandActivator(
                     appId = activatorDto.appId,
                     resourceId = activatorDto.resourceId,
                     environmentId = normalizedEnvironmentId,
-                    commandTemplate = activatorDto.commandTemplate
+                    commandTemplate = activatorDto.commandTemplate,
                 )
             }
         }
 
         val indexes = buildIndexes(activators)
 
-        val guidanceData = dto.guidanceData.map { guidanceDto ->
+        val activatorGuidanceData = dto.activators.mapNotNull { activatorDto ->
+            if (activatorDto.guidanceLines.isEmpty()) {
+                null
+            } else {
+                GuidanceData(
+                    environmentId = canonicalizeEnvironmentId(activatorDto.environmentId),
+                    appId = activatorDto.appId,
+                    resourceId = activatorDto.resourceId,
+                    guidanceLines = activatorDto.guidanceLines,
+                )
+            }
+        }
+
+        val legacyGuidanceData = dto.guidanceData.map { guidanceDto ->
             require(guidanceDto.environmentId != "*") {
                 "Guidance data uses '*' for environmentId, which is no longer supported. Use '$ALL_ENVS_ENVIRONMENT_ID' instead for non-environment-specific guidance."
             }
@@ -114,6 +127,7 @@ object SpringboardFactory {
                 guidanceLines = guidanceDto.guidanceLines
             )
         }
+        val guidanceData = activatorGuidanceData + legacyGuidanceData
 
         for (guidance in guidanceData) {
             val coordinate = Coordinate(guidance.environmentId, guidance.appId, guidance.resourceId)

@@ -88,6 +88,31 @@ class SpringboardJsonWriterTest {
             "appGroupId (default null) should be omitted on apps that don't set one; got:\n$output")
     }
 
+    @Test
+    fun `guidance data is written on matching activator`() {
+        val fixture = """
+        {
+          "name": "Guidance Fixture",
+          "environments": [{ "id": "dev", "name": "Dev" }],
+          "apps": [{ "id": "app1", "name": "App" }],
+          "resources": [{ "id": "res1", "name": "Resource" }],
+          "activators": [
+            { "type": "url", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "url": "https://example.com" }
+          ],
+          "guidanceData": [
+            { "environmentId": "dev", "appId": "app1", "resourceId": "res1", "guidanceLines": ["Open it.", "Check it."] }
+          ]
+        }
+        """.trimIndent()
+
+        val springboard = SpringboardFactory.fromJson(fixture, "/test.json")
+        val output = SpringboardJsonWriter.toJson(springboard)
+
+        assertTrue(output.contains("\"guidanceLines\""), "Expected guidanceLines on activator; got:\n$output")
+        assertTrue(!output.contains("\"guidanceData\""), "Legacy guidanceData should not be written; got:\n$output")
+        assertEquals(springboard.guidanceData, SpringboardFactory.fromJson(output, "/test.json").guidanceData)
+    }
+
     private fun escapeForJsonString(value: String): String {
         val escaped = value
             .replace("\\", "\\\\")

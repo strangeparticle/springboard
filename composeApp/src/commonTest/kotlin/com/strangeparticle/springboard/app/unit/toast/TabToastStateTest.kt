@@ -54,6 +54,20 @@ class TabToastStateTest {
     }
 
     @Test
+    fun clearAllRemovesToastsAndElapsedTracking() {
+        val state = TabToastState()
+        state.info("tracked")
+        state.error("also tracked")
+        val id = state.activeToasts.first().id
+        state.recordElapsed(id, 2500L)
+
+        state.clearAll()
+
+        assertTrue(state.activeToasts.isEmpty())
+        assertEquals(0L, state.elapsedVisibleMs(id))
+    }
+
+    @Test
     fun elapsedVisibleMsDefaultsToZero() {
         val state = TabToastState()
         state.info("new toast")

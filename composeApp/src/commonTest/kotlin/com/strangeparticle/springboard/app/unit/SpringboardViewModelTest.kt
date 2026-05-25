@@ -882,6 +882,46 @@ class SpringboardViewModelTest {
     }
 
     @Test
+    fun `loadConfigFromSource replacing current tab clears stale toasts before replacement toasts`() = kotlinx.coroutines.test.runTest {
+        val loader = RecordingLoader(mutableMapOf("/replacement.json" to TestFixtureJson.COMMAND_ACTIVATOR))
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            contentLoader = loader,
+        )
+        vm.loadConfig(TestFixtureJson.URL_ONLY, "/initial.json")
+        vm.activeTabToast.error("stale notification")
+
+        val result = vm.loadConfigFromSource("/replacement.json", inNewTab = false)
+
+        assertEquals(SpringboardViewModel.LoadResult.Success(vm.activeTabId), result)
+        val messages = vm.activeTabToast.activeToasts.map { it.message }
+        assertFalse(messages.any { it.contains("stale notification") })
+        assertFalse(messages.any { it.contains("URL Only Springboard") })
+        assertTrue(messages.any { it.contains("execute CLI commands") })
+        assertTrue(messages.any { it == "Springboard loaded: Command Springboard" })
+    }
+
+    @Test
+    fun `loadConfigFromSource replacing current tab keeps stale toasts when replacement fails`() = kotlinx.coroutines.test.runTest {
+        val loader = RecordingLoader(mutableMapOf())
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            contentLoader = loader,
+        )
+        vm.loadConfig(TestFixtureJson.URL_ONLY, "/initial.json")
+        vm.activeTabToast.error("stale notification")
+
+        val result = vm.loadConfigFromSource("/missing.json", inNewTab = false)
+
+        assertTrue(result is SpringboardViewModel.LoadResult.Failure)
+        val messages = vm.activeTabToast.activeToasts.map { it.message }
+        assertTrue(messages.any { it.contains("stale notification") })
+        assertTrue(messages.any { it.contains("URL Only Springboard") })
+    }
+
+    @Test
     fun `wasm stores filtered springboard for UI and unfiltered springboard for data integrity`() {
         val vm = SpringboardViewModel(
             createSettingsManagerForTest(target = RuntimeEnvironment.WASM),

@@ -27,6 +27,11 @@ class TabToastState {
         _elapsedVisibleMs.remove(id)
     }
 
+    fun clearAll() {
+        activeToasts = emptyList()
+        _elapsedVisibleMs.clear()
+    }
+
     fun elapsedVisibleMs(id: Long): Long = _elapsedVisibleMs[id] ?: 0L
 
     fun recordElapsed(id: Long, elapsedMs: Long) {

@@ -12,6 +12,7 @@ fun FrameWindowScope.SpringboardMenuBar(
     canSaveActiveTabInPlace: Boolean,
     isActiveTabDirty: Boolean,
     canCreateNewTab: Boolean,
+    tabCount: Int,
     onOpenInCurrentTab: () -> Unit,
     onOpenInNewTab: () -> Unit,
     onOpenFromNetworkInCurrentTab: () -> Unit,
@@ -99,10 +100,19 @@ fun FrameWindowScope.SpringboardMenuBar(
             Separator()
 
             // ── Tab navigation ──────────────────────────────────
-            Item("Previous Tab", shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true)) {
+            val canNavigateTabs = tabCount > 1
+            Item(
+                "Previous Tab",
+                enabled = canNavigateTabs,
+                shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true),
+            ) {
                 onPreviousTab()
             }
-            Item("Next Tab", shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true)) {
+            Item(
+                "Next Tab",
+                enabled = canNavigateTabs,
+                shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true),
+            ) {
                 onNextTab()
             }
 

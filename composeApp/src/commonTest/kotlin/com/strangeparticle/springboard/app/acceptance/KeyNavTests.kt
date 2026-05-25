@@ -64,6 +64,18 @@ class KeyNavTests {
     @Test fun `typing selects entry when dropdown is open`() =
         KeyNavTestScenarios.typingSelectsEntryWhenDropdownIsOpen()
 
+    @Test fun `arrow-down highlights next item in expanded dropdown`() =
+        KeyNavTestScenarios.arrowDownHighlightsNextItemInExpandedDropdown()
+
+    @Test fun `arrow-up highlights previous item in expanded dropdown`() =
+        KeyNavTestScenarios.arrowUpHighlightsPreviousItemInExpandedDropdown()
+
+    @Test fun `arrow keys wrap highlight at expanded dropdown boundaries`() =
+        KeyNavTestScenarios.arrowKeysWrapHighlightAtExpandedDropdownBoundaries()
+
+    @Test fun `enter selects highlighted item in expanded dropdown`() =
+        KeyNavTestScenarios.enterSelectsHighlightedItemInExpandedDropdown()
+
     @Test fun `shift-tab moves backward and wraps across dropdown series`() =
         KeyNavTestScenarios.shiftTabMovesBackwardAndWrapsAcrossDropdownSeries()
 

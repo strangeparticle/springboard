@@ -66,6 +66,7 @@ object TestTags {
     fun aiChatScrollbackPaneCopyButton(index: Int) = "aiChatScrollbackPaneCopyButton_$index"
     fun tabDirtyIndicator(tabId: String) = "tabDirtyIndicator_$tabId"
     fun tabLockIndicator(tabId: String) = "tabLockIndicator_$tabId"
+    fun keyNavDropdownOption(dropdownTag: String, optionId: String) = "${dropdownTag}_option_${optionId}"
 
     const val CLOSE_DIRTY_TAB_DIALOG = "closeDirtyTabDialog"
     const val CLOSE_DIRTY_TAB_CONFIRM_BUTTON = "closeDirtyTabConfirmButton"

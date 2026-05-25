@@ -29,10 +29,13 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -245,6 +248,14 @@ internal fun MinimalDropdown(
             DropdownMenuItem(
                 modifier = Modifier
                     .let { if (highlightedIndex == 0) it.background(highlightColor) else it }
+                    .semantics { selected = highlightedIndex == 0 }
+                    .let {
+                        if (testTag != null) {
+                            it.testTag(TestTags.keyNavDropdownOption(testTag, KeyNavNoneOptionId))
+                        } else {
+                            it
+                        }
+                    }
                     .onPreviewKeyEvent { event ->
                         handleArrowKey(event) || handleTypeahead(event)
                     },
@@ -264,6 +275,14 @@ internal fun MinimalDropdown(
                 DropdownMenuItem(
                     modifier = Modifier
                         .let { if (highlightedIndex == dropdownIndex) it.background(highlightColor) else it }
+                        .semantics { selected = highlightedIndex == dropdownIndex }
+                        .let {
+                            if (testTag != null) {
+                                it.testTag(TestTags.keyNavDropdownOption(testTag, id))
+                            } else {
+                                it
+                            }
+                        }
                         .onPreviewKeyEvent { event ->
                             handleArrowKey(event) || handleTypeahead(event)
                         },

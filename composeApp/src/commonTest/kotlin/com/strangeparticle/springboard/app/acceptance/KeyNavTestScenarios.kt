@@ -7,6 +7,7 @@ import com.strangeparticle.springboard.app.shared.createSettingsManagerForTest
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
+import com.strangeparticle.springboard.app.ui.keynav.KeyNavNoneOptionId
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlin.test.assertEquals
@@ -39,6 +40,34 @@ object KeyNavTestScenarios {
                 settingsViewModel = components.settingsViewModel,
             )
         }
+    }
+
+    private fun ComposeUiTest.openAppDropdown(
+        components: KeyNavTestComponents,
+        selectedAppId: String? = null,
+    ) {
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        if (selectedAppId != null) {
+            components.viewModel.selectApp(selectedAppId)
+        }
+        waitForIdle()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).performClick()
+        waitForIdle()
+    }
+
+    private fun ComposeUiTest.assertAppDropdownOptionHighlighted(optionId: String) {
+        onNodeWithTag(TestTags.keyNavDropdownOption(TestTags.APP_DROPDOWN, optionId))
+            .assertIsSelected()
+    }
+
+    private fun ComposeUiTest.pressAppDropdownKey(key: androidx.compose.ui.input.key.Key) {
+        onNodeWithTag(TestTags.APP_DROPDOWN).performKeyInput {
+            pressKey(key)
+        }
+        waitForIdle()
     }
 
     // --- Focus on startup ---
@@ -419,6 +448,48 @@ object KeyNavTestScenarios {
         waitForIdle()
 
         assertEquals("res2", components.viewModel.selectedResourceId)
+    }
+
+    fun arrowDownHighlightsNextItemInExpandedDropdown() = runComposeUiTest {
+        val components = createTestComponents()
+        openAppDropdown(components)
+        assertAppDropdownOptionHighlighted(KeyNavNoneOptionId)
+
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.DirectionDown)
+
+        assertAppDropdownOptionHighlighted("app1")
+    }
+
+    fun arrowUpHighlightsPreviousItemInExpandedDropdown() = runComposeUiTest {
+        val components = createTestComponents()
+        openAppDropdown(components, selectedAppId = "app2")
+        assertAppDropdownOptionHighlighted("app2")
+
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.DirectionUp)
+
+        assertAppDropdownOptionHighlighted("app1")
+    }
+
+    fun arrowKeysWrapHighlightAtExpandedDropdownBoundaries() = runComposeUiTest {
+        val components = createTestComponents()
+        openAppDropdown(components)
+        assertAppDropdownOptionHighlighted(KeyNavNoneOptionId)
+
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.DirectionUp)
+        assertAppDropdownOptionHighlighted("app2")
+
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.DirectionDown)
+        assertAppDropdownOptionHighlighted(KeyNavNoneOptionId)
+    }
+
+    fun enterSelectsHighlightedItemInExpandedDropdown() = runComposeUiTest {
+        val components = createTestComponents()
+        openAppDropdown(components)
+
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.DirectionDown)
+        pressAppDropdownKey(androidx.compose.ui.input.key.Key.Enter)
+
+        assertEquals("app1", components.viewModel.selectedAppId)
     }
 
     fun shiftTabMovesBackwardAndWrapsAcrossDropdownSeries() = runComposeUiTest {

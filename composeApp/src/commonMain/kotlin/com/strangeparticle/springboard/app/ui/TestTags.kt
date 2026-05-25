@@ -5,6 +5,7 @@ object TestTags {
     const val VERSION_DESIGNATOR = "versionDesignator"
     const val STATUS_BAR_SOURCE = "statusBarSource"
     const val RELOAD_BUTTON = "reloadButton"
+    const val OPEN_FROM_NETWORK_BUTTON = "openFromNetworkButton"
     const val APP_DROPDOWN = "appDropdown"
     const val RESOURCE_DROPDOWN = "resourceDropdown"
     const val ENVIRONMENT_DROPDOWN = "environmentDropdown"

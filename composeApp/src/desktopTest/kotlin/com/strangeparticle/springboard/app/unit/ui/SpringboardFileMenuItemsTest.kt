@@ -37,14 +37,34 @@ class SpringboardFileMenuItemsTest {
         assertFalse(newTabItem.enabled)
     }
 
+    @Test
+    fun tabNavigationMenuItemsAreDisabledWithOneTab() = runComposeUiTest {
+        val tabNavigationItems = defaultFileMenuItems(tabCount = 1)
+            .filter { it.label == "Previous Tab" || it.label == "Next Tab" }
+
+        assertEquals(2, tabNavigationItems.size)
+        assertTrue(tabNavigationItems.all { !it.enabled })
+    }
+
+    @Test
+    fun tabNavigationMenuItemsAreEnabledWithMultipleTabs() = runComposeUiTest {
+        val tabNavigationItems = defaultFileMenuItems(tabCount = 2)
+            .filter { it.label == "Previous Tab" || it.label == "Next Tab" }
+
+        assertEquals(2, tabNavigationItems.size)
+        assertTrue(tabNavigationItems.all { it.enabled })
+    }
+
     private fun defaultFileMenuItems(
-        canCreateNewTab: Boolean,
+        canCreateNewTab: Boolean = true,
+        tabCount: Int = 2,
         onCreateNewTab: () -> Unit = {},
     ) = springboardFileMenuItems(
         hasActiveSpringboard = true,
         canSaveActiveTabInPlace = true,
         isActiveTabDirty = true,
         canCreateNewTab = canCreateNewTab,
+        tabCount = tabCount,
         onCreateNewTab = onCreateNewTab,
         onOpenInCurrentTab = {},
         onOpenInNewTab = {},

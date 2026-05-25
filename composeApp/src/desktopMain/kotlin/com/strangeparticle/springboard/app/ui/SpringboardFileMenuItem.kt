@@ -25,6 +25,7 @@ fun springboardFileMenuItems(
     canSaveActiveTabInPlace: Boolean,
     isActiveTabDirty: Boolean,
     canCreateNewTab: Boolean,
+    tabCount: Int,
     onCreateNewTab: () -> Unit,
     onOpenInCurrentTab: () -> Unit,
     onOpenInNewTab: () -> Unit,
@@ -108,12 +109,14 @@ fun springboardFileMenuItems(
     SpringboardFileMenuItem(
         section = SpringboardFileMenuSection.TAB_NAVIGATION,
         label = "Previous Tab",
+        enabled = tabCount > 1,
         shortcut = KeyShortcut(Key.LeftBracket, meta = true, shift = true),
         onClick = onPreviousTab,
     ),
     SpringboardFileMenuItem(
         section = SpringboardFileMenuSection.TAB_NAVIGATION,
         label = "Next Tab",
+        enabled = tabCount > 1,
         shortcut = KeyShortcut(Key.RightBracket, meta = true, shift = true),
         onClick = onNextTab,
     ),

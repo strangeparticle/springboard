@@ -87,7 +87,7 @@ private fun renderAiAssistantGroup(viewModel: SettingsViewModel) {
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    Spacer(modifier = Modifier.height(10.dp))
+    SettingRowSpacer()
     AiSettingsSectionComposable(viewModel)
 }
 
@@ -111,7 +111,7 @@ private fun SettingsGroupSectionComposable(
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurface,
     )
-    Spacer(modifier = Modifier.height(10.dp))
+    SettingRowSpacer()
 
     for (item in items) {
         // StartupTabs gets a special "Use current tabs" affordance below its
@@ -137,7 +137,7 @@ private fun SettingsGroupSectionComposable(
         } else {
             SettingRowComposable(item = item, viewModel = viewModel)
         }
-        Spacer(modifier = Modifier.height(10.dp))
+        SettingRowSpacer()
     }
 }
 

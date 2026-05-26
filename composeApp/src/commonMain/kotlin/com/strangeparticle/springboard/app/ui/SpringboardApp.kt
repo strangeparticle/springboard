@@ -323,6 +323,8 @@ private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegi
     register(AddResourceToolCallHandler())
     register(AddUrlActivatorToolCallHandler())
     register(AddUrlTemplateActivatorToolCallHandler())
+    register(ChangeResourceIdToolCallHandler())
+    register(ChangeResourceNameToolCallHandler())
     register(CloseTabToolCallHandler())
     register(CreateSpringboardToolCallHandler())
     register(CreateTabToolCallHandler())
@@ -347,7 +349,6 @@ private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegi
     register(UpdateAppToolCallHandler())
     register(UpdateEnvironmentToolCallHandler())
     register(UpdateGuidanceToolCallHandler())
-    register(UpdateResourceToolCallHandler())
 }
 
 private fun localCommandGroup(

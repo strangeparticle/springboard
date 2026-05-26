@@ -8,6 +8,10 @@ import com.strangeparticle.springboard.app.editio.toolcall.AddEnvironmentToolCal
 import com.strangeparticle.springboard.app.editio.toolcall.AddEnvironmentToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.AddResourceToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.AddResourceToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ChangeResourceIdToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ChangeResourceIdToolCallHandlerRequest
+import com.strangeparticle.springboard.app.editio.toolcall.ChangeResourceNameToolCallHandler
+import com.strangeparticle.springboard.app.editio.toolcall.ChangeResourceNameToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.RemoveAppToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.RemoveAppGroupToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.RemoveAppGroupToolCallHandler
@@ -22,8 +26,6 @@ import com.strangeparticle.springboard.app.editio.toolcall.UpdateAppGroupToolCal
 import com.strangeparticle.springboard.app.editio.toolcall.UpdateAppToolCallHandler
 import com.strangeparticle.springboard.app.editio.toolcall.UpdateEnvironmentToolCallHandlerRequest
 import com.strangeparticle.springboard.app.editio.toolcall.UpdateEnvironmentToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.UpdateResourceToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.UpdateResourceToolCallHandler
 import com.strangeparticle.springboard.app.domain.model.App
 import com.strangeparticle.springboard.app.domain.mutator.SpringboardMutationError
 import com.strangeparticle.springboard.app.domain.mutator.addApp
@@ -334,15 +336,59 @@ internal class EntityCrudToolsTest {
     }
 
     @Test
-    fun `update_resource updates name`() = runTest {
+    fun `change_resource_name changes only resource name`() = runTest {
         val (ctx, tabId) = loadedContext()
-        val result = UpdateResourceToolCallHandler().executeToolCallHandler(
-            UpdateResourceToolCallHandlerRequest(tab_id = tabId, id = "res1", name = "Renamed Resource", display_message = "x"),
+        val result = ChangeResourceNameToolCallHandler().executeToolCallHandler(
+            ChangeResourceNameToolCallHandlerRequest(tab_id = tabId, id = "res1", name = "Renamed Resource", display_message = "x"),
             ctx,
         )
+
         assertTrue(result.success)
-        val updated = ctx.viewModel.springboardUnfiltered!!.resources.first { it.id == "res1" }
-        assertEquals("Renamed Resource", updated.name)
+        val springboard = ctx.viewModel.springboardUnfiltered!!
+        assertTrue(springboard.resources.any { it.id == "res1" && it.name == "Renamed Resource" })
+        assertTrue(springboard.activators.any { it.resourceId == "res1" })
+    }
+
+    @Test
+    fun `change_resource_id rewrites resource id throughout springboard tree`() = runTest {
+        val (ctx, tabId) = loadedContext(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE)
+        val result = ChangeResourceIdToolCallHandler().executeToolCallHandler(
+            ChangeResourceIdToolCallHandlerRequest(tab_id = tabId, id = "res1", new_id = "trd", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val springboard = ctx.viewModel.springboardUnfiltered!!
+        assertTrue(springboard.resources.any { it.id == "trd" && it.name == "Dashboard" })
+        assertTrue(springboard.resources.none { it.id == "res1" })
+        assertTrue(springboard.activators.none { it.resourceId == "res1" })
+        assertTrue(springboard.activators.any { it.resourceId == "trd" })
+        assertTrue(springboard.guidanceData.none { it.resourceId == "res1" })
+        assertTrue(springboard.guidanceData.any { it.resourceId == "trd" })
+    }
+
+    @Test
+    fun `change_resource_id rejects duplicate new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+        val result = ChangeResourceIdToolCallHandler().executeToolCallHandler(
+            ChangeResourceIdToolCallHandlerRequest(tab_id = tabId, id = "res1", new_id = "res2", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("duplicate_id", result.code)
+    }
+
+    @Test
+    fun `change_resource_id rejects blank new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+        val result = ChangeResourceIdToolCallHandler().executeToolCallHandler(
+            ChangeResourceIdToolCallHandlerRequest(tab_id = tabId, id = "res1", new_id = " ", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("blank_id", result.code)
     }
 
     @Test

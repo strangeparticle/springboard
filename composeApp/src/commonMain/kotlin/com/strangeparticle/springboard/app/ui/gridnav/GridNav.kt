@@ -282,7 +282,7 @@ fun GridNav(
                 )
 
                 GridNavColumnResizeBoundary(
-                    height = renderedDataHeight,
+                    height = renderedDataHeight + GridNavSizingConstants.DataRowDividerThickness,
                     onDragDelta = { deltaPx ->
                         val deltaDp = with(density) { deltaPx.toDp() }
                         resourceLabelWidth = (resourceLabelWidth + deltaDp).coerceIn(

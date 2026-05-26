@@ -241,5 +241,5 @@ private fun ResourceLabelRow(
         }
     }
 
-    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
+    HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = GridNavSizingConstants.DataRowDividerThickness)
 }

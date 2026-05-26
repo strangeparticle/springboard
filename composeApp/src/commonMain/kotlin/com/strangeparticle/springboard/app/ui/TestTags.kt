@@ -74,6 +74,7 @@ object TestTags {
 
     fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
     fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"
+    fun settingsRow(settingKey: String) = "settingsRow_$settingKey"
 
     fun gridCell(appId: String, resourceId: String) = "gridCell_${appId}_${resourceId}"
     fun gridCellActivatorIndicator(appId: String, resourceId: String) = "gridCellActivator_${appId}_${resourceId}"

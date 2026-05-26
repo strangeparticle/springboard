@@ -40,7 +40,7 @@ fun GridNavColumnResizeBoundary(
         contentAlignment = Alignment.Center,
     ) {
         VerticalDivider(
-            color = MaterialTheme.colorScheme.outline,
+            color = MaterialTheme.colorScheme.outlineVariant,
             thickness = GridNavSizingConstants.ColumnResizeBoundaryThickness,
         )
 

@@ -34,6 +34,25 @@ class GridNavSizingConstantsTest {
     }
 
     @Test
+    fun `column boundary divider is thinner than header boundary while resize handle stays unchanged`() {
+        assertEquals(2f, GridNavSizingConstants.HeaderResizeBoundaryThickness.value)
+        assertEquals(1f, GridNavSizingConstants.ColumnResizeBoundaryThickness.value)
+        assertTrue(
+            GridNavSizingConstants.ColumnResizeBoundaryThickness <
+                GridNavSizingConstants.HeaderResizeBoundaryThickness,
+        )
+        assertEquals(20f, GridNavSizingConstants.ColumnResizeThumbWidth.value)
+        assertEquals(28f, GridNavSizingConstants.ColumnResizeThumbHeight.value)
+        assertEquals(20f, GridNavSizingConstants.ColumnResizeGripWidth.value)
+        assertEquals(20f, GridNavSizingConstants.ColumnResizeGripHeight.value)
+    }
+
+    @Test
+    fun `data row divider thickness is available for boundary extension calculations`() {
+        assertEquals(0.5f, GridNavSizingConstants.DataRowDividerThickness.value)
+    }
+
+    @Test
     fun `group label strip height is tall enough for label text`() {
         assertTrue(
             GridNavSizingConstants.GroupLabelStripHeight.value >= GroupLabelTextSizeSp,

@@ -21,7 +21,10 @@ object GridNavSizingConstants {
     val HeaderResizeBoundaryThickness = 2.dp
 
     /** Visual thickness of the boundary divider line between resource labels and data columns. */
-    val ColumnResizeBoundaryThickness = HeaderResizeBoundaryThickness
+    val ColumnResizeBoundaryThickness = 1.dp
+
+    /** Visual thickness of the horizontal dividers between data rows. */
+    val DataRowDividerThickness = 0.5.dp
 
     /** Vertical hit area of the resize thumb (taller than the divider so it is grabbable). */
     val HeaderResizeThumbHeight = 20.dp

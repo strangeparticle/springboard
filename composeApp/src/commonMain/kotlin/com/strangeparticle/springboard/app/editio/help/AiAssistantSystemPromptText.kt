@@ -39,7 +39,7 @@ internal object AiAssistantSystemPromptText {
         - If a generated id conflicts with an existing id, append a short numeric suffix.
         - Do not ask the user to choose an id unless the intended entity itself is ambiguous.
         - Do not invent ids for existing entities. Use ids from the provided state when referring to existing apps, groups, resources, environments, activators, guidance, or tabs.
-        - The user can ask to rename or change generated ids later.
+        - The user can ask to rename or change generated ids later. For existing resources, change the display name with change_resource_name and change the id with change_resource_id.
         - Examples: "Productivity Tools" -> productivity_tools; "Springboard General 1" -> springboard_general_1.
 
         Compound operations:

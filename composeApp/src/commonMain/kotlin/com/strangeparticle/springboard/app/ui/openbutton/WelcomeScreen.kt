@@ -10,13 +10,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.platform.openFileDialog
+import com.strangeparticle.springboard.app.platform.openFileDialog as platformOpenFileDialog
 
 @Composable
 fun WelcomeScreen(
     onFileSelected: (String) -> Unit,
     onOpenFromNetwork: (() -> Unit)? = null,
     showFileOpen: Boolean = true,
+    openFileDialog: () -> String? = { platformOpenFileDialog(null) },
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -29,7 +30,7 @@ fun WelcomeScreen(
             if (showFileOpen) {
                 Button(
                     onClick = {
-                        val path = openFileDialog(null)
+                        val path = openFileDialog()
                         if (path != null) {
                             onFileSelected(path)
                         }

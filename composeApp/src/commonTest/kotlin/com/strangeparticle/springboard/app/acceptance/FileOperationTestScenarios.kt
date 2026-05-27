@@ -46,6 +46,20 @@ object FileOperationTestScenarios {
         }
     }
 
+    private fun ComposeUiTest.setSpringboardApp(
+        components: FileOperationTestComponents,
+        openFileDialog: () -> String?,
+    ) {
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                fileContentService = components.fileContentService,
+                openFileDialog = openFileDialog,
+            )
+        }
+    }
+
     // --- Open valid springboard ---
 
     fun openingAValidSpringboardLoadsItSuccessfully() = runComposeUiTest {
@@ -56,6 +70,24 @@ object FileOperationTestScenarios {
         waitForIdle()
 
         onNodeWithTag(TestTags.STATUS_BAR_SOURCE).assertExists().assertIsDisplayed()
+    }
+
+    fun openingAValidSpringboardFromFileFocusesAppDropdown() = runComposeUiTest {
+        val filePath = "/test/springboard.json"
+        val fakeService = PlatformFileContentServiceInMemoryFake().apply {
+            fileContents[filePath] = TestFixtureJson.MULTI_ENV_WITH_COMMON
+        }
+        val components = createTestComponents(fileContentService = fakeService)
+        setSpringboardApp(
+            components = components,
+            openFileDialog = { filePath },
+        )
+        waitForIdle()
+
+        onNodeWithText("Open Springboard from File...").performClick()
+        waitForIdle()
+
+        onNodeWithTag(TestTags.APP_DROPDOWN).assertIsFocused()
     }
 
     // --- Open shows file path and time ---

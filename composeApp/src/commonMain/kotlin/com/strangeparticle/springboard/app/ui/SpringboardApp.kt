@@ -68,6 +68,7 @@ internal fun SpringboardApp(
     fileContentService: PlatformFileContentService = PlatformFileContentServiceDefaultImpl(),
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
+    openFileDialog: () -> String? = { com.strangeparticle.springboard.app.platform.openFileDialog(null) },
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -140,6 +141,7 @@ internal fun SpringboardApp(
                     fileContentService = fileContentService,
                     networkContentService = networkContentService,
                     showFileOpen = showFileOpen,
+                    openFileDialog = openFileDialog,
                     isAssistantConfigured = effectiveAiChatPaneState.isConfigured,
                     onToggleAssistant = { showAssistant.value = !showAssistant.value },
                     showAssistant = showAssistant.value,

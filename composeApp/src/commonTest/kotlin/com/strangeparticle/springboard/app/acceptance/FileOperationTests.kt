@@ -7,6 +7,9 @@ class FileOperationTests {
     @Test fun `opening a valid springboard loads it successfully`() =
         FileOperationTestScenarios.openingAValidSpringboardLoadsItSuccessfully()
 
+    @Test fun `opening a valid springboard from file focuses app dropdown`() =
+        FileOperationTestScenarios.openingAValidSpringboardFromFileFocusesAppDropdown()
+
     @Test fun `open shows file path and time - opening a springboard shows file path in status bar`() =
         FileOperationTestScenarios.openingASpringboardShowsFilePathInStatusBar()
 

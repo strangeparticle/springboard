@@ -176,6 +176,7 @@ fun main(args: Array<String>) {
                         val contents = readFileContents(path)
                         if (contents != null) {
                             loadSpringboardConfig(path, contents)
+                            viewModel.requestFocusAppDropdown()
                         } else {
                             viewModel.activeTabToast.error("Failed to open: file not found")
                         }
@@ -188,6 +189,7 @@ fun main(args: Array<String>) {
                         if (contents != null) {
                             viewModel.createTab()
                             loadSpringboardConfig(path, contents)
+                            viewModel.requestFocusAppDropdown()
                         } else {
                             viewModel.activeTabToast.error("Failed to open: file not found")
                         }

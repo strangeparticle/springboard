@@ -44,6 +44,7 @@ internal fun MainScreen(
     aiChatPaneState: AiChatPaneState = AiChatPaneState.notConfigured(),
     onCloseAssistant: () -> Unit = {},
     onOpenAiSettings: () -> Unit = onOpenSettings,
+    openFileDialog: () -> String? = { com.strangeparticle.springboard.app.platform.openFileDialog(null) },
 ) {
     var isReloading by remember { mutableStateOf(false) }
     var showNetworkDialog by remember { mutableStateOf(false) }
@@ -108,12 +109,14 @@ internal fun MainScreen(
                         val contents = fileContentService.readFileContents(path)
                         if (contents != null) {
                             viewModel.loadConfig(contents, path)
+                            viewModel.requestFocusAppDropdown()
                             println("[Springboard] grid ready")
                             println("[Springboard] application ready")
                         }
                     },
                     onOpenFromNetwork = openFromNetwork,
                     showFileOpen = showFileOpen,
+                    openFileDialog = openFileDialog,
                 )
             }
         } else {

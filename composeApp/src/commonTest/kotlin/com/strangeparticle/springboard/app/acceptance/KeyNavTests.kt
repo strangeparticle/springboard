@@ -61,8 +61,11 @@ class KeyNavTests {
     @Test fun `grid is hidden when environment selection is none`() =
         KeyNavTestScenarios.gridIsHiddenWhenEnvironmentSelectionIsNone()
 
-    @Test fun `typing selects entry when dropdown is open`() =
-        KeyNavTestScenarios.typingSelectsEntryWhenDropdownIsOpen()
+    @Test fun `typeahead auto-selects matching entry when dropdown is closed`() =
+        KeyNavTestScenarios.typeaheadAutoSelectsMatchingEntryWhenDropdownIsClosed()
+
+    @Test fun `typeahead auto-selects matching entry when dropdown is expanded`() =
+        KeyNavTestScenarios.typeaheadAutoSelectsMatchingEntryWhenDropdownIsExpanded()
 
     @Test fun `arrow-down highlights next item in expanded dropdown`() =
         KeyNavTestScenarios.arrowDownHighlightsNextItemInExpandedDropdown()

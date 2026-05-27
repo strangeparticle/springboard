@@ -1,13 +1,13 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiProviderClientRequest
-import com.strangeparticle.editio.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
-import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.editio.conversation.AiConversationMessageForUser
-import com.strangeparticle.editio.toolcall.AiToolCallDefinition
-import com.strangeparticle.editio.toolcall.ToolCall
-import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
+import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
+import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.toolcall.AiToolCallDefinition
+import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -32,7 +32,7 @@ internal class AnthropicChatCompletionRequestTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun emptyRequest(
-        history: List<com.strangeparticle.editio.conversation.AiConversationMessage> = emptyList(),
+        history: List<com.strangeparticle.luther.conversation.AiConversationMessage> = emptyList(),
         tools: List<AiToolCallDefinition> = emptyList(),
         maxTokens: Int? = null,
     ) = AiProviderClientRequest(

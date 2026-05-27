@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceService
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment

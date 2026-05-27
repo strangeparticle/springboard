@@ -3,13 +3,13 @@
 Springboard's AI editing feature lets users describe changes to their springboard configurations in natural language. The AI executes those changes directly using native tool calls — no copy/paste, no manual JSON edits. The chat session is global across all open tabs; tool calls that operate on a specific tab identify it by `tab_id`.
 
 
-This document covers Springboard's implementation and integration of the Editio tool-call framework. For Editio's architecture and how to add new providers, see `README-Editio.md`.
+This document covers Springboard's implementation and integration of the Luther tool-call framework. For Luther's architecture and how to add new providers, see `README-Luther.md`.
 
 ---
 
 ## How It Fits Together
 
-TODO: editio and its role in this call chain (below) should be better documented, as should the seams between editio and springboard
+TODO: luther and its role in this call chain (below) should be better documented, as should the seams between luther and springboard
 
 ```
 User types a message
@@ -29,9 +29,9 @@ SpringboardAppSnapshot.capture(viewModel) → JSON → back to model as tool res
 
 ---
 
-## Springboard-Specific Editio Types
+## Springboard-Specific Luther Types
 
-These live in `com.strangeparticle.springboard.app.editio.*`. They extend Editio's marker interfaces with Springboard's concrete runtime needs.
+These live in `com.strangeparticle.springboard.app.luther.*`. They extend Luther's marker interfaces with Springboard's concrete runtime needs.
 
 ### SpringboardAppSnapshot
 
@@ -160,7 +160,7 @@ Errors always carry a machine-readable `code` string for model introspection:
 
 ## Tool Surface
 
-All tools are in `com.strangeparticle.springboard.app.editio.toolcall.*`. Each is a `ToolCallHandler` + a `@Serializable` request DTO.
+All tools are in `com.strangeparticle.springboard.app.luther.toolcall.*`. Each is a `ToolCallHandler` + a `@Serializable` request DTO.
 
 ### Entity CRUD
 
@@ -254,7 +254,7 @@ The `toolCallId` forwarded by the dispatcher is used as the key for the pending 
 
 ```
 composeApp/src/commonMain/kotlin/
-├── com/strangeparticle/editio/                          ← Editio core (provider-neutral)
+├── com/strangeparticle/luther/                          ← Luther core (provider-neutral)
 │   ├── Ai*.kt                                           ← message, request, response, error types
 │   ├── providers/
 │   │   ├── AiClient.kt
@@ -265,7 +265,7 @@ composeApp/src/commonMain/kotlin/
 │       └── ToolCallSchema.kt                            ← requestSchema, @ToolFieldDescription
 │
 └── com/strangeparticle/springboard/app/
-    ├── editio/                                          ← Springboard's Editio integration
+    ├── luther/                                          ← Springboard's Luther integration
     │   ├── SpringboardAppSnapshot.kt
     │   ├── SpringboardTabSnapshot.kt
     │   ├── SpringboardToolCallExecutionContext.kt

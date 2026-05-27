@@ -1,12 +1,12 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.editio.client.AiProviderClientException
-import com.strangeparticle.editio.client.AiProviderClientRequest
-import com.strangeparticle.editio.client.AiProviderClientResponse
-import com.strangeparticle.editio.client.AiProviderClientStopReason
-import com.strangeparticle.editio.client.AiProviderClient
-import com.strangeparticle.editio.client.AiProviderClientModelInfo
-import com.strangeparticle.editio.toolcall.ToolCall
+import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.AiProviderClient
+import com.strangeparticle.luther.client.AiProviderClientModelInfo
+import com.strangeparticle.luther.toolcall.ToolCall
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 

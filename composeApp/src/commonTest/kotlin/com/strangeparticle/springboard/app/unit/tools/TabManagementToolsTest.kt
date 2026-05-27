@@ -1,15 +1,15 @@
 package com.strangeparticle.springboard.app.unit.tools
 
-import com.strangeparticle.springboard.app.editio.toolcall.CloseTabToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.CloseTabToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.CreateTabToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.CreateTabToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.OpenFromUrlToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.OpenFromUrlToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.OpenLocalFileToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.OpenLocalFileToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.CloseTabToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.CloseTabToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.CreateSpringboardToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.CreateSpringboardToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.CreateTabToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.CreateTabToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.OpenFromUrlToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.OpenFromUrlToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.OpenLocalFileToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.OpenLocalFileToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake

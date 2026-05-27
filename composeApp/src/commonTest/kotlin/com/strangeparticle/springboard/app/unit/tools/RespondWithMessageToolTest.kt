@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit.tools
 
-import com.strangeparticle.springboard.app.editio.toolcall.RespondWithMessageToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.RespondWithMessageToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.RespondWithMessageToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.RespondWithMessageToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson

@@ -13,10 +13,10 @@ import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
-import com.strangeparticle.springboard.app.ui.editio.AiChatPane
-import com.strangeparticle.springboard.app.ui.editio.AiChatPaneDefaults
-import com.strangeparticle.springboard.app.ui.editio.AiChatPaneState
-import com.strangeparticle.springboard.app.ui.editio.ChatPaneResizeHandle
+import com.strangeparticle.springboard.app.ui.luther.AiChatPane
+import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
+import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
+import com.strangeparticle.springboard.app.ui.luther.ChatPaneResizeHandle
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen

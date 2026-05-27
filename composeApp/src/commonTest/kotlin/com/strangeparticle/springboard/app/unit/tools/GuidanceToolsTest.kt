@@ -1,11 +1,11 @@
 package com.strangeparticle.springboard.app.unit.tools
 
-import com.strangeparticle.springboard.app.editio.toolcall.AddGuidanceToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.AddGuidanceToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.RemoveGuidanceToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.RemoveGuidanceToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.UpdateGuidanceToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.UpdateGuidanceToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddGuidanceToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.AddGuidanceToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.RemoveGuidanceToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.RemoveGuidanceToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.UpdateGuidanceToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.UpdateGuidanceToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson

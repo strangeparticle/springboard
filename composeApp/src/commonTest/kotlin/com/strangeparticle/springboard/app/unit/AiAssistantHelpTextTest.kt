@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.editio.help.AiAssistantFullHelpText
-import com.strangeparticle.springboard.app.editio.help.AiAssistantSystemPromptText
-import com.strangeparticle.springboard.app.editio.help.AiAssistantTerseHelpText
+import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
+import com.strangeparticle.springboard.app.luther.help.AiAssistantSystemPromptText
+import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 import kotlin.test.Test
 import kotlin.test.assertContains
 

@@ -3,7 +3,7 @@ package com.strangeparticle.springboard.app
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImpl
 import com.strangeparticle.springboard.app.settings.SettingsManager

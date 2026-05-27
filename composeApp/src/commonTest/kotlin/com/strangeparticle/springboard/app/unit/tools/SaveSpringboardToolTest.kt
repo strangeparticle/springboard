@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit.tools
 
-import com.strangeparticle.springboard.app.editio.toolcall.SaveSpringboardToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.SaveSpringboardToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.SaveSpringboardToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.SaveSpringboardToolCallHandlerRequest
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake

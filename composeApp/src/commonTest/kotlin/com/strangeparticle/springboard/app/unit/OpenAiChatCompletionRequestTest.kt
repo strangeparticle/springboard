@@ -1,13 +1,13 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiProviderClientRequest
-import com.strangeparticle.editio.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.editio.conversation.AiConversationMessage
-import com.strangeparticle.editio.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.editio.toolcall.ToolCall
-import com.strangeparticle.editio.toolcall.AiToolCallDefinition
-import com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage
-import com.strangeparticle.editio.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
+import com.strangeparticle.luther.conversation.AiConversationMessage
+import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.toolcall.AiToolCallDefinition
+import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
+import com.strangeparticle.luther.conversation.AiConversationMessageForUser
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -21,7 +21,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Tests for [com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
+ * Tests for [com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
      * envelope: top-level shape, message role mapping for each [AiConversationMessage] variant,
  * and tool-definition adaptation.
  */
@@ -41,8 +41,8 @@ internal class OpenAiChatCompletionRequestTest {
 
     private fun buildBody(request: AiProviderClientRequest): JsonObject {
         val rawJson = json.encodeToString(
-            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
-            _root_ide_package_.com.strangeparticle.editio.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
+            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
+            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
         )
         return json.parseToJsonElement(rawJson).jsonObject
     }

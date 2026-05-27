@@ -1,16 +1,16 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
-import com.strangeparticle.editio.toolcall.ToolCallDispatcher
-import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
-import com.strangeparticle.editio.toolcall.ToolCallHandler
-import com.strangeparticle.editio.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.editio.toolcall.ToolCallRegistry
-import com.strangeparticle.editio.toolcall.decodeToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.SpringboardToolCallHandlerResponse
-import com.strangeparticle.editio.toolcall.requestSchema
-import com.strangeparticle.springboard.app.editio.getSpringboardToolCallExecutionContextOrThrow
-import com.strangeparticle.springboard.app.editio.successResult
+import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.toolcall.ToolCallDispatcher
+import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.toolcall.ToolCallHandler
+import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.toolcall.decodeToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResponse
+import com.strangeparticle.luther.toolcall.requestSchema
+import com.strangeparticle.springboard.app.luther.getSpringboardToolCallExecutionContextOrThrow
+import com.strangeparticle.springboard.app.luther.successResult
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.SpringboardToolCallExecutionContextInMemoryFake

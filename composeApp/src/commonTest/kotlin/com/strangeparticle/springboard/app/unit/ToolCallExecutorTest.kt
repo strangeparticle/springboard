@@ -1,12 +1,12 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
-import com.strangeparticle.editio.toolcall.ToolCallDispatcher
-import com.strangeparticle.editio.toolcall.ToolCallExecutionResult
-import com.strangeparticle.editio.toolcall.ToolCallHandler
-import com.strangeparticle.editio.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.editio.toolcall.ToolCallRegistry
-import com.strangeparticle.editio.toolcall.requestSchema
+import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.toolcall.ToolCallDispatcher
+import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.toolcall.ToolCallHandler
+import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.toolcall.requestSchema
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException

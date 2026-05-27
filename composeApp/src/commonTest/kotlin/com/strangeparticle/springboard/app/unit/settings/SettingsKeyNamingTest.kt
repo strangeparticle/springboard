@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.editio.client.provider.openai.OpenAiApiKeySetting
+import com.strangeparticle.luther.client.provider.openai.OpenAiApiKeySetting
 import com.strangeparticle.springboard.app.settings.SettingsKeyNaming
 import com.strangeparticle.springboard.app.settings.items.core.ActiveBrandSetting
 import com.strangeparticle.springboard.app.settings.items.core.StartupTabsSetting

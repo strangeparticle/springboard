@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.provider.anthropic.AnthropicModelFilter
+import com.strangeparticle.luther.client.provider.anthropic.AnthropicModelFilter
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test

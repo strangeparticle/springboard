@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.editio.SystemPromptBuilder
+import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertFalse

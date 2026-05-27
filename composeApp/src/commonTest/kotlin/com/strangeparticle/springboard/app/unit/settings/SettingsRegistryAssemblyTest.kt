@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.items.core.ActiveBrandSetting
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems

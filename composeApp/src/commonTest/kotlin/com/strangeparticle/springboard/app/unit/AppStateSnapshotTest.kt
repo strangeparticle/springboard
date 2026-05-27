@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
+import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.domain.factory.dto.CommandActivatorDto
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment

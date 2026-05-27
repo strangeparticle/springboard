@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.settings.items.core
 
-import com.strangeparticle.editio.client.provider.AiProviderRegistry
+import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.settings.DropDownOption
 import com.strangeparticle.springboard.app.settings.SettingsGroup
 import com.strangeparticle.springboard.app.settings.items.base.DropDownSettingsItem

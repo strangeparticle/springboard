@@ -8,10 +8,10 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import com.strangeparticle.editio.client.provider.anthropic.AnthropicApiKeySetting
-import com.strangeparticle.editio.client.provider.anthropic.AnthropicPreferredModelSetting
-import com.strangeparticle.editio.client.provider.openai.OpenAiApiKeySetting
-import com.strangeparticle.editio.client.provider.openai.OpenAiPreferredModelSetting
+import com.strangeparticle.luther.client.provider.anthropic.AnthropicApiKeySetting
+import com.strangeparticle.luther.client.provider.anthropic.AnthropicPreferredModelSetting
+import com.strangeparticle.luther.client.provider.openai.OpenAiApiKeySetting
+import com.strangeparticle.luther.client.provider.openai.OpenAiPreferredModelSetting
 import com.strangeparticle.springboard.app.settings.items.core.AiProviderSetting
 import com.strangeparticle.springboard.app.settings.items.core.HttpAiProviderTimeoutSecondsSetting
 import com.strangeparticle.springboard.app.settings.items.core.ShowFullChatTranscriptSetting

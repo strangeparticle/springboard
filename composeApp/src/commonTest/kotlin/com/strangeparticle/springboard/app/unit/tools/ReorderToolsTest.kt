@@ -1,14 +1,14 @@
 package com.strangeparticle.springboard.app.unit.tools
 
 import com.strangeparticle.springboard.app.domain.model.Coordinate
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderActivatorsToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderActivatorsToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderAppsToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderAppsToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderEnvironmentsToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderEnvironmentsToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderResourcesToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.ReorderResourcesToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderActivatorsToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderActivatorsToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderAppsToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderAppsToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderEnvironmentsToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderEnvironmentsToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderResourcesToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ReorderResourcesToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson

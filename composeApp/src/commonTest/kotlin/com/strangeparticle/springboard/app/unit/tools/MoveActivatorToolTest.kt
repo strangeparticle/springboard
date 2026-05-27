@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit.tools
 
-import com.strangeparticle.springboard.app.editio.toolcall.MoveActivatorToolCallHandlerRequest
-import com.strangeparticle.springboard.app.editio.toolcall.MoveActivatorToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.MoveActivatorToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.MoveActivatorToolCallHandler
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake

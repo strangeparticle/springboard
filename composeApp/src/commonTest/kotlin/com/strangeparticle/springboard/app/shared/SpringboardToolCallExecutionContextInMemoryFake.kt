@@ -1,12 +1,12 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.springboard.app.editio.SpringboardToolCallExecutionContext
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.CompletableDeferred
 
 /**
  * Test implementation of [SpringboardToolCallExecutionContext]. Holds a real [SpringboardViewModel]
- * (needed because [com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot.capture]
+ * (needed because [com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot.capture]
  * reads viewmodel state when a tool builds its result). Records `markStateChanged()`
  * calls and exposes the approval-deferred registry so tests can drive confirmation
  * flows.

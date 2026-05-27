@@ -1,29 +1,29 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import com.strangeparticle.editio.client.AiProviderClientErrorType
-import com.strangeparticle.editio.client.AiProviderClientException
-import com.strangeparticle.editio.session.AiSessionManager
-import com.strangeparticle.editio.session.AiSessionSnapshotProvider
-import com.strangeparticle.editio.session.AiSessionToolCallExecutionContextFactory
-import com.strangeparticle.editio.session.ChatMessagePart
-import com.strangeparticle.editio.toolcall.ToolCall
-import com.strangeparticle.editio.toolcall.ToolCallExecutionContext
-import com.strangeparticle.editio.toolcall.ToolCallRegistry
-import com.strangeparticle.springboard.app.editio.SpringboardAppSnapshot
-import com.strangeparticle.springboard.app.editio.SpringboardToolCallExecutionContext
-import com.strangeparticle.springboard.app.editio.SystemPromptBuilder
-import com.strangeparticle.springboard.app.editio.toolcall.ActivateColumnToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ActivateCoordinateToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ActivateCoordinatesToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.ActivateRowToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.AddAppToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.AddEnvironmentToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.AddResourceToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.AddUrlActivatorToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.CreateSpringboardToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.RemoveActivatorToolCallHandler
-import com.strangeparticle.springboard.app.editio.toolcall.SaveSpringboardToolCallHandler
+import com.strangeparticle.luther.client.AiProviderClientErrorType
+import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.session.AiSessionManager
+import com.strangeparticle.luther.session.AiSessionSnapshotProvider
+import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
+import com.strangeparticle.luther.session.ChatMessagePart
+import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
+import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
+import com.strangeparticle.springboard.app.luther.toolcall.ActivateColumnToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ActivateCoordinateToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ActivateCoordinatesToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ActivateRowToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddAppToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddEnvironmentToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddResourceToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddUrlActivatorToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.CreateSpringboardToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.RemoveActivatorToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.SaveSpringboardToolCallHandler
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -80,7 +80,7 @@ internal class AiAssistantTests {
 
         fixture.manager.submit("Add resource and activator").join()
 
-        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage>().size)
+        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>().size)
     }
 
     @Test
@@ -225,7 +225,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
             .last()
         assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
     }
@@ -390,7 +390,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.editio.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
             .last()
         assertTrue(lastToolMessage.content.contains("missing_tab"))
     }

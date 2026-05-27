@@ -1,9 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.editio.client.AiProviderClientErrorType
-import com.strangeparticle.editio.client.AiProviderClientException
-import com.strangeparticle.editio.client.AiProviderClientStopReason
-import com.strangeparticle.editio.client.provider.anthropic.response.AnthropicResponseParser
+import com.strangeparticle.luther.client.AiProviderClientErrorType
+import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

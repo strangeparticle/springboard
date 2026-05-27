@@ -106,6 +106,9 @@ class GridNavTests {
     @Test fun `hovering row header highlights cells in that row`() =
         GridNavTestScenarios.hoveringRowHeaderHighlightsCellsInThatRow()
 
+    @Test fun `moving pointer from activator cell to row header clears activator preview`() =
+        GridNavTestScenarios.movingPointerFromActivatorCellToRowHeaderClearsActivatorPreview()
+
     @Test fun `clicking column header activates all resources in column`() =
         GridNavTestScenarios.clickingColumnHeaderActivatesAllResourcesInColumn()
 

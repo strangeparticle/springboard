@@ -202,7 +202,12 @@ fun GridNav(
                         gridHeaderHeight = gridHeaderHeight,
                         hoveredHeaderResourceId = hoveredHeaderResourceId,
                         hoveredResourceId = hoveredResourceId,
-                        onHeaderResourceHover = { hoveredHeaderResourceId = it },
+                        onHeaderResourceHover = {
+                            hoveredHeaderResourceId = it
+                            if (it != null) {
+                                onActivatorPreviewChange(null)
+                            }
+                        },
                         onResourceClick = onRowActivate,
                         onEnvironmentHeadingSelect = onEnvironmentHeadingSelect,
                     )

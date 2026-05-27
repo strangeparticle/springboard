@@ -11,6 +11,7 @@ import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
 import com.strangeparticle.luther.session.ChatHistoryGroup
 import com.strangeparticle.luther.session.ChatHistoryGroupType
+import com.strangeparticle.luther.session.buildChatHistoryDebugDumpJson
 import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistoryItem
 import com.strangeparticle.luther.session.event.LocalCommandResponseKind
 import com.strangeparticle.luther.session.event.LocalCommandSource
@@ -225,12 +226,20 @@ private fun rememberAiChatPaneState(
     } else {
         buildSlimScrollbackPanes(chatHistory)
     }
+    val systemPrompt = SystemPromptBuilder.build()
+    val debugChatHistoryText = buildChatHistoryDebugDumpJson(
+        groups = chatHistory,
+        providerLabel = provider.displayName,
+        modelLabel = modelId,
+        systemPrompt = systemPrompt,
+    )
 
     return AiChatPaneState.configured(
         providerLabel = provider.displayName,
         modelLabel = modelId,
         transcriptParts = manager.transcriptParts,
         scrollbackPanes = effectiveScrollbackPanes,
+        debugChatHistoryText = debugChatHistoryText,
         isRunning = runningJob?.isActive == true,
         onSubmit = { text ->
             when (val command = parseAiChatLocalCommand(text)) {

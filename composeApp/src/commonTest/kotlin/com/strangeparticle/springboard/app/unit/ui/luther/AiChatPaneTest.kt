@@ -530,6 +530,32 @@ internal class AiChatPaneTest {
     }
 
     @Test
+    fun `copy debug chat history button copies debug dump text and sits left of transcript copy`() = runComposeUiTest {
+        var copiedText = ""
+        val state = configuredState(
+            debugChatHistoryText = """{"kind":"SpringboardAiDebugDump"}""",
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = state,
+                    onClose = {},
+                    onOpenSettings = {},
+                    onCopyTranscript = { copiedText = it },
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON).performClick()
+
+        val debugButton = onNodeWithTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON).getUnclippedBoundsInRoot()
+        val transcriptButton = onNodeWithTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON).getUnclippedBoundsInRoot()
+        assertTrue(debugButton.right <= transcriptButton.left)
+        assertEquals("""{"kind":"SpringboardAiDebugDump"}""", copiedText)
+    }
+
+    @Test
     fun `user-facing help is rendered when transcript is empty`() = runComposeUiTest {
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {
@@ -779,6 +805,7 @@ internal class AiChatPaneTest {
         isRunning: Boolean = false,
         transcriptParts: List<ChatMessagePart> = emptyList(),
         scrollbackPanes: List<AiChatScrollbackPane>? = null,
+        debugChatHistoryText: String = "",
         onSubmit: (String) -> Unit = {},
         onStop: () -> Unit = {},
         onProcessingFocusFallback: () -> Unit = {},
@@ -787,6 +814,7 @@ internal class AiChatPaneTest {
             providerLabel = "OpenAI",
             modelLabel = "gpt-5",
             transcriptParts = transcriptParts,
+            debugChatHistoryText = debugChatHistoryText,
             isRunning = isRunning,
             onSubmit = onSubmit,
             onStop = onStop,
@@ -799,6 +827,7 @@ internal class AiChatPaneTest {
             modelLabel = "gpt-5",
             transcriptParts = transcriptParts,
             scrollbackPanes = scrollbackPanes,
+            debugChatHistoryText = debugChatHistoryText,
             isRunning = isRunning,
             onSubmit = onSubmit,
             onStop = onStop,

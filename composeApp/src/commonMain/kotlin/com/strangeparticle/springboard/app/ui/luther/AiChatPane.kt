@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
@@ -238,6 +239,17 @@ internal fun AiChatPane(
                                 text = "Not configured",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        IconButton(
+                            onClick = { onCopyTranscript(state.debugChatHistoryText) },
+                            enabled = state.debugChatHistoryText.isNotBlank(),
+                            modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON),
+                        ) {
+                            Icon(
+                                Icons.Default.BugReport,
+                                contentDescription = "Copy debug chat history",
+                                modifier = Modifier.size(15.dp),
                             )
                         }
                         IconButton(

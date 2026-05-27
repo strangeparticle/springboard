@@ -7,6 +7,7 @@ import com.strangeparticle.luther.session.ChatHistoryGroup
 import com.strangeparticle.luther.session.ChatHistoryGroupType
 import com.strangeparticle.luther.session.ChatMessagePart
 import com.strangeparticle.luther.session.ToolCallState
+import com.strangeparticle.luther.session.buildChatHistoryDebugDumpJson
 import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
 import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistoryItem
@@ -34,6 +35,11 @@ import com.strangeparticle.springboard.app.ui.luther.buildSlimScrollbackPanes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 
 internal class ChatHistoryProjectionTest {
 
@@ -141,5 +147,63 @@ internal class ChatHistoryProjectionTest {
         val interaction = assertIs<AiChatScrollbackPane.Interaction>(buildSlimScrollbackPanes(groups).single())
         assertEquals(listOf(ChatMessagePart.ChatError("AI request failed")), interaction.responseParts)
         assertEquals(1, buildProviderHistory(items).size)
+    }
+
+    @Test
+    fun `debug dump serializes provider model system prompt and raw grouped history`() {
+        val groups = listOf(
+            ChatHistoryGroup(ChatHistoryGroupType.LOCAL_COMMAND, listOf(
+                LocalCommandSubmittedChatHistoryItem("/help", LocalCommandSource.User),
+                LocalCommandRespondedChatHistoryItem("/help", "Help text", LocalCommandResponseKind.Help),
+            )),
+            ChatHistoryGroup(ChatHistoryGroupType.AI_INTERACTION, listOf(
+                StateSnapshotAddedChatHistoryItem("{\"tabs\":[]}"),
+                UserSubmittedChatHistoryItem("Run tool"),
+                AssistantRespondedChatHistoryItem(
+                    text = "Calling a tool",
+                    toolCalls = listOf(ToolCall("call-1", "record_tool", "{\"value\":\"quoted\\nline\"}")),
+                ),
+                ToolApprovalRequestedChatHistoryItem("call-1"),
+                ToolApprovalRespondedChatHistoryItem("call-1", approved = true),
+                ToolCallStartedChatHistoryItem(ToolCall("call-1", "record_tool", "{\"value\":\"quoted\\nline\"}")),
+                ToolCallCompletedChatHistoryItem("call-1", providerContent = "{\"ok\":true}", transcriptOutput = "Done", endsTurn = false),
+                ToolCallFailedChatHistoryItem("call-2", providerContent = "{\"ok\":false}", message = "Failed"),
+                ToolCallDeniedChatHistoryItem("call-3"),
+                AssistantErroredChatHistoryItem("AI request failed"),
+            )),
+        )
+
+        val dumpJson = buildChatHistoryDebugDumpJson(
+            groups = groups,
+            providerLabel = "OpenAI",
+            modelLabel = "gpt-5",
+            systemPrompt = "system prompt",
+        )
+
+        val root = Json.parseToJsonElement(dumpJson).jsonObject
+        assertEquals(JsonPrimitive("SpringboardAiDebugDump"), root["kind"])
+        assertEquals(JsonPrimitive("OpenAI"), root["provider"])
+        assertEquals(JsonPrimitive("gpt-5"), root["model"])
+        assertEquals(JsonPrimitive("system prompt"), root["systemPrompt"])
+        assertEquals(JsonPrimitive(2), root["groupCount"])
+        assertEquals(JsonPrimitive(12), root["itemCount"])
+
+        val groupsJson = root["groups"] as JsonArray
+        val localGroup = groupsJson[0] as JsonObject
+        assertEquals(JsonPrimitive("LOCAL_COMMAND"), localGroup["type"])
+        assertEquals(JsonPrimitive(0), localGroup["groupIndex"])
+
+        val aiItems = ((groupsJson[1] as JsonObject)["items"] as JsonArray)
+        assertEquals(JsonPrimitive("StateSnapshotAddedChatHistoryItem"), (aiItems[0] as JsonObject)["kind"])
+        assertEquals(JsonPrimitive("{\"tabs\":[]}"), (aiItems[0] as JsonObject)["snapshotJson"])
+        assertEquals(JsonPrimitive("AssistantRespondedChatHistoryItem"), (aiItems[2] as JsonObject)["kind"])
+
+        val toolCalls = (aiItems[2] as JsonObject)["toolCalls"] as JsonArray
+        assertEquals(JsonPrimitive("call-1"), (toolCalls[0] as JsonObject)["toolCallId"])
+        assertEquals(JsonPrimitive("{\"value\":\"quoted\\nline\"}"), (toolCalls[0] as JsonObject)["argumentsAsJsonString"])
+        assertEquals(JsonPrimitive("ToolCallFailedChatHistoryItem"), (aiItems[7] as JsonObject)["kind"])
+        assertEquals(JsonPrimitive("{\"ok\":false}"), (aiItems[7] as JsonObject)["providerContent"])
+        assertEquals(JsonPrimitive("ToolCallDeniedChatHistoryItem"), (aiItems[8] as JsonObject)["kind"])
+        assertEquals(JsonPrimitive("AssistantErroredChatHistoryItem"), (aiItems[9] as JsonObject)["kind"])
     }
 }

@@ -40,6 +40,7 @@ object TestTags {
     const val AI_CHAT_USER_HELP = "aiChatUserHelp"
     const val AI_CHAT_RESIZE_HANDLE = "aiChatResizeHandle"
     const val ASSISTANT_TOGGLE_BUTTON = "assistantToggleButton"
+    const val AI_CHAT_COPY_DEBUG_HISTORY_BUTTON = "aiChatCopyDebugHistoryButton"
     const val AI_CHAT_COPY_TRANSCRIPT_BUTTON = "aiChatCopyTranscriptButton"
     const val AI_CHAT_CLOSE_BUTTON = "aiChatCloseButton"
     const val AI_CHAT_SETTINGS_BUTTON = "aiChatSettingsButton"

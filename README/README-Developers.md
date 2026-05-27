@@ -98,12 +98,17 @@ Network content reads use **Content HTTP Timeout**, defaulting to `30` seconds:
 ./gradlew :composeApp:run --args="--http-content-timeout-seconds 45"
 ```
 
-**2. Ktor request/response logging (rebuild required)**
+### AI provider request/response logging (rebuild required)
 
-The AI providers all share the single `HttpClient` constructed in
-`composeApp/src/desktopMain/kotlin/com/strangeparticle/springboard/app/main.kt` (search for
-`aiHttpClient`). To dump every HTTP request body, response status, and response body to stdout,
-install the ktor `Logging` plugin on that client.
+The desktop app constructs separate Ktor clients in
+`composeApp/src/desktopMain/kotlin/com/strangeparticle/springboard/app/main.kt`:
+
+- `aiHttpClient` is shared by AI providers and AI model-list calls.
+- `contentHttpClient` is used for opening network/S3 springboards and saving S3 springboards.
+
+To dump AI HTTP request bodies, response statuses, and response bodies to stdout, install the ktor
+`Logging` plugin on `aiHttpClient`. To debug network/S3 springboard loading or saving, install it
+on `contentHttpClient` instead or as well.
 
 Step 1 — add the dependency in `gradle/libs.versions.toml`:
 

@@ -70,6 +70,16 @@ object KeyNavTestScenarios {
         waitForIdle()
     }
 
+    private fun ComposeUiTest.typeIntoDropdown(
+        dropdownTag: String,
+        keys: List<androidx.compose.ui.input.key.Key>,
+    ) {
+        onNodeWithTag(dropdownTag).performKeyInput {
+            keys.forEach { pressKey(it) }
+        }
+        waitForIdle()
+    }
+
     // --- Focus on startup ---
 
     fun appDropdownGetsFocusOnStartup() = runComposeUiTest {
@@ -425,7 +435,27 @@ object KeyNavTestScenarios {
         onNodeWithTag(TestTags.gridSectionHeading("common")).assertDoesNotExist()
     }
 
-    fun typingSelectsEntryWhenDropdownIsOpen() = runComposeUiTest {
+    fun typeaheadAutoSelectsMatchingEntryWhenDropdownIsClosed() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        components.viewModel.selectApp("app1")
+        waitForIdle()
+
+        onRoot().performKeyInput { pressKey(androidx.compose.ui.input.key.Key.Tab) }
+        waitForIdle()
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).assertIsFocused()
+
+        typeIntoDropdown(
+            TestTags.RESOURCE_DROPDOWN,
+            listOf(androidx.compose.ui.input.key.Key.L, androidx.compose.ui.input.key.Key.O),
+        )
+
+        assertEquals("res2", components.viewModel.selectedResourceId)
+    }
+
+    fun typeaheadAutoSelectsMatchingEntryWhenDropdownIsExpanded() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)
         waitForIdle()
@@ -442,10 +472,10 @@ object KeyNavTestScenarios {
         onNodeWithTag(TestTags.RESOURCE_DROPDOWN).performClick()
         waitForIdle()
 
-        onAllNodes(isRoot())[0].performKeyInput {
-            pressKey(androidx.compose.ui.input.key.Key.L)
-        }
-        waitForIdle()
+        typeIntoDropdown(
+            TestTags.RESOURCE_DROPDOWN,
+            listOf(androidx.compose.ui.input.key.Key.L, androidx.compose.ui.input.key.Key.O),
+        )
 
         assertEquals("res2", components.viewModel.selectedResourceId)
     }

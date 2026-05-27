@@ -20,6 +20,9 @@ data class CustomColors(
     val toastInfoBorder: Color,
     val toastInfoText: Color,
 
+    // Tabs
+    val tabDirtyIndicator: Color,
+
     // Guidance panel
     val guidanceBackground: Color,
     val guidanceHeaderBackground: Color,

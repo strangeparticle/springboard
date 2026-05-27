@@ -1,6 +1,8 @@
 package com.strangeparticle.springboard.app.unit.ui.tabs
 
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -8,6 +10,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import com.strangeparticle.springboard.app.ui.TestTags
+import com.strangeparticle.springboard.app.ui.brand.AppTheme
+import com.strangeparticle.springboard.app.ui.brand.brands.strangeparticle.StrangeParticleCustomColorsLightTheme
 import com.strangeparticle.springboard.app.ui.tabs.TabIndicator
 import com.strangeparticle.springboard.app.ui.tabs.TabStatusIcon
 import kotlin.test.Test
@@ -84,17 +88,44 @@ class TabIndicatorTest {
     @Test
     fun rendersDirtyIconWhenStatusIsDirty() = runComposeUiTest {
         setContent {
-            TabIndicator(
-                label = "my-tab",
-                isActive = false,
-                statusIcons = listOf(TabStatusIcon.Dirty),
-                tabId = "tab-7",
-                onSelect = {},
-                onClose = {},
-            )
+            AppTheme("strangeparticle-light") {
+                TabIndicator(
+                    label = "my-tab",
+                    isActive = false,
+                    statusIcons = listOf(TabStatusIcon.Dirty),
+                    tabId = "tab-7",
+                    onSelect = {},
+                    onClose = {},
+                )
+            }
         }
         onNodeWithTag(TestTags.tabDirtyIndicator("tab-7"), useUnmergedTree = true).assertExists()
+        onNode(hasContentDescription("Tab has unsaved changes"), useUnmergedTree = true).assertExists()
         onNodeWithTag(TestTags.tabLockIndicator("tab-7")).assertDoesNotExist()
+    }
+
+    @Test
+    fun dirtyIndicatorIsFilledWithThemeYellow() = runComposeUiTest {
+        setContent {
+            AppTheme("strangeparticle-light") {
+                TabIndicator(
+                    label = "my-tab",
+                    isActive = false,
+                    statusIcons = listOf(TabStatusIcon.Dirty),
+                    tabId = "tab-8",
+                    onSelect = {},
+                    onClose = {},
+                )
+            }
+        }
+
+        val pixels = onNodeWithTag(TestTags.tabDirtyIndicator("tab-8"), useUnmergedTree = true)
+            .captureToImage()
+            .toPixelMap()
+        assertEquals(
+            StrangeParticleCustomColorsLightTheme.tabDirtyIndicator,
+            pixels[pixels.width / 2, pixels.height / 2],
+        )
     }
 
     @Test
@@ -116,14 +147,16 @@ class TabIndicatorTest {
     @Test
     fun rendersDirtyAndNonSaveableIconsTogether() = runComposeUiTest {
         setContent {
-            TabIndicator(
-                label = "my-tab",
-                isActive = false,
-                statusIcons = listOf(TabStatusIcon.NonSaveable, TabStatusIcon.Dirty),
-                tabId = "tab-11",
-                onSelect = {},
-                onClose = {},
-            )
+            AppTheme("strangeparticle-light") {
+                TabIndicator(
+                    label = "my-tab",
+                    isActive = false,
+                    statusIcons = listOf(TabStatusIcon.NonSaveable, TabStatusIcon.Dirty),
+                    tabId = "tab-11",
+                    onSelect = {},
+                    onClose = {},
+                )
+            }
         }
         onNodeWithTag(TestTags.tabLockIndicator("tab-11"), useUnmergedTree = true).assertExists()
         onNodeWithTag(TestTags.tabDirtyIndicator("tab-11"), useUnmergedTree = true).assertExists()

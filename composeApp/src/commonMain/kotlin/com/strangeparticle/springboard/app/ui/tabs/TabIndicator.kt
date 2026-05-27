@@ -5,17 +5,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,12 +27,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.springboard.app.ui.TestTags
+import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 
 object TabIndicatorDefaults {
     val Height = 28.dp
@@ -86,24 +89,24 @@ fun TabIndicator(
             Spacer(modifier = Modifier.width(4.dp))
             statusIcons.forEachIndexed { index, statusIcon ->
                 if (index > 0) Spacer(modifier = Modifier.width(2.dp))
-                val (imageVector: ImageVector, tag, contentDescription) = when (statusIcon) {
-                    TabStatusIcon.Dirty -> Triple(
-                        Icons.Outlined.Circle,
-                        TestTags.tabDirtyIndicator(tabId),
-                        "Tab has unsaved changes",
+                when (statusIcon) {
+                    TabStatusIcon.Dirty -> Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(LocalUiBrand.current.customColors.tabDirtyIndicator)
+                            .testTag(TestTags.tabDirtyIndicator(tabId))
+                            .semantics { contentDescription = "Tab has unsaved changes" },
                     )
-                    TabStatusIcon.NonSaveable -> Triple(
-                        Icons.Default.Lock,
-                        TestTags.tabLockIndicator(tabId),
-                        "Tab source is read-only",
-                    )
+                    TabStatusIcon.NonSaveable -> {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Tab source is read-only",
+                            tint = foreground,
+                            modifier = Modifier.size(10.dp).testTag(TestTags.tabLockIndicator(tabId)),
+                        )
+                    }
                 }
-                Icon(
-                    imageVector = imageVector,
-                    contentDescription = contentDescription,
-                    tint = foreground,
-                    modifier = Modifier.size(10.dp).testTag(tag),
-                )
             }
         }
         IconButton(

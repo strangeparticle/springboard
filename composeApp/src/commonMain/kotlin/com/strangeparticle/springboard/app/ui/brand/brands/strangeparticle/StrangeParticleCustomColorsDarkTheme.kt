@@ -21,6 +21,9 @@ val StrangeParticleCustomColorsDarkTheme = CustomColors(
     toastInfoBorder = Color(0xFF2E7D5A),
     toastInfoText = Color(0xFFBFEBD5),
 
+    // Tabs
+    tabDirtyIndicator = Color(0xFFFFD54F),
+
     // Guidance panel
     guidanceBackground = Color(0xFF1D1A14),
     guidanceHeaderBackground = Color(0xFF2A241B),

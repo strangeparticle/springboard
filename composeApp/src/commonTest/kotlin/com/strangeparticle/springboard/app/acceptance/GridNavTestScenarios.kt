@@ -868,4 +868,36 @@ object GridNavTestScenarios {
         // Cells in other rows must not be highlighted.
         assertEquals(false, cellHighlighted("app1", "res2"))
     }
+
+    fun movingPointerFromActivatorCellToRowHeaderClearsActivatorPreview() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        val cellBounds = onNodeWithTag(TestTags.gridCell("app1", "res1"))
+            .fetchSemanticsNode()
+            .boundsInRoot
+        val rowHeaderBounds = onNodeWithTag(TestTags.gridRowLabel("res1"))
+            .fetchSemanticsNode()
+            .boundsInRoot
+
+        onRoot().performMouseInput {
+            moveTo(cellBounds.center)
+        }
+        waitForIdle()
+
+        assertEquals(
+            "url: https://example.com/common/app1/dash",
+            components.viewModel.hoveredActivatorPreview,
+        )
+
+        onRoot().performMouseInput {
+            moveTo(Offset(rowHeaderBounds.center.x, cellBounds.center.y))
+        }
+        waitForIdle()
+
+        assertNull(components.viewModel.hoveredActivatorPreview)
+    }
 }

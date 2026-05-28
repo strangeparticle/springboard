@@ -19,6 +19,7 @@ import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDef
 import com.strangeparticle.springboard.app.command.parseCommandApiStartupArgs
 import com.strangeparticle.springboard.app.aws.AwsCliCredentialProvider
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -123,6 +124,14 @@ fun main(args: Array<String>) {
                     snapshotProvider = { SpringboardAppSnapshot.capture(viewModel).toCompactJson() },
                     discoveryFile = CommandApiDiscoveryFile.fromPath(commandApiStartupArgs.discoveryFilePath),
                     preferredPort = commandApiStartupArgs.preferredPort,
+                    toolCallExecutionContext = object : SpringboardToolCallExecutionContext {
+                        override val viewModel = viewModel
+
+                        override fun markStateChanged() {
+                        }
+
+                        override suspend fun awaitUserApproval(toolCallId: String): Boolean = false
+                    },
                 ).start()
             } else {
                 null

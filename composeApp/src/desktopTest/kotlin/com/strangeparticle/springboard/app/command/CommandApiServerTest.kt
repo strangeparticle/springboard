@@ -1,5 +1,10 @@
 package com.strangeparticle.springboard.app.command
 
+import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.toolcall.ToolCallHandler
+import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.command.SpringboardCommand
 import com.strangeparticle.springboard.command.SpringboardCommandErrorCode
 import com.strangeparticle.springboard.command.SpringboardCommandJson
@@ -8,9 +13,11 @@ import com.strangeparticle.springboard.command.dto.SpringboardCommandDto
 import com.strangeparticle.springboard.command.dto.SpringboardCommandRequestEnvelopeDto
 import com.strangeparticle.springboard.command.dto.SpringboardCommandResponseEnvelopeDto
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -189,6 +196,8 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"name\":\"Springboard Command API\""))
             assertTrue(response.body.contains("\"/api/status\""))
             assertTrue(response.body.contains("\"/api/commands/activate-coordinate\""))
+            assertTrue(response.body.contains("\"/api/tools\""))
+            assertTrue(response.body.contains("\"/api/tools/{toolName}\""))
             assertTrue(response.body.contains("\"/api/commands/open-springboard\""))
             assertTrue(response.body.contains("\"/api/commands/switch-tab\""))
             assertTrue(response.body.contains("\"/api/commands/show-guidance\""))
@@ -239,6 +248,150 @@ internal class CommandApiServerTest {
             assertTrue(commands.any {
                 it.jsonObject.getValue("id").jsonPrimitive.content == "activateCoordinate"
             })
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool catalog endpoint returns provider-visible tool metadata`() {
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+        )
+        val handle = server.start()
+        try {
+            val response = getText(handle.baseUrl, "/api/tools", token = "secret-token")
+            val root = Json.parseToJsonElement(response.body).jsonObject
+            val tools = root.getValue("tools").jsonArray
+            val saveSpringboard = tools.single {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "save_springboard"
+            }.jsonObject
+
+            assertEquals(200, response.statusCode)
+            assertEquals(38, tools.size)
+            assertTrue(tools.any {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
+            })
+            assertEquals("true", saveSpringboard.getValue("requiresUserConfirmation").jsonPrimitive.content)
+            assertTrue(saveSpringboard.getValue("schema").jsonObject.isNotEmpty())
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool catalog endpoint rejects missing bearer token with failure envelope`() {
+        val server = CommandApiServerDefaultImpl(
+            executor = RecordingCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+        )
+        val handle = server.start()
+        try {
+            val response = getText(handle.baseUrl, "/api/tools", token = null)
+
+            assertEquals(401, response.statusCode)
+            assertTrue(response.body.contains("\"protocolVersion\":1"))
+            assertTrue(response.body.contains("\"code\":\"unauthorized\""))
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool endpoint dispatches wrapper arguments through registered handler`() {
+        val handler = RecordingToolCallHandler()
+        val registry = ToolCallRegistry().apply { register(handler) }
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+            toolCallRegistry = registry,
+            toolCallExecutionContext = FakeToolCallExecutionContext,
+        )
+        val handle = server.start()
+        try {
+            val response = postJson(
+                baseUrl = handle.baseUrl,
+                path = "/api/tools/test_tool",
+                token = "secret-token",
+                body = """{"requestId":"tool-request-1","arguments":{"message":"hello"}}""",
+            )
+            val root = Json.parseToJsonElement(response.body).jsonObject
+            val result = root.getValue("result").jsonObject
+
+            assertEquals(200, response.statusCode)
+            assertEquals("tool-request-1", root.getValue("requestId").jsonPrimitive.content)
+            assertEquals("success", result.getValue("type").jsonPrimitive.content)
+            assertEquals("tool-request-1", handler.calls.single().toolCallId)
+            assertEquals("""{"message":"hello"}""", handler.calls.single().argumentsAsJsonString)
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool endpoint accepts raw argument object`() {
+        val handler = RecordingToolCallHandler()
+        val registry = ToolCallRegistry().apply { register(handler) }
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+            toolCallRegistry = registry,
+            toolCallExecutionContext = FakeToolCallExecutionContext,
+        )
+        val handle = server.start()
+        try {
+            val response = postJson(
+                baseUrl = handle.baseUrl,
+                path = "/api/tools/test_tool",
+                token = "secret-token",
+                body = """{"message":"hello"}""",
+            )
+
+            assertEquals(200, response.statusCode)
+            assertTrue(response.body.contains("\"requestId\":null"))
+            assertEquals("""{"message":"hello"}""", handler.calls.single().argumentsAsJsonString)
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool endpoint returns structured unknown tool failure`() {
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+            toolCallRegistry = ToolCallRegistry(),
+            toolCallExecutionContext = FakeToolCallExecutionContext,
+        )
+        val handle = server.start()
+        try {
+            val response = postJson(
+                baseUrl = handle.baseUrl,
+                path = "/api/tools/missing_tool",
+                token = "secret-token",
+                body = """{"requestId":"tool-request-2","arguments":{}}""",
+            )
+
+            assertEquals(200, response.statusCode)
+            assertTrue(response.body.contains("\"requestId\":\"tool-request-2\""))
+            assertTrue(response.body.contains("\"type\":\"failure\""))
+            assertTrue(response.body.contains("\"code\":\"unknown_tool\""))
         } finally {
             handle.stop()
         }
@@ -589,4 +742,34 @@ internal class CommandApiServerTest {
             return SpringboardCommandResult.Success("Recorded.")
         }
     }
+
+    private object FakeToolCallExecutionContext : ToolCallExecutionContext
+
+    private class RecordingToolCallHandler : ToolCallHandler {
+        val calls = mutableListOf<ToolCallHandlerCall>()
+
+        override val providerToolId: String = "test_tool"
+        override val description: String = "Records tool calls for tests."
+        override val schema = buildJsonObject {
+            put("type", "object")
+            put("additionalProperties", true)
+        }
+
+        override suspend fun executeToolCallHandler(
+            toolCallId: String,
+            argumentsAsJsonString: String,
+            context: ToolCallExecutionContext,
+        ): ToolCallHandlerResponse {
+            calls += ToolCallHandlerCall(
+                toolCallId = toolCallId,
+                argumentsAsJsonString = argumentsAsJsonString,
+            )
+            return ToolCallExecutionResult(success = true, message = "Recorded.")
+        }
+    }
+
+    private data class ToolCallHandlerCall(
+        val toolCallId: String,
+        val argumentsAsJsonString: String,
+    )
 }

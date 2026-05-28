@@ -19,6 +19,8 @@ internal class ToolCallRegistry {
 
     fun getDefinitions(): List<AiToolCallDefinition> = tools.values.map { it.toDefinition() }
 
+    fun getHandlers(): List<ToolCallHandler> = tools.values.toList()
+
     fun isRegistered(toolName: String): Boolean = toolName in tools
 
     fun getHandler(providerToolId: String): ToolCallHandler? = tools[providerToolId]

@@ -1,5 +1,12 @@
 package com.strangeparticle.springboard.app.command
 
+import com.strangeparticle.luther.toolcall.ToolCallDispatcher
+import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResponse
+import com.strangeparticle.springboard.app.luther.toolcall.createSpringboardToolCallRegistry
 import com.strangeparticle.springboard.command.SpringboardCommandErrorCode
 import com.strangeparticle.springboard.command.SpringboardCommandJson
 import com.strangeparticle.springboard.command.SpringboardCommandResult
@@ -9,6 +16,7 @@ import com.strangeparticle.springboard.command.dto.SpringboardCommandDto
 import com.strangeparticle.springboard.command.dto.SpringboardCommandDtoMapper
 import com.strangeparticle.springboard.command.dto.SpringboardCommandRequestEnvelopeDto
 import com.strangeparticle.springboard.command.dto.SpringboardCommandResponseEnvelopeDto
+import com.strangeparticle.springboard.command.dto.SpringboardCommandResultDto
 import com.strangeparticle.springboard.command.dto.SpringboardOpenSpringboardRequestDto
 import com.strangeparticle.springboard.command.dto.SpringboardShowGuidanceRequestDto
 import com.strangeparticle.springboard.command.dto.SpringboardSwitchTabRequestDto
@@ -22,13 +30,17 @@ import io.ktor.server.request.ApplicationRequest
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respondText
+import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
@@ -36,13 +48,17 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.time.Instant
 
-class CommandApiServerDefaultImpl(
+internal class CommandApiServerDefaultImpl(
     private val executor: SpringboardCommandExecutor,
     private val snapshotProvider: () -> String = { """{"tabs":[],"activeTabId":null}""" },
     private val discoveryFile: CommandApiDiscoveryFile = CommandApiDiscoveryFile(),
     private val preferredPort: Int = 47382,
     private val token: String = CommandApiTokenGenerator.generate(),
+    private val toolCallRegistry: ToolCallRegistry = createSpringboardToolCallRegistry(),
+    private val toolCallExecutionContext: ToolCallExecutionContext? = null,
 ) : CommandApiServer {
+    private val toolCallDispatcher = ToolCallDispatcher(toolCallRegistry)
+
     override fun start(): CommandApiServerHandle {
         val port = choosePort()
         val baseUrl = "http://127.0.0.1:$port"
@@ -55,60 +71,38 @@ class CommandApiServerDefaultImpl(
                         status = HttpStatusCode.OK,
                     )
                 }
-                get("/api/commands") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@get
-                    }
-                    call.respondText(
+                authenticatedGet("/api/commands") {
+                    respondText(
                         text = commandCatalogJson(),
                         contentType = ContentType.Application.Json,
                         status = HttpStatusCode.OK,
                     )
                 }
-                get("/api/snapshot") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@get
-                    }
-                    call.respondText(
+                authenticatedGet("/api/tools") {
+                    respondText(
+                        text = toolCatalogJson(),
+                        contentType = ContentType.Application.Json,
+                        status = HttpStatusCode.OK,
+                    )
+                }
+                authenticatedGet("/api/snapshot") {
+                    respondText(
                         text = snapshotProvider(),
                         contentType = ContentType.Application.Json,
                         status = HttpStatusCode.OK,
                     )
                 }
-                get("/api/status") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@get
-                    }
-                    call.respondExecutedCommand(
+                authenticatedGet("/api/status") {
+                    respondExecutedCommand(
                         requestId = null,
                         commandDto = SpringboardCommandDto.Status,
                     )
                 }
-                post("/api/commands") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@post
-                    }
-
+                authenticatedPost("/api/commands") {
                     val request = runCatching {
-                        SpringboardCommandJson.decodeRequest(call.receiveText())
+                        SpringboardCommandJson.decodeRequest(receiveText())
                     }.getOrElse {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = null,
@@ -116,11 +110,11 @@ class CommandApiServerDefaultImpl(
                                 message = "Invalid command request JSON.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
                     if (request.protocolVersion != 1) {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = request.requestId,
@@ -128,27 +122,19 @@ class CommandApiServerDefaultImpl(
                                 message = "Unsupported command protocol version: ${request.protocolVersion}.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
-                    call.respondExecutedCommand(
+                    respondExecutedCommand(
                         requestId = request.requestId,
                         commandDto = request.command,
                     )
                 }
-                post("/api/commands/activate-coordinate") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@post
-                    }
-
+                authenticatedPost("/api/commands/activate-coordinate") {
                     val request = runCatching {
-                        SpringboardCommandJson.json.decodeFromString<SpringboardActivateCoordinateRequestDto>(call.receiveText())
+                        SpringboardCommandJson.json.decodeFromString<SpringboardActivateCoordinateRequestDto>(receiveText())
                     }.getOrElse {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = null,
@@ -156,27 +142,19 @@ class CommandApiServerDefaultImpl(
                                 message = "Invalid activate-coordinate request JSON.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
-                    call.respondExecutedCommand(
+                    respondExecutedCommand(
                         requestId = request.requestId,
                         commandDto = SpringboardCommandDtoMapper.toCommandDto(request),
                     )
                 }
-                post("/api/commands/open-springboard") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@post
-                    }
-
+                authenticatedPost("/api/commands/open-springboard") {
                     val request = runCatching {
-                        SpringboardCommandJson.json.decodeFromString<SpringboardOpenSpringboardRequestDto>(call.receiveText())
+                        SpringboardCommandJson.json.decodeFromString<SpringboardOpenSpringboardRequestDto>(receiveText())
                     }.getOrElse {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = null,
@@ -184,27 +162,19 @@ class CommandApiServerDefaultImpl(
                                 message = "Invalid open-springboard request JSON.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
-                    call.respondExecutedCommand(
+                    respondExecutedCommand(
                         requestId = request.requestId,
                         commandDto = SpringboardCommandDtoMapper.toCommandDto(request),
                     )
                 }
-                post("/api/commands/switch-tab") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@post
-                    }
-
+                authenticatedPost("/api/commands/switch-tab") {
                     val request = runCatching {
-                        SpringboardCommandJson.json.decodeFromString<SpringboardSwitchTabRequestDto>(call.receiveText())
+                        SpringboardCommandJson.json.decodeFromString<SpringboardSwitchTabRequestDto>(receiveText())
                     }.getOrElse {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = null,
@@ -212,27 +182,19 @@ class CommandApiServerDefaultImpl(
                                 message = "Invalid switch-tab request JSON.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
-                    call.respondExecutedCommand(
+                    respondExecutedCommand(
                         requestId = request.requestId,
                         commandDto = SpringboardCommandDtoMapper.toCommandDto(request),
                     )
                 }
-                post("/api/commands/show-guidance") {
-                    if (!call.request.hasValidToken()) {
-                        call.respondCommand(
-                            status = HttpStatusCode.Unauthorized,
-                            response = unauthorizedResponse(),
-                        )
-                        return@post
-                    }
-
+                authenticatedPost("/api/commands/show-guidance") {
                     val request = runCatching {
-                        SpringboardCommandJson.json.decodeFromString<SpringboardShowGuidanceRequestDto>(call.receiveText())
+                        SpringboardCommandJson.json.decodeFromString<SpringboardShowGuidanceRequestDto>(receiveText())
                     }.getOrElse {
-                        call.respondCommand(
+                        respondCommand(
                             status = HttpStatusCode.BadRequest,
                             response = failureResponse(
                                 requestId = null,
@@ -240,12 +202,34 @@ class CommandApiServerDefaultImpl(
                                 message = "Invalid show-guidance request JSON.",
                             ),
                         )
-                        return@post
+                        return@authenticatedPost
                     }
 
-                    call.respondExecutedCommand(
+                    respondExecutedCommand(
                         requestId = request.requestId,
                         commandDto = SpringboardCommandDtoMapper.toCommandDto(request),
+                    )
+                }
+                authenticatedPost("/api/tools/{toolName}") {
+                    val toolName = parameters["toolName"].orEmpty()
+                    val body = receiveText()
+                    val parsedRequest = parseToolRequest(body).getOrElse {
+                        respondCommand(
+                            status = HttpStatusCode.BadRequest,
+                            response = SpringboardCommandResponseEnvelopeDto(
+                                requestId = null,
+                                result = SpringboardCommandResultDto.Failure(
+                                    code = SpringboardCommandErrorCode.InvalidRequest.wireValue,
+                                    message = "Invalid tool request JSON.",
+                                ),
+                            ),
+                        )
+                        return@authenticatedPost
+                    }
+                    respondExecutedTool(
+                        requestId = parsedRequest.requestId,
+                        toolName = toolName,
+                        argumentsAsJsonString = parsedRequest.argumentsAsJsonString,
                     )
                 }
             }
@@ -312,12 +296,63 @@ class CommandApiServerDefaultImpl(
     private fun ApplicationRequest.hasValidToken(): Boolean =
         header("Authorization") == "Bearer $token"
 
+    private fun Route.authenticatedGet(
+        path: String,
+        handler: suspend ApplicationCall.() -> Unit,
+    ) {
+        get(path) {
+            if (call.respondUnauthorizedIfNeeded()) {
+                call.handler()
+            }
+        }
+    }
+
+    private fun Route.authenticatedPost(
+        path: String,
+        handler: suspend ApplicationCall.() -> Unit,
+    ) {
+        post(path) {
+            if (call.respondUnauthorizedIfNeeded()) {
+                call.handler()
+            }
+        }
+    }
+
+    private suspend fun ApplicationCall.respondUnauthorizedIfNeeded(): Boolean {
+        if (request.hasValidToken()) {
+            return true
+        }
+        respondCommand(
+            status = HttpStatusCode.Unauthorized,
+            response = unauthorizedResponse(),
+        )
+        return false
+    }
+
     private fun commandCatalogJson(): String {
         val catalog = buildJsonObject {
             put("protocolVersion", 1)
             putJsonArray("commands") {
                 SpringboardCommandCatalog.definitions.forEach { definition ->
                     add(SpringboardCommandJson.json.encodeToJsonElement(SpringboardCommandDtoMapper.toDto(definition)))
+                }
+            }
+        }
+        return SpringboardCommandJson.json.encodeToString(catalog)
+    }
+
+    private fun toolCatalogJson(): String {
+        val catalog = buildJsonObject {
+            put("protocolVersion", 1)
+            putJsonArray("tools") {
+                toolCallRegistry.getHandlers().forEach { tool ->
+                    add(buildJsonObject {
+                        put("name", tool.providerToolId)
+                        put("description", tool.description)
+                        put("requiresUserConfirmation", tool.requiresUserConfirmation)
+                        put("endpoint", "/api/tools/${tool.providerToolId}")
+                        put("schema", tool.schema)
+                    })
                 }
             }
         }
@@ -349,6 +384,12 @@ class CommandApiServerDefaultImpl(
                 })
                 add(buildJsonObject {
                     put("method", "GET")
+                    put("path", "/api/tools")
+                    put("description", "Returns the full provider-visible tool catalog used by Springboard's assistant.")
+                    put("requiresAuth", true)
+                })
+                add(buildJsonObject {
+                    put("method", "GET")
                     put("path", "/api/snapshot")
                     put("description", "Returns the current Springboard app snapshot.")
                     put("requiresAuth", true)
@@ -364,6 +405,21 @@ class CommandApiServerDefaultImpl(
                     put("path", "/api/commands")
                     put("description", "Executes a generic command request envelope.")
                     put("requiresAuth", true)
+                })
+                // every tool is exposed as a callable endpoint
+                add(buildJsonObject {
+                    put("method", "POST")
+                    put("path", "/api/tools/{toolName}")
+                    put("description", "Executes a provider-visible Springboard tool with JSON arguments.")
+                    put("requiresAuth", true)
+                    // This is the generic HTTP wrapper. Each tool's actual argument shape
+                    // is published in GET /api/tools as that tool's provider schema.
+                    putJsonObject("exampleRequest") {
+                        put("requestId", "request-tool")
+                        putJsonObject("arguments") {
+                            put("tab_id", "tab-1")
+                        }
+                    }
                 })
                 add(buildJsonObject {
                     put("method", "POST")
@@ -416,6 +472,7 @@ class CommandApiServerDefaultImpl(
                     add(SpringboardCommandJson.json.encodeToJsonElement(SpringboardCommandDtoMapper.toDto(definition)))
                 }
             }
+            put("toolCatalog", "/api/tools")
             putJsonObject("response") {
                 putJsonObject("successExample") {
                     put("protocolVersion", 1)
@@ -437,6 +494,20 @@ class CommandApiServerDefaultImpl(
             }
         }
         return SpringboardCommandJson.json.encodeToString(help)
+    }
+
+    private fun parseToolRequest(body: String): Result<CommandApiToolRequest> = runCatching {
+        val root = SpringboardCommandJson.json.parseToJsonElement(body)
+        val rootObject = root.jsonObject
+        val requestId = rootObject["requestId"]?.jsonPrimitive?.contentOrNull
+        // Callers may send either {"requestId": "...", "arguments": {...}} or the raw
+        // provider-style argument object. Tool-specific DTO decoding happens in the
+        // registered ToolCallHandler, not in the HTTP transport layer.
+        val arguments = rootObject["arguments"] ?: root
+        CommandApiToolRequest(
+            requestId = requestId,
+            argumentsAsJsonString = SpringboardCommandJson.json.encodeToString(arguments),
+        )
     }
 
     private suspend fun ApplicationCall.respondExecutedCommand(
@@ -472,6 +543,76 @@ class CommandApiServerDefaultImpl(
         )
     }
 
+    private suspend fun ApplicationCall.respondExecutedTool(
+        requestId: String?,
+        toolName: String,
+        argumentsAsJsonString: String,
+    ) {
+        val context = toolCallExecutionContext
+        if (context == null) {
+            respondCommand(
+                status = HttpStatusCode.ServiceUnavailable,
+                response = SpringboardCommandResponseEnvelopeDto(
+                    requestId = requestId,
+                    result = SpringboardCommandResultDto.Failure(
+                        code = "toolExecutionUnavailable",
+                        message = "Tool execution is not available in this Springboard process.",
+                    ),
+                ),
+            )
+            return
+        }
+
+        val response = runCatching {
+            toolCallDispatcher.execute(
+                toolCallId = requestId ?: "command-api-$toolName",
+                providerToolId = toolName,
+                argumentsAsJsonString = argumentsAsJsonString,
+                context = context,
+            )
+        }.getOrElse {
+            ToolCallExecutionResult(
+                success = false,
+                message = "Tool execution failed.",
+                code = "internal_error",
+            )
+        }
+
+        respondCommand(
+            status = HttpStatusCode.OK,
+            response = SpringboardCommandResponseEnvelopeDto(
+                requestId = requestId,
+                result = response.toCommandResultDto(),
+            ),
+        )
+    }
+
+    private fun ToolCallHandlerResponse.toCommandResultDto(): SpringboardCommandResultDto {
+        val providerContent = toProviderMessageContent(SpringboardCommandJson.json)
+        val data = runCatching { SpringboardCommandJson.json.parseToJsonElement(providerContent) }.getOrNull()
+        return when (this) {
+            is SpringboardToolCallHandlerResponse -> if (success) {
+                SpringboardCommandResultDto.Success(message = message, data = data)
+            } else {
+                SpringboardCommandResultDto.Failure(
+                    code = code ?: "toolExecutionFailed",
+                    message = message ?: "Tool execution failed.",
+                    details = data,
+                )
+            }
+            is ToolCallExecutionResult -> if (success) {
+                SpringboardCommandResultDto.Success(message = message, data = data)
+            } else {
+                SpringboardCommandResultDto.Failure(
+                    code = code ?: "toolExecutionFailed",
+                    message = message ?: "Tool execution failed.",
+                    details = data,
+                )
+            }
+            else -> SpringboardCommandResultDto.Success(data = data)
+        }
+    }
+
     private suspend fun io.ktor.server.application.ApplicationCall.respondCommand(
         status: HttpStatusCode,
         response: SpringboardCommandResponseEnvelopeDto,
@@ -498,4 +639,9 @@ class CommandApiServerDefaultImpl(
             stopServer()
         }
     }
+
+    private data class CommandApiToolRequest(
+        val requestId: String?,
+        val argumentsAsJsonString: String,
+    )
 }

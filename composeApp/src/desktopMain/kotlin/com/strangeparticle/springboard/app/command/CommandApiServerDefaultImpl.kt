@@ -216,12 +216,10 @@ internal class CommandApiServerDefaultImpl(
                     val parsedRequest = parseToolRequest(body).getOrElse {
                         respondCommand(
                             status = HttpStatusCode.BadRequest,
-                            response = SpringboardCommandResponseEnvelopeDto(
+                            response = toolFailureResponse(
                                 requestId = null,
-                                result = SpringboardCommandResultDto.Failure(
-                                    code = SpringboardCommandErrorCode.InvalidRequest.wireValue,
-                                    message = "Invalid tool request JSON.",
-                                ),
+                                code = SpringboardCommandErrorCode.InvalidRequest.wireValue,
+                                message = "Invalid tool request JSON.",
                             ),
                         )
                         return@authenticatedPost
@@ -344,6 +342,22 @@ internal class CommandApiServerDefaultImpl(
     private fun toolCatalogJson(): String {
         val catalog = buildJsonObject {
             put("protocolVersion", 1)
+            put("toolCount", toolCallRegistry.getHandlers().size)
+            putJsonObject("requestBody") {
+                put(
+                    "description",
+                    "POST either the wrapper body with requestId and arguments, or the raw argument object matching the tool schema.",
+                )
+                putJsonObject("wrapperExample") {
+                    put("requestId", "request-tool")
+                    putJsonObject("arguments") {
+                        put("tab_id", "tab-1")
+                    }
+                }
+                putJsonObject("rawArgumentsExample") {
+                    put("tab_id", "tab-1")
+                }
+            }
             putJsonArray("tools") {
                 toolCallRegistry.getHandlers().forEach { tool ->
                     add(buildJsonObject {
@@ -369,6 +383,20 @@ internal class CommandApiServerDefaultImpl(
                 put("description", "Read the token from the local discovery file and send Authorization: Bearer <token>.")
             }
             put("discoveryFile", discoveryFile.path.toString())
+            put("toolCount", toolCallRegistry.getHandlers().size)
+            putJsonObject("toolExecution") {
+                put("catalog", "/api/tools")
+                put("endpointTemplate", "/api/tools/{toolName}")
+                put(
+                    "description",
+                    "Use GET /api/tools to discover each provider-visible tool name, schema, endpoint, and confirmation requirement.",
+                )
+                put("confirmationRequiredBehavior", "Tools marked requiresUserConfirmation return an approvalRequired failure over HTTP.")
+                putJsonObject("requestBody") {
+                    put("wrapper", "{\"requestId\":\"request-tool\",\"arguments\":{...}}")
+                    put("rawArguments", "{...}")
+                }
+            }
             putJsonArray("endpoints") {
                 add(buildJsonObject {
                     put("method", "GET")
@@ -548,16 +576,39 @@ internal class CommandApiServerDefaultImpl(
         toolName: String,
         argumentsAsJsonString: String,
     ) {
+        val tool = toolCallRegistry.getHandler(toolName)
+        if (tool == null) {
+            respondCommand(
+                status = HttpStatusCode.OK,
+                response = toolFailureResponse(
+                    requestId = requestId,
+                    code = "unknown_tool",
+                    message = "Unknown tool: '$toolName'",
+                ),
+            )
+            return
+        }
+
+        if (tool.requiresUserConfirmation) {
+            respondCommand(
+                status = HttpStatusCode.OK,
+                response = toolFailureResponse(
+                    requestId = requestId,
+                    code = "approvalRequired",
+                    message = "Tool '$toolName' requires user confirmation and cannot be executed directly over the command API.",
+                ),
+            )
+            return
+        }
+
         val context = toolCallExecutionContext
         if (context == null) {
             respondCommand(
                 status = HttpStatusCode.ServiceUnavailable,
-                response = SpringboardCommandResponseEnvelopeDto(
+                response = toolFailureResponse(
                     requestId = requestId,
-                    result = SpringboardCommandResultDto.Failure(
-                        code = "toolExecutionUnavailable",
-                        message = "Tool execution is not available in this Springboard process.",
-                    ),
+                    code = "toolExecutionUnavailable",
+                    message = "Tool execution is not available in this Springboard process.",
                 ),
             )
             return
@@ -586,6 +637,19 @@ internal class CommandApiServerDefaultImpl(
             ),
         )
     }
+
+    private fun toolFailureResponse(
+        requestId: String?,
+        code: String,
+        message: String,
+    ): SpringboardCommandResponseEnvelopeDto =
+        SpringboardCommandResponseEnvelopeDto(
+            requestId = requestId,
+            result = SpringboardCommandResultDto.Failure(
+                code = code,
+                message = message,
+            ),
+        )
 
     private fun ToolCallHandlerResponse.toCommandResultDto(): SpringboardCommandResultDto {
         val providerContent = toProviderMessageContent(SpringboardCommandJson.json)

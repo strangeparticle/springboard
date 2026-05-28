@@ -205,6 +205,10 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
             assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
+            assertTrue(response.body.contains("\"toolCount\":38"))
+            assertTrue(response.body.contains("\"toolExecution\""))
+            assertTrue(response.body.contains("approvalRequired"))
+            assertTrue(response.body.contains("rawArguments"))
         } finally {
             handle.stop()
         }
@@ -272,6 +276,9 @@ internal class CommandApiServerTest {
             }.jsonObject
 
             assertEquals(200, response.statusCode)
+            assertEquals("38", root.getValue("toolCount").jsonPrimitive.content)
+            assertTrue(root.getValue("requestBody").jsonObject.containsKey("wrapperExample"))
+            assertTrue(root.getValue("requestBody").jsonObject.containsKey("rawArgumentsExample"))
             assertEquals(38, tools.size)
             assertTrue(tools.any {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
@@ -392,6 +399,38 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"requestId\":\"tool-request-2\""))
             assertTrue(response.body.contains("\"type\":\"failure\""))
             assertTrue(response.body.contains("\"code\":\"unknown_tool\""))
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
+    fun `tool endpoint returns approval required failure for confirmation-gated tools`() {
+        val handler = RecordingToolCallHandler(requiresUserConfirmation = true)
+        val registry = ToolCallRegistry().apply { register(handler) }
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            preferredPort = 0,
+            token = "secret-token",
+            toolCallRegistry = registry,
+            toolCallExecutionContext = FakeToolCallExecutionContext,
+        )
+        val handle = server.start()
+        try {
+            val response = postJson(
+                baseUrl = handle.baseUrl,
+                path = "/api/tools/test_tool",
+                token = "secret-token",
+                body = """{"requestId":"tool-request-3","arguments":{"message":"hello"}}""",
+            )
+
+            assertEquals(200, response.statusCode)
+            assertTrue(response.body.contains("\"requestId\":\"tool-request-3\""))
+            assertTrue(response.body.contains("\"type\":\"failure\""))
+            assertTrue(response.body.contains("\"code\":\"approvalRequired\""))
+            assertEquals(0, handler.calls.size)
         } finally {
             handle.stop()
         }
@@ -745,7 +784,9 @@ internal class CommandApiServerTest {
 
     private object FakeToolCallExecutionContext : ToolCallExecutionContext
 
-    private class RecordingToolCallHandler : ToolCallHandler {
+    private class RecordingToolCallHandler(
+        override val requiresUserConfirmation: Boolean = false,
+    ) : ToolCallHandler {
         val calls = mutableListOf<ToolCallHandlerCall>()
 
         override val providerToolId: String = "test_tool"

@@ -73,20 +73,12 @@ Then inspect the instance-specific discovery file to find the base URL and beare
 cat /private/tmp/springboard-codex-control-api.json
 ```
 
-Example read-only status check:
+Example read-only status check, using the `baseUrl` and `token` values from that discovery file:
 
 ```shell
-python3 - <<'PY'
-import json, pathlib, subprocess
-
-discovery = pathlib.Path("/private/tmp/springboard-codex-control-api.json")
-data = json.loads(discovery.read_text())
-subprocess.run([
-    "curl", "-sS", "-i",
-    "-H", f"Authorization: Bearer {data['token']}",
-    f"{data['baseUrl']}/api/status",
-], check=False)
-PY
+curl -sS -i \
+  -H "Authorization: Bearer <token-from-discovery-file>" \
+  "<base-url-from-discovery-file>/api/status"
 ```
 
 Use `--disable-command-api` when a local run should not start the command API at all.

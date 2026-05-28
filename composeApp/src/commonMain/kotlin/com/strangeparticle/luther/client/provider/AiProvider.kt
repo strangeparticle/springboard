@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.springboard.app.settings.SettingsItem
 import com.strangeparticle.springboard.app.settings.SettingsItemContext
+import com.strangeparticle.springboard.app.settings.items.base.DropDownFromApiCallSettingsItem
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 
 /**
@@ -28,6 +29,7 @@ internal interface AiProvider {
 
     fun settingsItems(): List<SettingsItem<*>>
     fun createClient(context: SettingsItemContext): AiProviderClient
+    fun preferredModelSetting(): DropDownFromApiCallSettingsItem
 
     /**
      * The currently-selected model id for this provider, read via [context]

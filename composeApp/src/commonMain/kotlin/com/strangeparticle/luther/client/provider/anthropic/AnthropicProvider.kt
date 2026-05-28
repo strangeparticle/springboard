@@ -16,6 +16,8 @@ internal object AnthropicProvider : AiProvider {
         AnthropicPreferredModelSetting,
     )
 
+    override fun preferredModelSetting() = AnthropicPreferredModelSetting
+
     override fun createClient(context: SettingsItemContext): AiProviderClient {
         val apiKey = context.get(AnthropicApiKeySetting).orEmpty()
         return AiProviderClientAnthropic(

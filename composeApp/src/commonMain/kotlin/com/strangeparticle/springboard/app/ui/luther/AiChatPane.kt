@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.ui.luther
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -23,11 +24,15 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,6 +60,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
@@ -96,6 +102,90 @@ internal object AiChatPaneDefaults {
         fontSize = 13.sp,
         lineHeight = 17.sp,
     )
+}
+
+@Composable
+private fun AiChatPaneModelDropdown(
+    state: AiChatPaneModelPickerState,
+    fallbackModelLabel: String,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val hasOptions = state.options.isNotEmpty()
+    val selectedDisplayName = (
+        state.options.firstOrNull { it.id == state.selectedModelId }?.displayName
+            ?: state.selectedModelLabel
+        ).ifBlank { fallbackModelLabel }
+    val displayedText = when {
+        state.isLoading -> "Loading"
+        state.errorMessage != null && selectedDisplayName.isBlank() -> "Error"
+        !hasOptions && selectedDisplayName.isBlank() -> "No models"
+        else -> selectedDisplayName
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Box {
+            Row(
+                modifier = Modifier
+                    .widthIn(min = 92.dp, max = 180.dp)
+                    .height(24.dp)
+                    .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.extraSmall)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.extraSmall)
+                    .clickable(enabled = hasOptions && !state.isLoading) { expanded = true }
+                    .padding(start = 8.dp, end = 4.dp)
+                    .semantics(mergeDescendants = true) {}
+                    .testTag(TestTags.AI_CHAT_MODEL_DROPDOWN),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = displayedText.ifBlank { "(select)" },
+                    fontSize = 11.sp,
+                    color = if (state.errorMessage != null) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            DropdownMenu(
+                expanded = expanded && hasOptions,
+                onDismissRequest = { expanded = false },
+            ) {
+                state.options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.displayName, fontSize = 13.sp) },
+                        onClick = {
+                            state.onSelectModel(option.id)
+                            expanded = false
+                        },
+                        modifier = Modifier.testTag(TestTags.aiChatModelDropdownOption(option.id)),
+                    )
+                }
+            }
+        }
+        IconButton(
+            onClick = state.onRefresh,
+            modifier = Modifier.size(24.dp).testTag(TestTags.AI_CHAT_MODEL_REFRESH_BUTTON),
+        ) {
+            if (state.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Reload assistant model options",
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -224,13 +314,39 @@ internal fun AiChatPane(
                             )
                             if (state.isConfigured) {
                                 Spacer(Modifier.width(8.dp))
-                                SelectionContainer(modifier = Modifier.alignBy(FirstBaseline)) {
-                                    Text(
-                                        text = "${state.providerLabel}: ${state.modelLabel}",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Normal,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                Text(
+                                    text = "${state.providerLabel}:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Normal,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.alignBy(FirstBaseline),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                if (state.modelPicker != null) {
+                                    AiChatPaneModelDropdown(
+                                        state = state.modelPicker,
+                                        fallbackModelLabel = state.modelLabel,
+                                        modifier = Modifier.alignBy(FirstBaseline),
                                     )
+                                    if (state.modelPicker.errorMessage != null) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            text = "Model list error: ${state.modelPicker.errorMessage}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.error,
+                                            maxLines = 1,
+                                            modifier = Modifier.alignBy(FirstBaseline),
+                                        )
+                                    }
+                                } else {
+                                    SelectionContainer(modifier = Modifier.alignBy(FirstBaseline)) {
+                                        Text(
+                                            text = state.modelLabel,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Normal,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
                                 }
                             }
                         }

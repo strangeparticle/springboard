@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.domain.mutator
 
+import com.strangeparticle.springboard.app.domain.factory.buildSpringboardIndexes
 import com.strangeparticle.springboard.app.domain.model.App
 import com.strangeparticle.springboard.app.domain.model.Springboard
 
@@ -72,6 +73,38 @@ internal fun updateApp(
         },
     )
     return springboard.copy(apps = springboard.apps.map { if (it.id == appId) updated else it })
+}
+
+internal fun changeAppId(
+    springboard: Springboard,
+    appId: String,
+    newId: String,
+): Springboard {
+    val existing = springboard.apps.firstOrNull { it.id == appId }
+        ?: throw SpringboardMutationError(
+            errorMessage = "No app with id '$appId' in this springboard.",
+            code = "missing_target",
+        )
+    if (newId.isBlank()) {
+        throw SpringboardMutationError(errorMessage = "App id must not be blank.", code = "blank_id")
+    }
+    if (newId != appId && springboard.apps.any { it.id == newId }) {
+        throw SpringboardMutationError(
+            errorMessage = "An app with id '$newId' already exists in this springboard.",
+            code = "duplicate_id",
+        )
+    }
+
+    if (newId == appId) return springboard
+
+    val newActivators = springboard.activators.map { if (it.appId == appId) it.withAppId(newId) else it }
+    val newGuidanceData = springboard.guidanceData.map { if (it.appId == appId) it.copy(appId = newId) else it }
+    return springboard.copy(
+        apps = springboard.apps.map { if (it.id == appId) existing.copy(id = newId) else it },
+        activators = newActivators,
+        guidanceData = newGuidanceData,
+        indexes = buildSpringboardIndexes(newActivators, newGuidanceData),
+    )
 }
 
 internal fun removeApp(springboard: Springboard, appId: String): Springboard {

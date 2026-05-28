@@ -41,6 +41,36 @@ internal fun updateAppGroup(
     return springboard.copy(appGroups = springboard.appGroups.map { if (it.id == groupId) updated else it })
 }
 
+internal fun changeAppGroupId(
+    springboard: Springboard,
+    groupId: String,
+    newId: String,
+): Springboard {
+    val existing = springboard.appGroups.firstOrNull { it.id == groupId }
+        ?: throw SpringboardMutationError(
+            errorMessage = "No appGroup with id '$groupId' in this springboard.",
+            code = "missing_target",
+        )
+    if (newId.isBlank()) {
+        throw SpringboardMutationError(errorMessage = "AppGroup id must not be blank.", code = "blank_id")
+    }
+    if (newId != groupId && springboard.appGroups.any { it.id == newId }) {
+        throw SpringboardMutationError(
+            errorMessage = "An appGroup with id '$newId' already exists in this springboard.",
+            code = "duplicate_id",
+        )
+    }
+
+    return if (newId == groupId) {
+        springboard
+    } else {
+        springboard.copy(
+            appGroups = springboard.appGroups.map { if (it.id == groupId) existing.copy(id = newId) else it },
+            apps = springboard.apps.map { if (it.appGroupId == groupId) it.copy(appGroupId = newId) else it },
+        )
+    }
+}
+
 internal fun removeAppGroup(springboard: Springboard, groupId: String): Springboard {
     if (springboard.appGroups.none { it.id == groupId }) {
         throw SpringboardMutationError(

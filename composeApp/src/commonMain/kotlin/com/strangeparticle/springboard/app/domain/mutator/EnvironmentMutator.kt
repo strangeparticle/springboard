@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.domain.mutator
 
+import com.strangeparticle.springboard.app.domain.factory.buildSpringboardIndexes
 import com.strangeparticle.springboard.app.domain.model.ALL_ENVS_ENVIRONMENT_ID
 import com.strangeparticle.springboard.app.domain.model.Environment
 import com.strangeparticle.springboard.app.domain.model.Springboard
@@ -52,6 +53,40 @@ internal fun updateEnvironment(
     )
 }
 
+internal fun changeEnvironmentId(
+    springboard: Springboard,
+    environmentId: String,
+    newId: String,
+): Springboard {
+    val existing = springboard.environments.firstOrNull { it.id == environmentId }
+        ?: throw SpringboardMutationError(
+            errorMessage = "No environment with id '$environmentId' in this springboard.",
+            code = "missing_target",
+        )
+    validateEnvironmentIdIsMutable(newId)
+    if (newId != environmentId && springboard.environments.any { it.id == newId }) {
+        throw SpringboardMutationError(
+            errorMessage = "An environment with id '$newId' already exists in this springboard.",
+            code = "duplicate_id",
+        )
+    }
+
+    if (newId == environmentId) return springboard
+
+    val newActivators = springboard.activators.map {
+        if (it.environmentId == environmentId) it.withEnvironmentId(newId) else it
+    }
+    val newGuidanceData = springboard.guidanceData.map {
+        if (it.environmentId == environmentId) it.copy(environmentId = newId) else it
+    }
+    return springboard.copy(
+        environments = springboard.environments.map { if (it.id == environmentId) existing.copy(id = newId) else it },
+        activators = newActivators,
+        guidanceData = newGuidanceData,
+        indexes = buildSpringboardIndexes(newActivators, newGuidanceData),
+    )
+}
+
 internal fun removeEnvironment(springboard: Springboard, environmentId: String): Springboard {
     if (springboard.environments.none { it.id == environmentId }) {
         throw SpringboardMutationError(
@@ -74,4 +109,16 @@ internal fun removeEnvironment(springboard: Springboard, environmentId: String):
         )
     }
     return springboard.copy(environments = springboard.environments.filterNot { it.id == environmentId })
+}
+
+private fun validateEnvironmentIdIsMutable(environmentId: String) {
+    if (environmentId.isBlank()) {
+        throw SpringboardMutationError(errorMessage = "Environment id must not be blank.", code = "blank_id")
+    }
+    if (environmentId.equals(ALL_ENVS_ENVIRONMENT_ID, ignoreCase = true)) {
+        throw SpringboardMutationError(
+            errorMessage = "Environment id '$environmentId' is reserved (case-insensitive match for the all-envs sentinel).",
+            code = "reserved_id",
+        )
+    }
 }

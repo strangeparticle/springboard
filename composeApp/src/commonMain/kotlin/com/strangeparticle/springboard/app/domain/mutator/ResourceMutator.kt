@@ -1,11 +1,8 @@
 package com.strangeparticle.springboard.app.domain.mutator
 
-import com.strangeparticle.springboard.app.domain.model.Activator
-import com.strangeparticle.springboard.app.domain.model.CommandActivator
+import com.strangeparticle.springboard.app.domain.factory.buildSpringboardIndexes
 import com.strangeparticle.springboard.app.domain.model.Resource
 import com.strangeparticle.springboard.app.domain.model.Springboard
-import com.strangeparticle.springboard.app.domain.model.UrlActivator
-import com.strangeparticle.springboard.app.domain.model.UrlTemplateActivator
 
 /**
  * Pure-function mutators for the [Resource] list inside a [Springboard].
@@ -105,16 +102,15 @@ private fun Springboard.withResourceUpdated(
 private fun Springboard.withResourceIdReplacedThroughoutSpringboardTree(
     oldResourceId: String,
     updatedResource: Resource,
-): Springboard = copy(
-    resources = resources.map { if (it.id == oldResourceId) updatedResource else it },
-    activators = activators.map { if (it.resourceId == oldResourceId) it.withResourceId(updatedResource.id) else it },
-    guidanceData = guidanceData.map { if (it.resourceId == oldResourceId) it.copy(resourceId = updatedResource.id) else it },
-)
-
-private fun Activator.withResourceId(newResourceId: String): Activator = when (this) {
-    is UrlActivator -> copy(resourceId = newResourceId)
-    is UrlTemplateActivator -> copy(resourceId = newResourceId)
-    is CommandActivator -> copy(resourceId = newResourceId)
+): Springboard {
+    val newActivators = activators.map { if (it.resourceId == oldResourceId) it.withResourceId(updatedResource.id) else it }
+    val newGuidanceData = guidanceData.map { if (it.resourceId == oldResourceId) it.copy(resourceId = updatedResource.id) else it }
+    return copy(
+        resources = resources.map { if (it.id == oldResourceId) updatedResource else it },
+        activators = newActivators,
+        guidanceData = newGuidanceData,
+        indexes = buildSpringboardIndexes(newActivators, newGuidanceData),
+    )
 }
 
 internal fun removeResource(springboard: Springboard, resourceId: String): Springboard {

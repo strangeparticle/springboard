@@ -39,10 +39,14 @@ import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
+import io.ktor.http.headersOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertContains
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -364,6 +368,64 @@ internal class AiChatEntryPointTest {
 
         onNodeWithTag(TestTags.AI_CHAT_WORKING_INDICATOR).assertDoesNotExist()
         onNodeWithTag(TestTags.AI_CHAT_INPUT).assertIsFocused()
+    }
+
+    @Test
+    fun `assistant model dropdown updates setting and next request model`() = runComposeUiTest {
+        var modelListRequests = 0
+        val chatRequestBodies = mutableListOf<String>()
+        val components = createComponents(
+            configureAi = true,
+            httpClient = HttpClient(MockEngine { request ->
+                when (request.url.encodedPath) {
+                    "/v1/models" -> {
+                        modelListRequests += 1
+                        respond(
+                            content = """
+                                {"object":"list","data":[
+                                  {"id":"gpt-5","object":"model"},
+                                  {"id":"gpt-4.1","object":"model"}
+                                ]}
+                            """.trimIndent(),
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
+                    "/v1/chat/completions" -> {
+                        chatRequestBodies += (request.body as TextContent).text
+                        respond(
+                            content = """{"choices":[{"message":{"content":"Done"},"finish_reason":"stop"}]}""",
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                        )
+                    }
+                    else -> respond(content = "not found", status = HttpStatusCode.NotFound)
+                }
+            }),
+        )
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+            )
+        }
+        components.viewModel.loadConfig(TestFixtureJson.URL_ONLY, "/test/springboard.json")
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).performClick()
+        waitUntil { modelListRequests > 0 }
+        waitForIdle()
+        onNodeWithTag(TestTags.AI_CHAT_MODEL_DROPDOWN).performClick()
+        onNodeWithTag(TestTags.aiChatModelDropdownOption("gpt-4.1")).performClick()
+        waitForIdle()
+
+        assertEquals("gpt-4.1", components.settingsViewModel.getResolvedValue(OpenAiPreferredModelSetting))
+
+        onNodeWithTag(TestTags.AI_CHAT_INPUT).performTextInput("Use the selected model")
+        onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
+
+        waitUntil { chatRequestBodies.isNotEmpty() }
+        assertContains(chatRequestBodies.single(), "\"model\":\"gpt-4.1\"")
     }
 
     @Test

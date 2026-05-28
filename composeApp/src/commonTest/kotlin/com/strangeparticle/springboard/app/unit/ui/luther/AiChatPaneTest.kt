@@ -13,9 +13,11 @@ import com.strangeparticle.luther.session.ToolCallState
 import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
+import com.strangeparticle.springboard.app.settings.DropDownOption
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
+import com.strangeparticle.springboard.app.ui.luther.AiChatPaneModelPickerState
 import com.strangeparticle.springboard.app.ui.luther.AiChatPane
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
@@ -218,6 +220,66 @@ internal class AiChatPaneTest {
         onNodeWithTag(TestTags.AI_CHAT_SEND_BUTTON).performClick()
 
         assertEquals(listOf("Add Chrome"), sentMessages)
+    }
+
+    @Test
+    fun `title bar renders provider with model dropdown and selection callback`() = runComposeUiTest {
+        val selectedModels = mutableListOf<String>()
+        val state = configuredState(
+            modelLabel = "gpt-5",
+            modelPicker = AiChatPaneModelPickerState(
+                selectedModelId = "gpt-5",
+                selectedModelLabel = "GPT-5",
+                options = listOf(
+                    DropDownOption("gpt-5", "GPT-5"),
+                    DropDownOption("gpt-4.1", "GPT-4.1"),
+                ),
+                isLoading = false,
+                errorMessage = null,
+                onRefresh = {},
+                onSelectModel = { selectedModels += it },
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithText("OpenAI:").assertExists()
+        onNodeWithTag(TestTags.AI_CHAT_MODEL_DROPDOWN).assertTextContains("GPT-5").performClick()
+        onNodeWithTag(TestTags.aiChatModelDropdownOption("gpt-4.1")).performClick()
+
+        assertEquals(listOf("gpt-4.1"), selectedModels)
+    }
+
+    @Test
+    fun `title bar model dropdown exposes loading error and empty option states`() = runComposeUiTest {
+        val refreshes = mutableListOf<Unit>()
+        val state = configuredState(
+            modelPicker = AiChatPaneModelPickerState(
+                selectedModelId = "",
+                selectedModelLabel = "",
+                options = emptyList(),
+                isLoading = true,
+                errorMessage = "network unavailable",
+                onRefresh = { refreshes += Unit },
+                onSelectModel = {},
+            ),
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(state = state, onClose = {}, onOpenSettings = {})
+            }
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_MODEL_DROPDOWN).assertTextContains("Loading")
+        onNodeWithText("Model list error: network unavailable").assertExists()
+        onNodeWithTag(TestTags.AI_CHAT_MODEL_REFRESH_BUTTON).performClick()
+
+        assertEquals(listOf(Unit), refreshes)
     }
 
     @Test
@@ -478,7 +540,8 @@ internal class AiChatPaneTest {
         }
 
         onNodeWithText("AI Assistant").assertExists()
-        onNodeWithText("OpenAI: gpt-5").assertExists()
+        onNodeWithText("OpenAI:").assertExists()
+        onNodeWithText("gpt-5").assertExists()
         onNodeWithText("OpenAI · gpt-5").assertDoesNotExist()
         onNodeWithText("Assistant · OpenAI gpt-5").assertDoesNotExist()
     }
@@ -805,6 +868,8 @@ internal class AiChatPaneTest {
         isRunning: Boolean = false,
         transcriptParts: List<ChatMessagePart> = emptyList(),
         scrollbackPanes: List<AiChatScrollbackPane>? = null,
+        modelLabel: String = "gpt-5",
+        modelPicker: AiChatPaneModelPickerState? = null,
         debugChatHistoryText: String = "",
         onSubmit: (String) -> Unit = {},
         onStop: () -> Unit = {},
@@ -812,7 +877,8 @@ internal class AiChatPaneTest {
     ): AiChatPaneState = if (scrollbackPanes == null) {
         AiChatPaneState.configured(
             providerLabel = "OpenAI",
-            modelLabel = "gpt-5",
+            modelLabel = modelLabel,
+            modelPicker = modelPicker,
             transcriptParts = transcriptParts,
             debugChatHistoryText = debugChatHistoryText,
             isRunning = isRunning,
@@ -824,7 +890,8 @@ internal class AiChatPaneTest {
     } else {
         AiChatPaneState.configured(
             providerLabel = "OpenAI",
-            modelLabel = "gpt-5",
+            modelLabel = modelLabel,
+            modelPicker = modelPicker,
             transcriptParts = transcriptParts,
             scrollbackPanes = scrollbackPanes,
             debugChatHistoryText = debugChatHistoryText,

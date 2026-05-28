@@ -24,6 +24,7 @@ import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
 import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 import com.strangeparticle.springboard.app.luther.toolcall.*
+import com.strangeparticle.springboard.app.settings.DropDownOption
 import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
@@ -31,6 +32,7 @@ import com.strangeparticle.springboard.app.settings.items.core.AiProviderSetting
 import com.strangeparticle.springboard.app.settings.items.core.ShowFullChatTranscriptSetting
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.luther.AiChatLocalCommand
+import com.strangeparticle.springboard.app.ui.luther.AiChatPaneModelPickerState
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
 import com.strangeparticle.springboard.app.ui.luther.buildDebugScrollbackPanes
 import com.strangeparticle.springboard.app.ui.luther.buildSlimScrollbackPanes
@@ -177,6 +179,21 @@ private fun rememberAiChatPaneState(
     val context = settingsViewModel.itemContext()
     val isConfigured = provider != null && provider.isConfigured(context)
     val modelId = provider?.currentModelId(context).orEmpty()
+    val modelSetting = provider?.preferredModelSetting()
+    var modelOptionsResult by remember(modelSetting) { mutableStateOf<Result<List<DropDownOption>>?>(null) }
+    var isModelOptionsLoading by remember(modelSetting) { mutableStateOf(false) }
+
+    fun loadModelOptions() {
+        val activeModelSetting = modelSetting ?: return
+        coroutineScope.launch {
+            isModelOptionsLoading = true
+            modelOptionsResult = activeModelSetting.loadOptions(settingsViewModel.itemContext())
+            isModelOptionsLoading = false
+        }
+    }
+    LaunchedEffect(modelSetting, isConfigured, settingsViewModel.settingsVersion) {
+        if (modelSetting != null && isConfigured) loadModelOptions()
+    }
 
     val aiClient = remember(provider, isConfigured, modelId) {
         if (provider != null && isConfigured) provider.createClient(context) else null
@@ -236,6 +253,21 @@ private fun rememberAiChatPaneState(
     return AiChatPaneState.configured(
         providerLabel = provider.displayName,
         modelLabel = modelId,
+        modelPicker = AiChatPaneModelPickerState(
+            selectedModelId = modelId,
+            selectedModelLabel = modelOptionsResult?.getOrNull()
+                .orEmpty()
+                .firstOrNull { it.id == modelId }
+                ?.displayName
+                ?: modelId,
+            options = modelOptionsResult?.getOrNull().orEmpty(),
+            isLoading = isModelOptionsLoading,
+            errorMessage = modelOptionsResult?.exceptionOrNull()?.message,
+            onRefresh = ::loadModelOptions,
+            onSelectModel = { selectedModelId ->
+                modelSetting?.let { settingsViewModel.setUserSetting(it, selectedModelId) }
+            },
+        ),
         transcriptParts = manager.transcriptParts,
         scrollbackPanes = effectiveScrollbackPanes,
         debugChatHistoryText = debugChatHistoryText,

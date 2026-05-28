@@ -16,6 +16,8 @@ internal object OpenAiProvider : AiProvider {
         OpenAiPreferredModelSetting,
     )
 
+    override fun preferredModelSetting() = OpenAiPreferredModelSetting
+
     override fun createClient(context: SettingsItemContext): AiProviderClient {
         val apiKey = context.get(OpenAiApiKeySetting).orEmpty()
         return AiProviderClientOpenAi(

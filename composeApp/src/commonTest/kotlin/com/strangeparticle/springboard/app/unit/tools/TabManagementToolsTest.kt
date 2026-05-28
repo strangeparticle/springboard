@@ -100,6 +100,28 @@ internal class TabManagementToolsTest {
     }
 
     @Test
+    fun `create_springboard uses the requested name`() = runTest {
+        val (ctx, _) = newContext()
+
+        val result = CreateSpringboardToolCallHandler().executeToolCallHandler(
+            CreateSpringboardToolCallHandlerRequest(
+                name = "86 Command API",
+                display_message = "new",
+            ),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val activeTab = ctx.viewModel.activeTab
+        assertNotNull(activeTab)
+        assertEquals("86 Command API", activeTab.springboardFilteredForRuntime?.name)
+        assertEquals("86 Command API", activeTab.label)
+        assertNull(activeTab.source)
+        assertTrue(activeTab.isDirty)
+        assertEquals(1, ctx.stateChangedCount)
+    }
+
+    @Test
     fun `create_springboard reports tab limit reached`() = runTest {
         val (ctx, _) = newContext()
         repeat(com.strangeparticle.springboard.app.viewmodel.MAX_OPEN_TABS - 1) { ctx.viewModel.createTab() }

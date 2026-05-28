@@ -22,7 +22,7 @@ internal class CreateSpringboardToolCallHandler : ToolCallHandler {
         args: CreateSpringboardToolCallHandlerRequest,
         context: SpringboardToolCallExecutionContext,
     ): SpringboardToolCallHandlerResponse {
-        return when (val result = context.viewModel.createUnsavedSpringboardTab()) {
+        return when (val result = context.viewModel.createUnsavedSpringboardTab(args.name)) {
             is SpringboardViewModel.LoadResult.Success -> {
                 context.markStateChanged()
                 context.successResult()

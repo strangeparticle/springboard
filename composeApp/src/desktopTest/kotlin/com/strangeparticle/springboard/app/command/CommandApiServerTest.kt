@@ -274,6 +274,14 @@ internal class CommandApiServerTest {
             val saveSpringboard = tools.single {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "save_springboard"
             }.jsonObject
+            val createSpringboard = tools.single {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "create_springboard"
+            }.jsonObject
+            val createSpringboardProperties = createSpringboard
+                .getValue("schema")
+                .jsonObject
+                .getValue("properties")
+                .jsonObject
 
             assertEquals(200, response.statusCode)
             assertEquals("38", root.getValue("toolCount").jsonPrimitive.content)
@@ -285,6 +293,7 @@ internal class CommandApiServerTest {
             })
             assertEquals("true", saveSpringboard.getValue("requiresUserConfirmation").jsonPrimitive.content)
             assertTrue(saveSpringboard.getValue("schema").jsonObject.isNotEmpty())
+            assertTrue(createSpringboardProperties.containsKey("name"))
         } finally {
             handle.stop()
         }

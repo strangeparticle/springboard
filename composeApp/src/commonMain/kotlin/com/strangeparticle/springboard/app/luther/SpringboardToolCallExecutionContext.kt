@@ -2,6 +2,8 @@ package com.strangeparticle.springboard.app.luther
 
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallHandler
+import com.strangeparticle.springboard.app.command.SpringboardCommandExecutor
+import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
 import com.strangeparticle.springboard.app.domain.model.Springboard
 import com.strangeparticle.springboard.app.domain.mutator.SpringboardMutationError
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
@@ -21,6 +23,9 @@ internal interface SpringboardToolCallExecutionContext : ToolCallExecutionContex
 
     /** The app's single viewmodel. Tools read state from it and call mutator methods on it. */
     val viewModel: SpringboardViewModel
+
+    val commandExecutor: SpringboardCommandExecutor
+        get() = SpringboardCommandExecutorDefaultImpl(viewModel)
 
     /**
      * Mark the most recent mutation as state-changing. The session manager flips

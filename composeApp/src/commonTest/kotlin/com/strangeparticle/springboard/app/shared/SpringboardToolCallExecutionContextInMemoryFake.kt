@@ -1,5 +1,7 @@
 package com.strangeparticle.springboard.app.shared
 
+import com.strangeparticle.springboard.app.command.SpringboardCommandExecutor
+import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import kotlinx.coroutines.CompletableDeferred
@@ -13,6 +15,7 @@ import kotlinx.coroutines.CompletableDeferred
  */
 internal class SpringboardToolCallExecutionContextInMemoryFake(
     override val viewModel: SpringboardViewModel,
+    override val commandExecutor: SpringboardCommandExecutor = SpringboardCommandExecutorDefaultImpl(viewModel),
 ) : SpringboardToolCallExecutionContext {
 
     /** Number of times [markStateChanged] has been called. */

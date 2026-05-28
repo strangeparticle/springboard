@@ -672,6 +672,40 @@ internal class AiChatPaneTest {
     }
 
     @Test
+    fun `copy controls show hover text`() = runComposeUiTest {
+        val state = configuredState(
+            scrollbackPanes = listOf(
+                AiChatScrollbackPane.Interaction(
+                    requestText = "Add Chrome",
+                    responseParts = listOf(ChatMessagePart.AssistantText("Added Chrome.")),
+                ),
+            ),
+        )
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AiChatPane(
+                    state = state,
+                    onClose = {},
+                    onOpenSettings = {},
+                )
+            }
+        }
+
+        mainClock.autoAdvance = false
+        onNodeWithTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON).performMouseInput {
+            moveTo(center)
+        }
+        mainClock.advanceTimeBy(1_000)
+        onNodeWithText("Copy conversation").assertExists()
+
+        onNodeWithTag(TestTags.aiChatScrollbackPaneCopyButton(0), useUnmergedTree = true).performMouseInput {
+            moveTo(center)
+        }
+        mainClock.advanceTimeBy(1_000)
+        onNodeWithText("Copy message").assertExists()
+    }
+
+    @Test
     fun `interaction pane renders user request once transcript has a user part`() = runComposeUiTest {
         val state = configuredState(
             transcriptParts = listOf(ChatMessagePart.UserText("Add a logs URL for fretnaut in prod")),

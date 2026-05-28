@@ -16,6 +16,8 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -48,6 +50,56 @@ internal class CommandApiServerTest {
         val text = directory.resolve("control-api.json").readText()
         assertTrue(text.contains("\"baseUrl\":\"http://127.0.0.1:47382\""))
         assertTrue(text.contains("\"token\":\"token-1\""))
+    }
+
+    @Test
+    fun `discovery file can target an explicit file path`() {
+        val path = Files.createTempDirectory("springboard-command-api-test")
+            .resolve("codex-control-api.json")
+        val discoveryFile = CommandApiDiscoveryFile.fromPath(path)
+        val dto = CommandApiDiscoveryDto(
+            baseUrl = "http://127.0.0.1:47382",
+            token = "token-1",
+            pid = 123,
+            startedAt = "2026-05-27T12:34:56Z",
+        )
+
+        discoveryFile.write(dto)
+
+        assertEquals(path, discoveryFile.path)
+        assertTrue(path.readText().contains("\"token\":\"token-1\""))
+    }
+
+    @Test
+    fun `startup args can disable command api and override port and discovery file`() {
+        val discoveryPath = Path.of("/tmp/springboard-codex-control-api.json").toAbsolutePath().normalize()
+
+        val config = parseCommandApiStartupArgs(
+            listOf(
+                "--disable-command-api",
+                "--command-api-port",
+                "0",
+                "--command-api-discovery-file",
+                discoveryPath.toString(),
+            )
+        )
+
+        assertEquals(false, config.enabled)
+        assertEquals(0, config.preferredPort)
+        assertEquals(discoveryPath, config.discoveryFilePath)
+    }
+
+    @Test
+    fun `startup args ignore invalid command api values without swallowing following flags`() {
+        val config = parseCommandApiStartupArgs(
+            listOf(
+                "--command-api-port",
+                "--disable-command-api",
+            )
+        )
+
+        assertEquals(false, config.enabled)
+        assertEquals(47382, config.preferredPort)
     }
 
     @Test
@@ -100,11 +152,32 @@ internal class CommandApiServerTest {
     }
 
     @Test
-    fun `help endpoint describes command-specific endpoint and bearer auth`() {
+    fun `server stop deletes discovery file`() {
+        val discoveryPath = Files.createTempDirectory("springboard-command-api-test")
+            .resolve("control-api.json")
+        val discoveryFile = CommandApiDiscoveryFile.fromPath(discoveryPath)
         val server = CommandApiServerDefaultImpl(
             executor = FakeCommandExecutor(),
             snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
-            discoveryFile = CommandApiDiscoveryFile(Files.createTempDirectory("springboard-command-api-test")),
+            discoveryFile = discoveryFile,
+            preferredPort = 0,
+            token = "secret-token",
+        )
+        val handle = server.start()
+
+        assertEquals(true, discoveryPath.exists())
+        handle.stop()
+        assertEquals(false, discoveryPath.exists())
+    }
+
+    @Test
+    fun `help endpoint describes command-specific endpoint and bearer auth`() {
+        val discoveryPath = Files.createTempDirectory("springboard-command-api-test")
+            .resolve("custom-control-api.json")
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            snapshotProvider = { """{"tabs":[],"activeTabId":null}""" },
+            discoveryFile = CommandApiDiscoveryFile.fromPath(discoveryPath),
             preferredPort = 0,
             token = "secret-token",
         )
@@ -122,6 +195,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"/api/snapshot\""))
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
+            assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
         } finally {
             handle.stop()
         }

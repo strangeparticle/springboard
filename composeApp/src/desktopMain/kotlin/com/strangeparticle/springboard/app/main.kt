@@ -13,8 +13,10 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.command.CommandApiDiscoveryFile
 import com.strangeparticle.springboard.app.command.CommandApiServerDefaultImpl
 import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
+import com.strangeparticle.springboard.app.command.parseCommandApiStartupArgs
 import com.strangeparticle.springboard.app.aws.AwsCliCredentialProvider
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
@@ -51,6 +53,7 @@ fun main(args: Array<String>) {
     println("[Springboard] platform initialized")
 
     val runtimeEnvironment = detectRuntimeEnvironment()
+    val commandApiStartupArgs = parseCommandApiStartupArgs(args.toList())
 
     // Initialize services
     val persistenceService = PersistenceServiceDefaultImpl()
@@ -113,16 +116,26 @@ fun main(args: Array<String>) {
                 s3ContentService = s3ContentService,
             )
         }
-        val commandApiHandle = remember {
-            CommandApiServerDefaultImpl(
-                executor = SpringboardCommandExecutorDefaultImpl(viewModel),
-                snapshotProvider = { SpringboardAppSnapshot.capture(viewModel).toCompactJson() },
-            ).start()
+        val commandApiHandle = remember(commandApiStartupArgs) {
+            if (commandApiStartupArgs.enabled) {
+                CommandApiServerDefaultImpl(
+                    executor = SpringboardCommandExecutorDefaultImpl(viewModel),
+                    snapshotProvider = { SpringboardAppSnapshot.capture(viewModel).toCompactJson() },
+                    discoveryFile = CommandApiDiscoveryFile.fromPath(commandApiStartupArgs.discoveryFilePath),
+                    preferredPort = commandApiStartupArgs.preferredPort,
+                ).start()
+            } else {
+                null
+            }
         }
         DisposableEffect(commandApiHandle) {
-            println("[Springboard] command API listening at ${commandApiHandle.baseUrl}")
+            if (commandApiHandle == null) {
+                println("[Springboard] command API disabled")
+            } else {
+                println("[Springboard] command API listening at ${commandApiHandle.baseUrl}")
+            }
             onDispose {
-                commandApiHandle.stop()
+                commandApiHandle?.stop()
             }
         }
         val settingsViewModel = remember {

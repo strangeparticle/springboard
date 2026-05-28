@@ -14,18 +14,19 @@ import kotlin.io.path.writeText
  */
 class CommandApiDiscoveryFile(
     private val directory: Path = defaultDirectory(),
+    private val fileName: String = "control-api.json",
 ) {
-    private val file: Path = directory.resolve("control-api.json")
+    val path: Path = directory.resolve(fileName)
 
     fun write(discovery: CommandApiDiscoveryDto) {
         Files.createDirectories(directory)
         setOwnerOnlyDirectoryPermissions()
-        file.writeText(SpringboardCommandJson.json.encodeToString(discovery))
+        path.writeText(SpringboardCommandJson.json.encodeToString(discovery))
         setOwnerOnlyFilePermissions()
     }
 
     fun delete() {
-        file.deleteIfExists()
+        path.deleteIfExists()
     }
 
     private fun setOwnerOnlyDirectoryPermissions() {
@@ -44,7 +45,7 @@ class CommandApiDiscoveryFile(
     private fun setOwnerOnlyFilePermissions() {
         runCatching {
             Files.setPosixFilePermissions(
-                file,
+                path,
                 setOf(
                     PosixFilePermission.OWNER_READ,
                     PosixFilePermission.OWNER_WRITE,
@@ -59,5 +60,10 @@ class CommandApiDiscoveryFile(
 
         fun defaultPath(): Path =
             defaultDirectory().resolve("control-api.json")
+
+        fun fromPath(path: Path): CommandApiDiscoveryFile {
+            val parent = path.parent ?: Path.of(".")
+            return CommandApiDiscoveryFile(parent, path.fileName.toString())
+        }
     }
 }

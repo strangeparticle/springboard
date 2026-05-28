@@ -260,11 +260,16 @@ class CommandApiServerDefaultImpl(
                 startedAt = Instant.now().toString(),
             )
         )
+        val shutdownHook = Thread {
+            discoveryFile.delete()
+        }
+        Runtime.getRuntime().addShutdownHook(shutdownHook)
         return DefaultCommandApiServerHandle(
             baseUrl = baseUrl,
             token = token,
             stopServer = { engine.stop() },
             discoveryFile = discoveryFile,
+            shutdownHook = shutdownHook,
         )
     }
 
@@ -328,7 +333,7 @@ class CommandApiServerDefaultImpl(
                 put("type", "bearer")
                 put("description", "Read the token from the local discovery file and send Authorization: Bearer <token>.")
             }
-            put("discoveryFile", CommandApiDiscoveryFile.defaultPath().toString())
+            put("discoveryFile", discoveryFile.path.toString())
             putJsonArray("endpoints") {
                 add(buildJsonObject {
                     put("method", "GET")
@@ -483,9 +488,13 @@ class CommandApiServerDefaultImpl(
         override val token: String,
         private val stopServer: () -> Unit,
         private val discoveryFile: CommandApiDiscoveryFile,
+        private val shutdownHook: Thread,
     ) : CommandApiServerHandle {
         override fun stop() {
             discoveryFile.delete()
+            runCatching {
+                Runtime.getRuntime().removeShutdownHook(shutdownHook)
+            }
             stopServer()
         }
     }

@@ -17,7 +17,6 @@ import com.strangeparticle.luther.session.event.LocalCommandResponseKind
 import com.strangeparticle.luther.session.event.LocalCommandSource
 import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
@@ -320,47 +319,6 @@ private fun rememberAiChatPaneState(
     )
 }
 
-
-private fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegistry().apply {
-    register(ActivateColumnToolCallHandler())
-    register(ActivateCoordinateToolCallHandler())
-    register(ActivateCoordinatesToolCallHandler())
-    register(ActivateRowToolCallHandler())
-    register(AddAppGroupToolCallHandler())
-    register(AddAppToolCallHandler())
-    register(AddCommandActivatorToolCallHandler())
-    register(AddEnvironmentToolCallHandler())
-    register(AddGuidanceToolCallHandler())
-    register(AddResourceToolCallHandler())
-    register(AddUrlActivatorToolCallHandler())
-    register(AddUrlTemplateActivatorToolCallHandler())
-    register(ChangeResourceIdToolCallHandler())
-    register(ChangeResourceNameToolCallHandler())
-    register(CloseTabToolCallHandler())
-    register(CreateSpringboardToolCallHandler())
-    register(CreateTabToolCallHandler())
-    register(MoveActivatorToolCallHandler())
-    register(OpenFromUrlToolCallHandler())
-    register(OpenLocalFileToolCallHandler())
-    register(RemoveActivatorToolCallHandler())
-    register(RemoveAppGroupToolCallHandler())
-    register(RemoveAppToolCallHandler())
-    register(RemoveEnvironmentToolCallHandler())
-    register(RemoveGuidanceToolCallHandler())
-    register(RemoveResourceToolCallHandler())
-    register(ReorderActivatorsToolCallHandler())
-    register(ReorderAppGroupsToolCallHandler())
-    register(ReorderAppsToolCallHandler())
-    register(ReorderEnvironmentsToolCallHandler())
-    register(ReorderResourcesToolCallHandler())
-    register(RespondWithMessageToolCallHandler())
-    register(SaveSpringboardToolCallHandler())
-    register(UpdateActivatorToolCallHandler())
-    register(UpdateAppGroupToolCallHandler())
-    register(UpdateAppToolCallHandler())
-    register(UpdateEnvironmentToolCallHandler())
-    register(UpdateGuidanceToolCallHandler())
-}
 
 private fun localCommandGroup(
     commandText: String,

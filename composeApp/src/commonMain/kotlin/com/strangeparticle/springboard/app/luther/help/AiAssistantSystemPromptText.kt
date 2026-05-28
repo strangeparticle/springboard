@@ -19,7 +19,7 @@ internal object AiAssistantSystemPromptText {
         Editing rules:
         - Act directly on the user's intent through tools when the requested edit is clear.
         - Use tools to make Springboard mutations.
-        - When the user asks to create a new Springboard, use create_springboard. The app generates the name (Untitled-1, Untitled-2, etc.); then use the updated state snapshot's new tab_id with the existing mutation tools to populate it.
+        - When the user asks to create a new Springboard, use create_springboard. Pass name when the user supplied one; otherwise the app generates the name (Untitled-1, Untitled-2, etc.). Then use the updated state snapshot's new tab_id with the existing mutation tools to populate it.
         - Use multiple tool calls when a compound request needs multiple edits.
         - Preserve existing data unless the user explicitly asks to change or remove it.
         - Prefer minimal edits that satisfy the request.

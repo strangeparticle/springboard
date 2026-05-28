@@ -230,6 +230,30 @@ class SpringboardViewModelTabsTest {
     }
 
     @Test
+    fun createUnsavedSpringboardTabUsesRequestedName() {
+        val viewModel = createViewModel()
+
+        val result = viewModel.createUnsavedSpringboardTab("86 Command API")
+
+        assertTrue(result is SpringboardViewModel.LoadResult.Success)
+        val activeTab = viewModel.activeTab
+        assertNotNull(activeTab)
+        assertEquals("86 Command API", activeTab.springboardFilteredForRuntime?.name)
+        assertEquals("86 Command API", activeTab.label)
+        assertNull(activeTab.source)
+        assertTrue(activeTab.isDirty)
+    }
+
+    @Test
+    fun createUnsavedSpringboardTabUsesNextUntitledNameForBlankRequestedName() {
+        val viewModel = createViewModel()
+
+        viewModel.createUnsavedSpringboardTab("   ")
+
+        assertEquals("Untitled-2", viewModel.activeTab?.springboardFilteredForRuntime?.name)
+    }
+
+    @Test
     fun createUnsavedSpringboardTabIncludesEmptyTabsWhenGeneratingName() {
         val viewModel = createViewModel()
 

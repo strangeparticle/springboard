@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app
 
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,7 +13,13 @@ import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.command.CommandApiDiscoveryFile
+import com.strangeparticle.springboard.app.command.CommandApiServerDefaultImpl
+import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
+import com.strangeparticle.springboard.app.command.parseCommandApiStartupArgs
 import com.strangeparticle.springboard.app.aws.AwsCliCredentialProvider
+import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.*
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -47,6 +54,7 @@ fun main(args: Array<String>) {
     println("[Springboard] platform initialized")
 
     val runtimeEnvironment = detectRuntimeEnvironment()
+    val commandApiStartupArgs = parseCommandApiStartupArgs(args.toList())
 
     // Initialize services
     val persistenceService = PersistenceServiceDefaultImpl()
@@ -108,6 +116,36 @@ fun main(args: Array<String>) {
                 contentLoader = contentLoader,
                 s3ContentService = s3ContentService,
             )
+        }
+        val commandApiHandle = remember(commandApiStartupArgs) {
+            if (commandApiStartupArgs.enabled) {
+                CommandApiServerDefaultImpl(
+                    executor = SpringboardCommandExecutorDefaultImpl(viewModel),
+                    snapshotProvider = { SpringboardAppSnapshot.capture(viewModel).toCompactJson() },
+                    discoveryFile = CommandApiDiscoveryFile.fromPath(commandApiStartupArgs.discoveryFilePath),
+                    preferredPort = commandApiStartupArgs.preferredPort,
+                    toolCallExecutionContext = object : SpringboardToolCallExecutionContext {
+                        override val viewModel = viewModel
+
+                        override fun markStateChanged() {
+                        }
+
+                        override suspend fun awaitUserApproval(toolCallId: String): Boolean = false
+                    },
+                ).start()
+            } else {
+                null
+            }
+        }
+        DisposableEffect(commandApiHandle) {
+            if (commandApiHandle == null) {
+                println("[Springboard] command API disabled")
+            } else {
+                println("[Springboard] command API listening at ${commandApiHandle.baseUrl}")
+            }
+            onDispose {
+                commandApiHandle?.stop()
+            }
         }
         val settingsViewModel = remember {
             SettingsViewModel(settingsManager = settingsManager, httpClient = aiHttpClient)

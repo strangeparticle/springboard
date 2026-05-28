@@ -64,6 +64,9 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.cio)
+            implementation(libs.ktor.server.cio)
+            implementation(libs.ktor.server.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
         val wasmJsMain by getting {
             dependencies {

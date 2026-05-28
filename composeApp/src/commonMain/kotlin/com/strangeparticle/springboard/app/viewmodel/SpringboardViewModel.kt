@@ -316,8 +316,8 @@ class SpringboardViewModel(
         return newTab.tabId
     }
 
-    fun createUnsavedSpringboardTab(): LoadResult {
-        val springboardName = nextUntitledTabName()
+    fun createUnsavedSpringboardTab(name: String? = null): LoadResult {
+        val springboardName = name?.trim()?.takeIf { it.isNotEmpty() } ?: nextUntitledTabName()
         val newTabId = createTabWithLabel(springboardName)
             ?: return LoadResult.Failure(
                 code = "tab_limit_reached",

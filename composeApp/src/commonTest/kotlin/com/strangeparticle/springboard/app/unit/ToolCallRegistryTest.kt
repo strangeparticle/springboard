@@ -11,6 +11,7 @@ import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResp
 import com.strangeparticle.luther.toolcall.requestSchema
 import com.strangeparticle.springboard.app.luther.getSpringboardToolCallExecutionContextOrThrow
 import com.strangeparticle.springboard.app.luther.successResult
+import com.strangeparticle.springboard.app.luther.toolcall.createSpringboardToolCallRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.SpringboardToolCallExecutionContextInMemoryFake
@@ -177,5 +178,15 @@ internal class ToolCallRegistryTest {
 
         assertTrue(registry.isRegistered("hello"))
         assertFalse(registry.isRegistered("goodbye"))
+    }
+
+    @Test
+    fun `springboard registry includes cascading id change tools`() {
+        val registry = createSpringboardToolCallRegistry()
+
+        assertTrue(registry.isRegistered("change_app_id"))
+        assertTrue(registry.isRegistered("change_resource_id"))
+        assertTrue(registry.isRegistered("change_environment_id"))
+        assertTrue(registry.isRegistered("change_app_group_id"))
     }
 }

@@ -95,6 +95,9 @@ internal fun SpringboardToolCallExecutionContext.applyMutation(
     tabId: String,
     springboard: Springboard,
 ): SpringboardToolCallHandlerResponse {
+    if (springboard === getSpringboardForTabOrError(tabId)) {
+        return successResult()
+    }
     viewModel.replaceTabSpringboard(tabId, springboard)
     viewModel.markTabDirty(tabId)
     markStateChanged()

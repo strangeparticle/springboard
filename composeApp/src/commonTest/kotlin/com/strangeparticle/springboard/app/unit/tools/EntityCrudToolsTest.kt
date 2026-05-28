@@ -10,6 +10,12 @@ import com.strangeparticle.springboard.app.luther.toolcall.AddResourceToolCallHa
 import com.strangeparticle.springboard.app.luther.toolcall.AddResourceToolCallHandler
 import com.strangeparticle.springboard.app.luther.toolcall.ChangeResourceIdToolCallHandler
 import com.strangeparticle.springboard.app.luther.toolcall.ChangeResourceIdToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeAppGroupIdToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeAppGroupIdToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeAppIdToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeAppIdToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeEnvironmentIdToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.ChangeEnvironmentIdToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.toolcall.ChangeResourceNameToolCallHandler
 import com.strangeparticle.springboard.app.luther.toolcall.ChangeResourceNameToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.toolcall.RemoveAppToolCallHandlerRequest
@@ -223,6 +229,78 @@ internal class EntityCrudToolsTest {
 
         assertFalse(result.success)
         assertEquals("conflicting_fields", result.code)
+        assertFalse(ctx.viewModel.activeTab!!.isDirty)
+        assertEquals(0, ctx.stateChangedCount)
+    }
+
+    @Test
+    fun `change_app_id rewrites app id throughout springboard tree`() = runTest {
+        val (ctx, tabId) = loadedContext(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE)
+
+        val result = ChangeAppIdToolCallHandler().executeToolCallHandler(
+            ChangeAppIdToolCallHandlerRequest(tab_id = tabId, id = "app1", new_id = "browser", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val springboard = ctx.viewModel.springboardUnfiltered!!
+        assertTrue(springboard.apps.any { it.id == "browser" })
+        assertTrue(springboard.apps.none { it.id == "app1" })
+        assertTrue(springboard.activators.none { it.appId == "app1" })
+        assertTrue(springboard.activators.any { it.appId == "browser" })
+        assertTrue(springboard.guidanceData.none { it.appId == "app1" })
+        assertTrue(springboard.guidanceData.any { it.appId == "browser" })
+    }
+
+    @Test
+    fun `change_app_id rejects duplicate new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeAppIdToolCallHandler().executeToolCallHandler(
+            ChangeAppIdToolCallHandlerRequest(tab_id = tabId, id = "app1", new_id = "app2", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("duplicate_id", result.code)
+    }
+
+    @Test
+    fun `change_app_id rejects blank new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeAppIdToolCallHandler().executeToolCallHandler(
+            ChangeAppIdToolCallHandlerRequest(tab_id = tabId, id = "app1", new_id = " ", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("blank_id", result.code)
+    }
+
+    @Test
+    fun `change_app_id rejects missing target`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeAppIdToolCallHandler().executeToolCallHandler(
+            ChangeAppIdToolCallHandlerRequest(tab_id = tabId, id = "missing", new_id = "app3", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("missing_target", result.code)
+    }
+
+    @Test
+    fun `change_app_id with unchanged id is a no-op`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeAppIdToolCallHandler().executeToolCallHandler(
+            ChangeAppIdToolCallHandlerRequest(tab_id = tabId, id = "app1", new_id = "app1", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
         assertFalse(ctx.viewModel.activeTab!!.isDirty)
         assertEquals(0, ctx.stateChangedCount)
     }
@@ -452,6 +530,78 @@ internal class EntityCrudToolsTest {
     }
 
     @Test
+    fun `change_environment_id rewrites environment id throughout springboard tree`() = runTest {
+        val (ctx, tabId) = loadedContext(TestFixtureJson.MULTI_ENV_WITH_GUIDANCE)
+
+        val result = ChangeEnvironmentIdToolCallHandler().executeToolCallHandler(
+            ChangeEnvironmentIdToolCallHandlerRequest(tab_id = tabId, id = "common", new_id = "shared", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val springboard = ctx.viewModel.springboardUnfiltered!!
+        assertTrue(springboard.environments.any { it.id == "shared" })
+        assertTrue(springboard.environments.none { it.id == "common" })
+        assertTrue(springboard.activators.none { it.environmentId == "common" })
+        assertTrue(springboard.activators.any { it.environmentId == "shared" })
+        assertTrue(springboard.guidanceData.none { it.environmentId == "common" })
+        assertTrue(springboard.guidanceData.any { it.environmentId == "shared" })
+    }
+
+    @Test
+    fun `change_environment_id rejects reserved ALL id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeEnvironmentIdToolCallHandler().executeToolCallHandler(
+            ChangeEnvironmentIdToolCallHandlerRequest(tab_id = tabId, id = "common", new_id = "ALL", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("reserved_id", result.code)
+    }
+
+    @Test
+    fun `change_environment_id rejects duplicate new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeEnvironmentIdToolCallHandler().executeToolCallHandler(
+            ChangeEnvironmentIdToolCallHandlerRequest(tab_id = tabId, id = "common", new_id = "preprod", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("duplicate_id", result.code)
+    }
+
+    @Test
+    fun `change_environment_id rejects blank new id`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeEnvironmentIdToolCallHandler().executeToolCallHandler(
+            ChangeEnvironmentIdToolCallHandlerRequest(tab_id = tabId, id = "common", new_id = " ", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("blank_id", result.code)
+    }
+
+    @Test
+    fun `change_environment_id with unchanged id is a no-op`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeEnvironmentIdToolCallHandler().executeToolCallHandler(
+            ChangeEnvironmentIdToolCallHandlerRequest(tab_id = tabId, id = "common", new_id = "common", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        assertFalse(ctx.viewModel.activeTab!!.isDirty)
+        assertEquals(0, ctx.stateChangedCount)
+    }
+
+    @Test
     fun `remove_environment refuses when in use`() = runTest {
         val (ctx, tabId) = loadedContext()
         val result = RemoveEnvironmentToolCallHandler().executeToolCallHandler(
@@ -506,5 +656,122 @@ internal class EntityCrudToolsTest {
 
         assertFalse(result.success)
         assertEquals("in_use", result.code)
+    }
+
+    @Test
+    fun `change_app_group_id rewrites app group references on apps`() = runTest {
+        val groupedJson = """
+        {
+          "name": "with group",
+          "appGroups": [{"id":"g1","description":"G"}],
+          "apps": [{"id":"a1","name":"A1","appGroupId":"g1"}],
+          "resources": [{"id":"r1","name":"R1"}],
+          "environments": [{"id":"e1","name":"E1"}],
+          "activators": [
+            {"type":"url","appId":"a1","resourceId":"r1","environmentId":"e1","url":"https://x.example.com"}
+          ]
+        }
+        """.trimIndent()
+        val (ctx, tabId) = loadedContext(groupedJson)
+
+        val result = ChangeAppGroupIdToolCallHandler().executeToolCallHandler(
+            ChangeAppGroupIdToolCallHandlerRequest(tab_id = tabId, id = "g1", new_id = "tools", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val springboard = ctx.viewModel.springboardUnfiltered!!
+        assertTrue(springboard.appGroups.any { it.id == "tools" })
+        assertTrue(springboard.appGroups.none { it.id == "g1" })
+        assertEquals("tools", springboard.apps.first { it.id == "a1" }.appGroupId)
+    }
+
+    @Test
+    fun `change_app_group_id rejects blank new id`() = runTest {
+        val groupedJson = """
+        {
+          "name": "with group",
+          "appGroups": [{"id":"g1","description":"G"}],
+          "apps": [{"id":"a1","name":"A1","appGroupId":"g1"}],
+          "resources": [{"id":"r1","name":"R1"}],
+          "environments": [{"id":"e1","name":"E1"}],
+          "activators": [
+            {"type":"url","appId":"a1","resourceId":"r1","environmentId":"e1","url":"https://x.example.com"}
+          ]
+        }
+        """.trimIndent()
+        val (ctx, tabId) = loadedContext(groupedJson)
+
+        val result = ChangeAppGroupIdToolCallHandler().executeToolCallHandler(
+            ChangeAppGroupIdToolCallHandlerRequest(tab_id = tabId, id = "g1", new_id = " ", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("blank_id", result.code)
+    }
+
+    @Test
+    fun `change_app_group_id rejects duplicate new id`() = runTest {
+        val groupedJson = """
+        {
+          "name": "with groups",
+          "appGroups": [{"id":"g1","description":"G1"},{"id":"g2","description":"G2"}],
+          "apps": [{"id":"a1","name":"A1","appGroupId":"g1"}],
+          "resources": [{"id":"r1","name":"R1"}],
+          "environments": [{"id":"e1","name":"E1"}],
+          "activators": [
+            {"type":"url","appId":"a1","resourceId":"r1","environmentId":"e1","url":"https://x.example.com"}
+          ]
+        }
+        """.trimIndent()
+        val (ctx, tabId) = loadedContext(groupedJson)
+
+        val result = ChangeAppGroupIdToolCallHandler().executeToolCallHandler(
+            ChangeAppGroupIdToolCallHandlerRequest(tab_id = tabId, id = "g1", new_id = "g2", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("duplicate_id", result.code)
+    }
+
+    @Test
+    fun `change_app_group_id rejects missing target`() = runTest {
+        val (ctx, tabId) = loadedContext()
+
+        val result = ChangeAppGroupIdToolCallHandler().executeToolCallHandler(
+            ChangeAppGroupIdToolCallHandlerRequest(tab_id = tabId, id = "missing", new_id = "g1", display_message = "x"),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("missing_target", result.code)
+    }
+
+    @Test
+    fun `change_app_group_id with unchanged id is a no-op`() = runTest {
+        val groupedJson = """
+        {
+          "name": "with group",
+          "appGroups": [{"id":"g1","description":"G"}],
+          "apps": [{"id":"a1","name":"A1","appGroupId":"g1"}],
+          "resources": [{"id":"r1","name":"R1"}],
+          "environments": [{"id":"e1","name":"E1"}],
+          "activators": [
+            {"type":"url","appId":"a1","resourceId":"r1","environmentId":"e1","url":"https://x.example.com"}
+          ]
+        }
+        """.trimIndent()
+        val (ctx, tabId) = loadedContext(groupedJson)
+
+        val result = ChangeAppGroupIdToolCallHandler().executeToolCallHandler(
+            ChangeAppGroupIdToolCallHandlerRequest(tab_id = tabId, id = "g1", new_id = "g1", display_message = "x"),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        assertFalse(ctx.viewModel.activeTab!!.isDirty)
+        assertEquals(0, ctx.stateChangedCount)
     }
 }

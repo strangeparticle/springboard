@@ -205,7 +205,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
             assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
-            assertTrue(response.body.contains("\"toolCount\":38"))
+            assertTrue(response.body.contains("\"toolCount\":41"))
             assertTrue(response.body.contains("\"toolExecution\""))
             assertTrue(response.body.contains("approvalRequired"))
             assertTrue(response.body.contains("rawArguments"))
@@ -284,12 +284,21 @@ internal class CommandApiServerTest {
                 .jsonObject
 
             assertEquals(200, response.statusCode)
-            assertEquals("38", root.getValue("toolCount").jsonPrimitive.content)
+            assertEquals("41", root.getValue("toolCount").jsonPrimitive.content)
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("wrapperExample"))
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("rawArgumentsExample"))
-            assertEquals(38, tools.size)
+            assertEquals(41, tools.size)
             assertTrue(tools.any {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
+            })
+            assertTrue(tools.any {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "change_app_id"
+            })
+            assertTrue(tools.any {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "change_environment_id"
+            })
+            assertTrue(tools.any {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "change_app_group_id"
             })
             assertEquals("true", saveSpringboard.getValue("requiresUserConfirmation").jsonPrimitive.content)
             assertTrue(saveSpringboard.getValue("schema").jsonObject.isNotEmpty())

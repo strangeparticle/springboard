@@ -50,6 +50,47 @@ The sample config at `springboard-example.json` is intended as the public deskto
 fixture at `composeApp/src/commonTest/resources/springboard-test-fixture.json` is also suitable for
 local experimentation.
 
+### Run a second desktop instance for command API smoke tests
+
+By default, the desktop app starts a local command API on preferred port `47382` and writes discovery
+data to:
+
+```text
+~/Library/Application Support/Springboard/control-api.json
+```
+
+That default is convenient for normal use, but it means two local Springboard instances can compete
+for the same discovery file. For agent/dev smoke testing, launch the extra instance with a random
+API port and a separate discovery file:
+
+```shell
+./gradlew :composeApp:run --args="--startup-tabs springboard-example.json --command-api-port 0 --command-api-discovery-file /private/tmp/springboard-codex-control-api.json"
+```
+
+Then inspect the instance-specific discovery file to find the base URL and bearer token:
+
+```shell
+cat /private/tmp/springboard-codex-control-api.json
+```
+
+Example read-only status check:
+
+```shell
+python3 - <<'PY'
+import json, pathlib, subprocess
+
+discovery = pathlib.Path("/private/tmp/springboard-codex-control-api.json")
+data = json.loads(discovery.read_text())
+subprocess.run([
+    "curl", "-sS", "-i",
+    "-H", f"Authorization: Bearer {data['token']}",
+    f"{data['baseUrl']}/api/status",
+], check=False)
+PY
+```
+
+Use `--disable-command-api` when a local run should not start the command API at all.
+
 ### Startup log lines
 
 The app emits structured log lines at each startup milestone. If the app hangs or crashes, these

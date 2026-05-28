@@ -33,13 +33,18 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -357,7 +362,8 @@ internal fun AiChatPane(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        IconButton(
+                        TooltipIconButton(
+                            tooltipText = "Copy debug history",
                             onClick = { onCopyTranscript(state.debugChatHistoryText) },
                             enabled = state.debugChatHistoryText.isNotBlank(),
                             modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON),
@@ -368,7 +374,8 @@ internal fun AiChatPane(
                                 modifier = Modifier.size(15.dp),
                             )
                         }
-                        IconButton(
+                        TooltipIconButton(
+                            tooltipText = "Copy conversation",
                             onClick = { onCopyTranscript(getAllScrollbackTextForCopyToClipboard(state.scrollbackPanes)) },
                             enabled = state.scrollbackPanes.isNotEmpty(),
                             modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON),
@@ -492,6 +499,30 @@ internal fun AiChatPane(
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TooltipIconButton(
+    tooltipText: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(tooltipText) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier,
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
 private fun ProcessingOverlay(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
@@ -550,7 +581,8 @@ private fun AiChatScrollbackPaneRenderer(
                         }
                     }
                 }
-                IconButton(
+                TooltipIconButton(
+                    tooltipText = "Copy message",
                     onClick = { onCopyToClipboard(getScrollbackPaneTextForCopyToClipboard(pane)) },
                     modifier = Modifier.size(28.dp).testTag(TestTags.aiChatScrollbackPaneCopyButton(index)),
                 ) {

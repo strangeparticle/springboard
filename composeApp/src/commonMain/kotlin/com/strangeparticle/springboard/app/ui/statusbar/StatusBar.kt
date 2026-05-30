@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.platform.formatTimestamp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
@@ -81,7 +80,10 @@ fun StatusBar(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "${currentSpringboardFilteredForRuntime.source} @ ${formatTimestamp(currentSpringboardFilteredForRuntime.lastLoadTime)}",
+            text = statusBarSourceLabel(
+                source = currentSpringboardFilteredForRuntime.source,
+                lastLoadTime = currentSpringboardFilteredForRuntime.lastLoadTime,
+            ),
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f).testTag(TestTags.STATUS_BAR_SOURCE),

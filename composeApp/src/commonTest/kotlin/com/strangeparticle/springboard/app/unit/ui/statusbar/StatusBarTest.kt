@@ -1,6 +1,7 @@
 package com.strangeparticle.springboard.app.unit.ui.statusbar
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performMouseInput
@@ -16,6 +17,28 @@ import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
 class StatusBarTest {
+
+    @Test
+    fun unsavedSpringboardShowsUnsavedPlaceholderInSourceArea() = runComposeUiTest {
+        val springboard = SpringboardFactory.createEmpty("Untitled")
+        val activeTab = TabState.createEmpty("tab-1").copy(
+            source = null,
+            springboardFilteredForRuntime = springboard,
+            springboardUnfiltered = springboard,
+        )
+
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                StatusBar(
+                    activeTab = activeTab,
+                    isReloading = false,
+                    onReload = {},
+                )
+            }
+        }
+
+        onNodeWithTag(TestTags.STATUS_BAR_SOURCE).assertTextEquals("<unsaved>")
+    }
 
     @Test
     fun openFromNetworkButtonTooltipSpecifiesCurrentTab() = runComposeUiTest {

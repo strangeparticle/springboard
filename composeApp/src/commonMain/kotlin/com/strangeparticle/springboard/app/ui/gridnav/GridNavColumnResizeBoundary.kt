@@ -11,6 +11,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -33,6 +35,12 @@ fun GridNavColumnResizeBoundary(
     onDragDelta: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Mirror the header resize boundary: the drag gesture runs in a long-lived coroutine
+    // keyed on Unit, so route deltas through the latest onDragDelta via rememberUpdatedState.
+    // The current resourceLabelWidth state is not recreated today, but this keeps the two
+    // resize boundaries consistent and safe against future state-recreation.
+    val currentOnDragDelta by rememberUpdatedState(onDragDelta)
+
     Box(
         modifier = modifier
             .width(GridNavSizingConstants.ColumnResizeThumbWidth)
@@ -55,7 +63,7 @@ fun GridNavColumnResizeBoundary(
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
-                        onDragDelta(dragAmount.x)
+                        currentOnDragDelta(dragAmount.x)
                     }
                 },
             contentAlignment = Alignment.Center,

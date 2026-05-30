@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.mutator.updateApp
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavSizingConstants
 import com.strangeparticle.springboard.app.ui.gridnav.IsInMultiSelectKey
@@ -180,6 +181,90 @@ object GridNavTestScenarios {
             afterFirstDrag,
             afterSecondDrag,
             "Expected thumb position to remain clamped after additional downward drag",
+        )
+    }
+
+    // --- Header height stability across in-place API mutations (issue #92) ---
+
+    // Renames an app on the active tab the same way the update_app tool call does:
+    // apply the pure-function mutator and push the result back via replaceTabSpringboard.
+    // This mutates the springboard in place, keeping GridNav composed (the bug only
+    // surfaces when GridNav stays composed while its app list changes).
+    private fun renameActiveTabApp(components: GridNavTestComponents, appId: String, newName: String) {
+        val currentSpringboard = components.viewModel.activeTab!!.springboardUnfiltered!!
+        val renamedSpringboard = updateApp(currentSpringboard, appId = appId, newName = newName)
+        components.viewModel.replaceTabSpringboard(components.viewModel.activeTabId, renamedSpringboard)
+    }
+
+    fun renamingAppViaApiPreservesDraggedHeaderHeight() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        // Drag the header to its maximum height so the user's chosen height is taller
+        // than any height the renamed app would auto-compute. This isolates the reset
+        // bug: the renamed initial height is always below this dragged value.
+        val excessivePx = with(density) {
+            (GridNavSizingConstants.MaxHeaderHeight + 200.dp).toPx()
+        }
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, excessivePx))
+            up()
+        }
+        waitForIdle()
+
+        val draggedTop = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+
+        // Rename an app to a longer name so its auto-computed initial header height
+        // changes (the longest name now drives a taller, but still sub-maximum, height).
+        renameActiveTabApp(components, appId = "app1", newName = "App One Extended Nme")
+        waitForIdle()
+
+        val afterRenameTop = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertEquals(
+            draggedTop,
+            afterRenameTop,
+            "Expected the dragged header height to survive an API rename, but the thumb moved from $draggedTop to $afterRenameTop",
+        )
+    }
+
+    fun headerResizeThumbStillRespondsAfterApiRename() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.MULTI_ENV_WITH_COMMON, "/test/springboard.json")
+        waitForIdle()
+
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 60f))
+            up()
+        }
+        waitForIdle()
+
+        renameActiveTabApp(components, appId = "app1", newName = "App One Extended Nme")
+        waitForIdle()
+
+        val topBeforeSecondDrag = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+
+        onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, 60f))
+            up()
+        }
+        waitForIdle()
+
+        val topAfterSecondDrag = onNodeWithTag(TestTags.GRID_HEADER_RESIZE_THUMB)
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(
+            topAfterSecondDrag > topBeforeSecondDrag,
+            "Expected the resize thumb to still respond to dragging after an API rename: was $topBeforeSecondDrag, now $topAfterSecondDrag",
         )
     }
 

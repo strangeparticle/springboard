@@ -22,6 +22,12 @@ class GridNavTests {
     @Test fun `dragging header resize thumb clamps at max height`() =
         GridNavTestScenarios.draggingHeaderResizeThumbClampsAtMaxHeight()
 
+    @Test fun `renaming app via API preserves dragged header height`() =
+        GridNavTestScenarios.renamingAppViaApiPreservesDraggedHeaderHeight()
+
+    @Test fun `header resize thumb still responds after API rename`() =
+        GridNavTestScenarios.headerResizeThumbStillRespondsAfterApiRename()
+
     @Test fun `column resize thumb has test tag`() =
         GridNavTestScenarios.columnResizeThumbHasTestTag()
 

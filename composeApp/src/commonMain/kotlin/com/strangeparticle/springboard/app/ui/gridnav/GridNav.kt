@@ -86,8 +86,17 @@ fun GridNav(
     val headerSizing = rememberGridNavHeaderSizing(springboard.apps)
     val density = LocalDensity.current
 
-    var gridHeaderHeight by remember(headerSizing.initialHeaderHeight) {
-        mutableStateOf(headerSizing.initialHeaderHeight)
+    // Seed the header height once from the initial auto-computed height. It must NOT
+    // be keyed on headerSizing.initialHeaderHeight: an in-place app mutation (e.g. an
+    // API-driven rename) recomputes initialHeaderHeight, and a keyed remember would
+    // re-seed the state, discarding a height the user dragged to. Instead, only grow
+    // to keep the longest renamed name visible; never shrink below the user's height.
+    var gridHeaderHeight by remember { mutableStateOf(headerSizing.initialHeaderHeight) }
+
+    LaunchedEffect(headerSizing.initialHeaderHeight) {
+        if (headerSizing.initialHeaderHeight > gridHeaderHeight) {
+            gridHeaderHeight = headerSizing.initialHeaderHeight
+        }
     }
 
     var resourceLabelWidth by remember {

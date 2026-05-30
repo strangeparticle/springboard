@@ -11,6 +11,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -33,6 +35,12 @@ fun GridNavHeaderResizeBoundary(
     onDragDelta: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The drag gesture runs in a long-lived coroutine keyed on Unit, so it never
+    // restarts. Route drag deltas through the latest onDragDelta via rememberUpdatedState
+    // so a recomposition that hands us a new lambda (e.g. when the caller recreates the
+    // header-height state) does not leave the gesture calling a stale, discarded closure.
+    val currentOnDragDelta by rememberUpdatedState(onDragDelta)
+
     Box(
         modifier = modifier.width(totalGridWidth),
         contentAlignment = Alignment.Center,
@@ -56,7 +64,7 @@ fun GridNavHeaderResizeBoundary(
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
-                        onDragDelta(dragAmount.y)
+                        currentOnDragDelta(dragAmount.y)
                     }
                 },
             contentAlignment = Alignment.Center,

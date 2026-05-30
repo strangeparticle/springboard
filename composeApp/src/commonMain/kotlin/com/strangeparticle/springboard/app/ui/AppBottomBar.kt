@@ -1,5 +1,6 @@
 package com.strangeparticle.springboard.app.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
+import org.jetbrains.compose.resources.painterResource
 
 /**
  * Persistent bottom-of-window bar that hosts global app controls (AI assistant toggle and
@@ -61,6 +63,18 @@ internal fun AppBottomBar(
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val bottomBarLogo = currentUiBrand.drawableResources.bottomBarLogo
+            if (bottomBarLogo != null) {
+                Image(
+                    painter = painterResource(bottomBarLogo.drawable),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .padding(start = bottomBarLogo.startPadding)
+                        .height(bottomBarLogo.height)
+                        .testTag(TestTags.BOTTOM_BAR_LOGO),
+                )
+            }
+
             Spacer(modifier = Modifier.weight(1f))
 
             TooltipBox(

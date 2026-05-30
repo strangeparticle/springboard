@@ -14,7 +14,7 @@ fun strangeParticleLightBrand(): UiBrand = UiBrand(
     typography = StrangeParticleTypography(),
     shapes = Shapes(),  // we don't currently use any custom shapes
     vectorImages = StrangeParticleImageVectors,
-    drawableResources = StrangeParticleImagePainters,
+    drawableResources = StrangeParticleImagePaintersLightTheme,
 )
 
 /**
@@ -27,5 +27,5 @@ fun strangeParticleDarkBrand(): UiBrand = UiBrand(
     typography = StrangeParticleTypography(),
     shapes = Shapes(),
     vectorImages = StrangeParticleImageVectors,
-    drawableResources = StrangeParticleImagePainters,
+    drawableResources = StrangeParticleImagePaintersDarkTheme,
 )

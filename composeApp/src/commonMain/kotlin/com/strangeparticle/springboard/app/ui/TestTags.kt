@@ -16,6 +16,7 @@ object TestTags {
     const val GRID_HEADER_RESIZE_GRIP_GLYPH = "gridHeaderResizeGripGlyph"
     const val GRID_COLUMN_RESIZE_THUMB = "gridColumnResizeThumb"
     const val GRID_COLUMN_RESIZE_GRIP_GLYPH = "gridColumnResizeGripGlyph"
+    const val BOTTOM_BAR_LOGO = "bottomBarLogo"
     const val SETTINGS_GEAR_ICON = "settingsGearIcon"
     const val SETTINGS_SCREEN = "settingsScreen"
     const val SETTINGS_BACK_BUTTON = "settingsBackButton"

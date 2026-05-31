@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalWindowInfo
 import com.strangeparticle.luther.client.provider.AiProvider
 import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.luther.session.AiSessionManager
@@ -75,6 +76,18 @@ internal fun SpringboardApp(
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+
+    // Shift state is only cleared by a Shift KeyUp, which never arrives if focus leaves the window
+    // while Shift is held (e.g. Cmd+Tab). Reset it on blur so the grid does not get stuck in
+    // multi-select mode, and discard any pending multi-select that was being built.
+    val windowInfo = LocalWindowInfo.current
+    LaunchedEffect(windowInfo.isWindowFocused) {
+        if (!windowInfo.isWindowFocused) {
+            isShiftHeld = false
+            viewModel.clearMultiSelect()
+        }
+    }
+
     var aiSettingsFirst by remember { mutableStateOf(false) }
     val derivedAiChatPaneState = rememberAiChatPaneState(
         viewModel = viewModel,

@@ -343,6 +343,19 @@ class SpringboardViewModelTest {
         assertEquals(setOf(coord2), vm.multiSelectSet)
     }
 
+    @Test
+    fun `clear multi select discards pending selection`() {
+        val vm = createViewModel()
+        vm.loadConfig(validJson, "/test.json")
+
+        vm.toggleMultiSelect(Coordinate("preprod", "app1", "res1"))
+        vm.toggleMultiSelect(Coordinate("preprod", "app1", "res2"))
+        assertEquals(2, vm.multiSelectSet.size)
+
+        vm.clearMultiSelect()
+        assertTrue(vm.multiSelectSet.isEmpty())
+    }
+
     // --- Guidance data through ViewModel load ---
 
     private val jsonWithGuidance = """

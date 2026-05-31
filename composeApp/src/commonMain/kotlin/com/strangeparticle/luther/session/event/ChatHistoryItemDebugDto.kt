@@ -12,6 +12,7 @@ internal fun ChatHistoryItem.toDebugDto(itemIndex: Int): ChatHistoryItemDebugDto
     is AssistantRespondedChatHistoryItem -> AssistantRespondedChatHistoryItemDebugDto.from(itemIndex, this)
     is LocalCommandRespondedChatHistoryItem -> LocalCommandRespondedChatHistoryItemDebugDto.from(itemIndex, this)
     is LocalCommandSubmittedChatHistoryItem -> LocalCommandSubmittedChatHistoryItemDebugDto.from(itemIndex, this)
+    is ProviderModelChangedChatHistoryItem -> ProviderModelChangedChatHistoryItemDebugDto.from(itemIndex, this)
     is StateSnapshotAddedChatHistoryItem -> StateSnapshotAddedChatHistoryItemDebugDto.from(itemIndex, this)
     is ToolApprovalRequestedChatHistoryItem -> ToolApprovalRequestedChatHistoryItemDebugDto.from(itemIndex, this)
     is ToolApprovalRespondedChatHistoryItem -> ToolApprovalRespondedChatHistoryItemDebugDto.from(itemIndex, this)

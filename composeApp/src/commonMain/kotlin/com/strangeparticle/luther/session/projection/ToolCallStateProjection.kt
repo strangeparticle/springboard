@@ -6,6 +6,7 @@ import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
 import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistoryItem
 import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
+import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
 import com.strangeparticle.luther.session.event.StateSnapshotAddedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolApprovalRequestedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolApprovalRespondedChatHistoryItem
@@ -33,6 +34,7 @@ internal fun buildToolCallStates(events: List<ChatHistoryItem>): Map<String, Too
             is AssistantRespondedChatHistoryItem,
             is LocalCommandRespondedChatHistoryItem,
             is LocalCommandSubmittedChatHistoryItem,
+            is ProviderModelChangedChatHistoryItem,
             is StateSnapshotAddedChatHistoryItem,
             is UserSubmittedChatHistoryItem -> Unit
         }

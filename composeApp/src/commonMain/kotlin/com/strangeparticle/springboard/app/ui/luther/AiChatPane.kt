@@ -572,8 +572,10 @@ private fun AiChatScrollbackPaneRenderer(
                 SelectionContainer(modifier = Modifier.weight(1f)) {
                     Column {
                         when (pane) {
+                            is AiChatScrollbackPane.ProviderModelChange -> ProviderModelChangePaneContent(pane, textStyle)
                             is AiChatScrollbackPane.LocalCommand -> LocalCommandPaneContent(pane, textStyle)
                             is AiChatScrollbackPane.Interaction -> InteractionPaneContent(pane, onApprovalDecision, textStyle)
+                            is AiChatScrollbackPane.DebugProviderModelChange -> DebugProviderModelChangePaneContent(pane, textStyle)
                             is AiChatScrollbackPane.DebugUserMessage -> DebugUserMessagePaneContent(pane, textStyle)
                             is AiChatScrollbackPane.DebugStateSnapshot -> DebugStateSnapshotPaneContent(pane, textStyle)
                             is AiChatScrollbackPane.DebugAssistantMessage -> DebugAssistantMessagePaneContent(pane, textStyle)
@@ -595,6 +597,19 @@ private fun AiChatScrollbackPaneRenderer(
             }
         }
     }
+}
+
+@Composable
+private fun ProviderModelChangePaneContent(
+    pane: AiChatScrollbackPane.ProviderModelChange,
+    textStyle: TextStyle,
+) {
+    Text(
+        text = pane.text,
+        style = textStyle,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+    )
 }
 
 @Composable
@@ -680,6 +695,15 @@ private fun DebugMonospaceBody(text: String, textStyle: TextStyle) {
 @Composable
 private fun DebugUserMessagePaneContent(
     pane: AiChatScrollbackPane.DebugUserMessage,
+    textStyle: TextStyle,
+) {
+    DebugPaneTitleBar(pane)
+    Text(text = pane.text, style = textStyle, color = MaterialTheme.colorScheme.onSurface)
+}
+
+@Composable
+private fun DebugProviderModelChangePaneContent(
+    pane: AiChatScrollbackPane.DebugProviderModelChange,
     textStyle: TextStyle,
 ) {
     DebugPaneTitleBar(pane)

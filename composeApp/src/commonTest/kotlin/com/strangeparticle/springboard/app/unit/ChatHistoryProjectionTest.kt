@@ -14,6 +14,7 @@ import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistory
 import com.strangeparticle.luther.session.event.LocalCommandResponseKind
 import com.strangeparticle.luther.session.event.LocalCommandSource
 import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
+import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
 import com.strangeparticle.luther.session.event.StateSnapshotAddedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolApprovalRequestedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolApprovalRespondedChatHistoryItem
@@ -32,6 +33,7 @@ import com.strangeparticle.springboard.app.ui.luther.CommandAttribution
 import com.strangeparticle.springboard.app.ui.luther.LocalCommandResponseStyle
 import com.strangeparticle.springboard.app.ui.luther.buildDebugScrollbackPanes
 import com.strangeparticle.springboard.app.ui.luther.buildSlimScrollbackPanes
+import com.strangeparticle.springboard.app.ui.luther.getAllScrollbackTextForCopyToClipboard
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -65,6 +67,36 @@ internal class ChatHistoryProjectionTest {
             LocalCommandSubmittedChatHistoryItem("/help", LocalCommandSource.User),
             LocalCommandRespondedChatHistoryItem("/help", "Help text", LocalCommandResponseKind.Help),
         )))
+    }
+
+    @Test
+    fun `provider model change group projects to provider model scrollback and debug dump only`() {
+        val groups = listOf(
+            ChatHistoryGroup(ChatHistoryGroupType.PROVIDER_MODEL_CHANGE, listOf(
+                ProviderModelChangedChatHistoryItem("OpenAI", "gpt-4o-mini"),
+            )),
+        )
+
+        assertEquals(
+            listOf(AiChatScrollbackPane.ProviderModelChange("Active AI provider/model: OpenAI:gpt-4o-mini")),
+            buildSlimScrollbackPanes(groups),
+        )
+        assertEquals(emptyList(), buildProviderHistory(groups.flatMap { it.items }))
+        assertEquals(
+            "Active AI provider/model: OpenAI:gpt-4o-mini",
+            getAllScrollbackTextForCopyToClipboard(buildSlimScrollbackPanes(groups)),
+        )
+
+        val dumpJson = buildChatHistoryDebugDumpJson(
+            groups = groups,
+            providerLabel = "OpenAI",
+            modelLabel = "gpt-4o-mini",
+            systemPrompt = "system prompt",
+        )
+        val item = (((Json.parseToJsonElement(dumpJson).jsonObject["groups"] as JsonArray)[0] as JsonObject)["items"] as JsonArray)[0] as JsonObject
+        assertEquals(JsonPrimitive("ProviderModelChangedChatHistoryItem"), item["kind"])
+        assertEquals(JsonPrimitive("OpenAI"), item["providerLabel"])
+        assertEquals(JsonPrimitive("gpt-4o-mini"), item["modelLabel"])
     }
 
     @Test

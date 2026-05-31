@@ -1030,6 +1030,11 @@ class SpringboardViewModel(
         }
     }
 
+    /** Discards any pending grid-nav multi-select without activating it (e.g. when the window loses focus). */
+    fun clearMultiSelect() {
+        multiSelectSet = emptySet()
+    }
+
     fun getActivatorForCell(coordinate: Coordinate): Activator? {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return null
         return currentSpringboardFilteredForRuntime.indexes.activatorByCoordinate[coordinate]

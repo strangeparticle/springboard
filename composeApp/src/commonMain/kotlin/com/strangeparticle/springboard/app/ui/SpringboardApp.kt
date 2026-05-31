@@ -36,7 +36,8 @@ import com.strangeparticle.springboard.app.ui.luther.AiChatPaneModelPickerState
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
 import com.strangeparticle.springboard.app.ui.luther.buildDebugScrollbackPanes
 import com.strangeparticle.springboard.app.ui.luther.buildSlimScrollbackPanes
-import com.strangeparticle.springboard.app.ui.luther.initialTerseHelpHistory
+import com.strangeparticle.springboard.app.ui.luther.appendProviderModelState
+import com.strangeparticle.springboard.app.ui.luther.initialChatHistory
 import com.strangeparticle.springboard.app.ui.luther.parseAiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
@@ -195,19 +196,32 @@ private fun rememberAiChatPaneState(
         if (modelSetting != null && isConfigured) loadModelOptions()
     }
 
-    val aiClient = remember(provider, isConfigured, modelId) {
+    val aiClient = remember(provider, isConfigured) {
         if (provider != null && isConfigured) provider.createClient(context) else null
     }
     var transcriptVersion by remember { mutableStateOf(0) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
     // TODO: what's this change doing here?  Seems like this should be part of a different commit?
     val latestModelId by rememberUpdatedState(modelId)
-    var chatHistory by remember(aiClient, viewModel) {
-        mutableStateOf(initialTerseHelpHistory())
+    var chatHistory by remember(viewModel) {
+        mutableStateOf<List<ChatHistoryGroup>>(emptyList())
     }
 
     if (provider == null || aiClient == null || modelId.isBlank()) {
         return AiChatPaneState.notConfigured()
+    }
+    val providerLabel = provider.displayName
+    // Record the active provider/model as a history entry. Keying the effect on the effective
+    // provider:model means it runs once when a configured provider/model first appears and again
+    // only when that value actually changes — not on every recomposition. The first record starts
+    // the history (provider/model entry, then terse help); later changes append a change entry.
+    val activeProviderModelDisplayString = "$providerLabel:$modelId"
+    LaunchedEffect(activeProviderModelDisplayString) {
+        chatHistory = if (chatHistory.isEmpty()) {
+            initialChatHistory(providerLabel, modelId)
+        } else {
+            appendProviderModelState(chatHistory, providerLabel, modelId)
+        }
     }
 
     val manager = remember(aiClient, viewModel) {
@@ -245,13 +259,13 @@ private fun rememberAiChatPaneState(
     val systemPrompt = SystemPromptBuilder.build()
     val debugChatHistoryText = buildChatHistoryDebugDumpJson(
         groups = chatHistory,
-        providerLabel = provider.displayName,
+        providerLabel = providerLabel,
         modelLabel = modelId,
         systemPrompt = systemPrompt,
     )
 
     return AiChatPaneState.configured(
-        providerLabel = provider.displayName,
+        providerLabel = providerLabel,
         modelLabel = modelId,
         modelPicker = AiChatPaneModelPickerState(
             selectedModelId = modelId,

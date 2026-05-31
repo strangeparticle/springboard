@@ -8,6 +8,7 @@ import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistory
 import com.strangeparticle.luther.session.event.LocalCommandResponseKind
 import com.strangeparticle.luther.session.event.LocalCommandSource
 import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
+import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
 import com.strangeparticle.luther.session.projection.buildProviderHistory
 import com.strangeparticle.luther.session.projection.buildTranscriptParts
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
@@ -18,6 +19,10 @@ import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 
 internal sealed class AiChatScrollbackPane {
+    data class ProviderModelChange(
+        val text: String,
+    ) : AiChatScrollbackPane()
+
     data class LocalCommand(
         val commandText: String,
         val commandAttribution: CommandAttribution,
@@ -57,6 +62,11 @@ internal sealed class AiChatScrollbackPane {
         val content: String,
         val historyIndex: Int,
     ) : AiChatScrollbackPane()
+
+    data class DebugProviderModelChange(
+        val text: String,
+        val historyIndex: Int,
+    ) : AiChatScrollbackPane()
 }
 
 internal enum class CommandAttribution {
@@ -86,10 +96,38 @@ internal fun initialTerseHelpHistory(): List<ChatHistoryGroup> = listOf(
     ),
 )
 
+// The starting chat history for a session records the active provider/model first, then the
+// terse help. Callers record the active provider/model exactly once when the session starts and
+// append a change entry only when the effective provider/model actually changes; see
+// SpringboardApp's provider/model recording effect.
+internal fun initialChatHistory(
+    providerLabel: String,
+    modelLabel: String,
+): List<ChatHistoryGroup> = listOf(providerModelStateGroup(providerLabel, modelLabel)) + initialTerseHelpHistory()
+
+internal fun appendProviderModelState(
+    groups: List<ChatHistoryGroup>,
+    providerLabel: String,
+    modelLabel: String,
+): List<ChatHistoryGroup> = groups + providerModelStateGroup(providerLabel, modelLabel)
+
+private fun providerModelStateGroup(
+    providerLabel: String,
+    modelLabel: String,
+): ChatHistoryGroup = ChatHistoryGroup(
+    type = ChatHistoryGroupType.PROVIDER_MODEL_CHANGE,
+    items = listOf(ProviderModelChangedChatHistoryItem(providerLabel, modelLabel)),
+)
+
 internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
     val panes = mutableListOf<AiChatScrollbackPane>()
     for (group in groups) {
         when (group.type) {
+            ChatHistoryGroupType.PROVIDER_MODEL_CHANGE -> {
+                group.items.filterIsInstance<ProviderModelChangedChatHistoryItem>().forEach { item ->
+                    panes += AiChatScrollbackPane.ProviderModelChange(item.displayText)
+                }
+            }
             ChatHistoryGroupType.LOCAL_COMMAND -> {
                 val submitted = group.items.filterIsInstance<LocalCommandSubmittedChatHistoryItem>().firstOrNull()
                 val responded = group.items.filterIsInstance<LocalCommandRespondedChatHistoryItem>().firstOrNull()
@@ -117,16 +155,26 @@ internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiCh
 }
 
 internal fun buildDebugScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
-    val allItems = groups.flatMap { it.items }
-    return buildProviderHistory(allItems).mapIndexedNotNull { index, message ->
-        when (message) {
-            is AiConversationMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, index)
-            is AiConversationMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, index)
-            is AiConversationMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, index)
-            is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, index)
-            else -> null
+    val panes = mutableListOf<AiChatScrollbackPane>()
+    var paneIndex = 0
+    groups.flatMap { it.items }.forEach { item ->
+        if (item is ProviderModelChangedChatHistoryItem) {
+            panes += AiChatScrollbackPane.DebugProviderModelChange(item.displayText, paneIndex)
+            paneIndex += 1
+            return@forEach
+        }
+        for (message in buildProviderHistory(listOf(item))) {
+            panes += when (message) {
+                is AiConversationMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, paneIndex)
+                is AiConversationMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, paneIndex)
+                is AiConversationMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, paneIndex)
+                is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, paneIndex)
+                else -> continue
+            }
+            paneIndex += 1
         }
     }
+    return panes
 }
 
 private fun LocalCommandSource?.toCommandAttribution(): CommandAttribution = when (this) {
@@ -152,15 +200,18 @@ private fun LocalCommandResponseKind.toLocalCommandResponseStyle(): LocalCommand
  * this view and label themselves inline.
  */
 internal fun debugPaneTitle(pane: AiChatScrollbackPane): String = when (pane) {
+    is AiChatScrollbackPane.DebugProviderModelChange -> "Provider/model"
     is AiChatScrollbackPane.DebugUserMessage -> "Your message"
     is AiChatScrollbackPane.DebugStateSnapshot -> "Application state sent to model"
     is AiChatScrollbackPane.DebugAssistantMessage -> "Assistant reply"
     is AiChatScrollbackPane.DebugToolResult -> "Tool result returned to model — id=${pane.toolCallId}"
+    is AiChatScrollbackPane.ProviderModelChange,
     is AiChatScrollbackPane.LocalCommand,
     is AiChatScrollbackPane.Interaction -> ""
 }
 
 internal fun getScrollbackPaneTextForCopyToClipboard(pane: AiChatScrollbackPane): String = when (pane) {
+    is AiChatScrollbackPane.ProviderModelChange -> pane.text
     is AiChatScrollbackPane.LocalCommand -> listOf(
         formatCommandForCopyToClipboard(pane),
         pane.responseText,
@@ -184,6 +235,7 @@ internal fun getScrollbackPaneTextForCopyToClipboard(pane: AiChatScrollbackPane)
         }
     }
     is AiChatScrollbackPane.DebugToolResult -> "${debugPaneTitle(pane)}:\n${pane.content}"
+    is AiChatScrollbackPane.DebugProviderModelChange -> "${debugPaneTitle(pane)}:\n${pane.text}"
 }
 
 internal fun getAllScrollbackTextForCopyToClipboard(panes: List<AiChatScrollbackPane>): String = panes

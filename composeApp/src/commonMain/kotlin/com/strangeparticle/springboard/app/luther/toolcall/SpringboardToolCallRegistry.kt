@@ -13,6 +13,7 @@ internal fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallReg
     register(AddEnvironmentToolCallHandler())
     register(AddGuidanceToolCallHandler())
     register(AddResourceToolCallHandler())
+    register(AddTerminalActivatorToolCallHandler())
     register(AddUrlActivatorToolCallHandler())
     register(AddUrlTemplateActivatorToolCallHandler())
     register(ChangeAppGroupIdToolCallHandler())

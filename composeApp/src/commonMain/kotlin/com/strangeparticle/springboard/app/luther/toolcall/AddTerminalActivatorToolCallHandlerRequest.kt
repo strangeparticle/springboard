@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import com.strangeparticle.luther.toolcall.ToolFieldDescription
 
 @Serializable
-internal data class UpdateActivatorToolCallHandlerRequest(
+internal data class AddTerminalActivatorToolCallHandlerRequest(
     @ToolFieldDescription("Id of the tab whose springboard to mutate.")
     val tab_id: String,
     @ToolFieldDescription("App id for the activator coordinate.")
@@ -13,15 +13,9 @@ internal data class UpdateActivatorToolCallHandlerRequest(
     val resource_id: String,
     @ToolFieldDescription("Environment id for the activator coordinate.")
     val environment_id: String,
-    @ToolFieldDescription("New URL for a URL activator.")
-    val url: String? = null,
-    @ToolFieldDescription("New URL template for a URL-template activator.")
-    val url_template: String? = null,
-    @ToolFieldDescription("New command template for a command activator.")
-    val command_template: String? = null,
-    @ToolFieldDescription("New working directory for a terminal activator.")
-    val working_directory: String? = null,
-    @ToolFieldDescription("New command for a terminal activator (optional; omit to leave it unchanged).")
+    @ToolFieldDescription("Directory the terminal opens in (cd'd into).")
+    val working_directory: String,
+    @ToolFieldDescription("Command to run in the new terminal session. Optional; omit to just open a prompt.")
     val command: String? = null,
     @ToolFieldDescription("Brief user-facing description of what was done.")
     val display_message: String,

@@ -1,6 +1,8 @@
 package com.strangeparticle.springboard.app.unit.ui.gridnav
 
+import com.strangeparticle.springboard.app.domain.model.TerminalActivator
 import com.strangeparticle.springboard.app.ui.gridnav.GridNavHeaderIdTextSizeSp
+import com.strangeparticle.springboard.app.ui.gridnav.activatorPreviewText
 import com.strangeparticle.springboard.app.ui.gridnav.truncateHeaderText
 import com.strangeparticle.springboard.app.ui.gridnav.truncateHeaderTextToFitWidth
 
@@ -97,5 +99,29 @@ class HeaderTextUtilsTest {
         assertEquals("febu…", small)
         assertEquals("feburil-h…", medium)
         assertEquals("feburil-hoodymap-lucky", large)
+    }
+
+    @Test
+    fun `terminal activator preview shows directory only when no command`() {
+        val activator = TerminalActivator(
+            appId = "app1",
+            resourceId = "res1",
+            environmentId = "staging",
+            workingDirectory = "/my/dir",
+            command = null,
+        )
+        assertEquals("term: /my/dir", activatorPreviewText(activator))
+    }
+
+    @Test
+    fun `terminal activator preview shows directory and command`() {
+        val activator = TerminalActivator(
+            appId = "app1",
+            resourceId = "res1",
+            environmentId = "staging",
+            workingDirectory = "/my/dir",
+            command = "git status",
+        )
+        assertEquals("term: /my/dir — git status", activatorPreviewText(activator))
     }
 }

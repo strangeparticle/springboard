@@ -6,6 +6,7 @@ import com.strangeparticle.springboard.app.domain.model.Activator
 import com.strangeparticle.springboard.app.domain.model.CommandActivator
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.domain.model.TerminalActivator
 import com.strangeparticle.springboard.app.domain.model.UrlActivator
 import com.strangeparticle.springboard.app.domain.model.UrlTemplateActivator
 
@@ -41,6 +42,8 @@ internal fun updateActivator(
     newUrl: String? = null,
     newUrlTemplate: String? = null,
     newCommandTemplate: String? = null,
+    newWorkingDirectory: String? = null,
+    newCommand: String? = null,
 ): Springboard {
     val existing = springboard.indexes.activatorByCoordinate[coordinate]
         ?: throw SpringboardMutationError(
@@ -51,7 +54,7 @@ internal fun updateActivator(
 
     val updated: Activator = when (existing) {
         is UrlActivator -> {
-            if (newUrlTemplate != null || newCommandTemplate != null) {
+            if (newUrlTemplate != null || newCommandTemplate != null || newWorkingDirectory != null || newCommand != null) {
                 throw SpringboardMutationError(
                     errorMessage = "URL activator only accepts a `url` payload — to change type, remove + add.",
                     code = "wrong_field_for_type",
@@ -60,7 +63,7 @@ internal fun updateActivator(
             existing.copy(url = newUrl ?: existing.url)
         }
         is UrlTemplateActivator -> {
-            if (newUrl != null || newCommandTemplate != null) {
+            if (newUrl != null || newCommandTemplate != null || newWorkingDirectory != null || newCommand != null) {
                 throw SpringboardMutationError(
                     errorMessage = "URL-template activator only accepts a `url_template` payload — to change type, remove + add.",
                     code = "wrong_field_for_type",
@@ -69,13 +72,25 @@ internal fun updateActivator(
             existing.copy(urlTemplate = newUrlTemplate ?: existing.urlTemplate)
         }
         is CommandActivator -> {
-            if (newUrl != null || newUrlTemplate != null) {
+            if (newUrl != null || newUrlTemplate != null || newWorkingDirectory != null || newCommand != null) {
                 throw SpringboardMutationError(
                     errorMessage = "Command activator only accepts a `command_template` payload — to change type, remove + add.",
                     code = "wrong_field_for_type",
                 )
             }
             existing.copy(commandTemplate = newCommandTemplate ?: existing.commandTemplate)
+        }
+        is TerminalActivator -> {
+            if (newUrl != null || newUrlTemplate != null || newCommandTemplate != null) {
+                throw SpringboardMutationError(
+                    errorMessage = "Terminal activator only accepts `working_directory` / `command` payloads — to change type, remove + add.",
+                    code = "wrong_field_for_type",
+                )
+            }
+            existing.copy(
+                workingDirectory = newWorkingDirectory ?: existing.workingDirectory,
+                command = newCommand ?: existing.command,
+            )
         }
     }
 

@@ -88,6 +88,13 @@ object SpringboardFactory {
                     environmentId = normalizedEnvironmentId,
                     commandTemplate = activatorDto.commandTemplate,
                 )
+                is TerminalActivatorDto -> TerminalActivator(
+                    appId = activatorDto.appId,
+                    resourceId = activatorDto.resourceId,
+                    environmentId = normalizedEnvironmentId,
+                    workingDirectory = activatorDto.workingDirectory,
+                    command = activatorDto.command,
+                )
             }
         }
 

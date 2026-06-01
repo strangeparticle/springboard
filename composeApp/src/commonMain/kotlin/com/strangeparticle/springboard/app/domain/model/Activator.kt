@@ -44,3 +44,15 @@ data class CommandActivator(
     override fun withResourceId(newResourceId: String) = copy(resourceId = newResourceId)
     override fun withEnvironmentId(newEnvironmentId: String) = copy(environmentId = newEnvironmentId)
 }
+
+data class TerminalActivator(
+    override val appId: String,
+    override val resourceId: String,
+    override val environmentId: String,
+    val workingDirectory: String,
+    val command: String?
+) : Activator() {
+    override fun withAppId(newAppId: String) = copy(appId = newAppId)
+    override fun withResourceId(newResourceId: String) = copy(resourceId = newResourceId)
+    override fun withEnvironmentId(newEnvironmentId: String) = copy(environmentId = newEnvironmentId)
+}

@@ -44,3 +44,14 @@ internal data class CommandActivatorDto(
     val commandTemplate: String,
     override val guidanceLines: List<String> = emptyList(),
 ) : ActivatorDto()
+
+@Serializable
+@SerialName("term")
+internal data class TerminalActivatorDto(
+    override val appId: String,
+    override val resourceId: String,
+    override val environmentId: String,
+    val workingDirectory: String,
+    val command: String? = null,
+    override val guidanceLines: List<String> = emptyList(),
+) : ActivatorDto()

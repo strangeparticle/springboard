@@ -16,13 +16,16 @@ import com.strangeparticle.springboard.app.platform.PlatformActivationService
 import com.strangeparticle.springboard.app.platform.PlatformActivationServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
+import com.strangeparticle.springboard.app.platform.PreferredTerminal
 import com.strangeparticle.springboard.app.platform.S3ContentService
 import com.strangeparticle.springboard.app.platform.S3GetResult
 import com.strangeparticle.springboard.app.platform.S3PutResult
 import com.strangeparticle.springboard.app.runtime.filterSpringboardForRuntime
 import com.strangeparticle.springboard.app.settings.items.core.HideAppAfterActivationSetting
+import com.strangeparticle.springboard.app.settings.items.core.OpenTerminalInNewWindowSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowMultipleSetting
 import com.strangeparticle.springboard.app.settings.items.core.OpenUrlsInNewWindowSingleSetting
+import com.strangeparticle.springboard.app.settings.items.core.PreferredTerminalSetting
 import com.strangeparticle.springboard.app.settings.items.core.ResetKeyNavAfterGridNavActivationSetting
 import com.strangeparticle.springboard.app.settings.items.core.ResetKeyNavAfterKeyNavActivationSetting
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -817,7 +820,9 @@ class SpringboardViewModel(
             springboardConfig,
             settingsManager.runtimeEnvironment,
         )
-        return runtimeSpringboard.activators.any { it is UrlTemplateActivator || it is CommandActivator }
+        return runtimeSpringboard.activators.any {
+            it is UrlTemplateActivator || it is CommandActivator || it is TerminalActivator
+        }
     }
 
     fun selectEnvironment(environmentId: String?) {
@@ -1044,6 +1049,20 @@ class SpringboardViewModel(
                 }
                 is CommandActivator -> {
                     platformActivationService.executeCommand(activator.commandTemplate) { errorMessage ->
+                        activeTabToast.error(errorMessage)
+                    }
+                }
+                is TerminalActivator -> {
+                    val preferredTerminal = PreferredTerminal.fromId(
+                        settingsManager.resolveValue(PreferredTerminalSetting),
+                    )
+                    val openInNewWindow = settingsManager.resolveValue(OpenTerminalInNewWindowSetting)
+                    platformActivationService.openTerminal(
+                        workingDirectory = activator.workingDirectory,
+                        command = activator.command,
+                        preferredTerminal = preferredTerminal,
+                        openInNewWindow = openInNewWindow,
+                    ) { errorMessage ->
                         activeTabToast.error(errorMessage)
                     }
                 }

@@ -2,6 +2,8 @@ package com.strangeparticle.springboard.app.unit.tools
 
 import com.strangeparticle.springboard.app.luther.toolcall.AddCommandActivatorToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.toolcall.AddCommandActivatorToolCallHandler
+import com.strangeparticle.springboard.app.luther.toolcall.AddTerminalActivatorToolCallHandlerRequest
+import com.strangeparticle.springboard.app.luther.toolcall.AddTerminalActivatorToolCallHandler
 import com.strangeparticle.springboard.app.luther.toolcall.AddUrlActivatorToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.toolcall.AddUrlActivatorToolCallHandler
 import com.strangeparticle.springboard.app.luther.toolcall.AddUrlTemplateActivatorToolCallHandlerRequest
@@ -11,6 +13,7 @@ import com.strangeparticle.springboard.app.luther.toolcall.RemoveActivatorToolCa
 import com.strangeparticle.springboard.app.luther.toolcall.UpdateActivatorToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.toolcall.UpdateActivatorToolCallHandler
 import com.strangeparticle.springboard.app.domain.model.Coordinate
+import com.strangeparticle.springboard.app.domain.model.TerminalActivator
 import com.strangeparticle.springboard.app.domain.model.UrlActivator
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
@@ -37,6 +40,18 @@ internal class ActivatorToolsTest {
         vm.loadConfig(json, "/test.json")
         return SpringboardToolCallExecutionContextInMemoryFake(viewModel = vm) to vm.activeTabId
     }
+
+    private val TERM_FIXTURE_JSON = """
+        {
+          "name": "Term Fixture",
+          "environments": [{ "id": "staging", "name": "Staging" }],
+          "apps": [{ "id": "app1", "name": "App One" }, { "id": "app2", "name": "App Two" }],
+          "resources": [{ "id": "res1", "name": "Dashboard" }, { "id": "res2", "name": "Logs" }],
+          "activators": [
+            { "type": "term", "appId": "app1", "resourceId": "res1", "environmentId": "staging", "workingDirectory": "/old/dir" }
+          ]
+        }
+    """.trimIndent()
 
     // ── add_url_activator ────────────────────────────────────────────────
 
@@ -206,6 +221,89 @@ internal class ActivatorToolsTest {
 
         assertFalse(result.success)
         assertEquals("missing_target", result.code)
+    }
+
+    @Test
+    fun `update_activator changes working directory and command for a terminal activator`() = runTest {
+        val (ctx, tabId) = loadedContext(TERM_FIXTURE_JSON)
+
+        val result = UpdateActivatorToolCallHandler().executeToolCallHandler(
+            UpdateActivatorToolCallHandlerRequest(
+                tab_id = tabId, app_id = "app1", resource_id = "res1", environment_id = "staging",
+                working_directory = "/new/dir",
+                command = "npm test",
+                display_message = "x",
+            ),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val activator = ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[Coordinate("staging", "app1", "res1")]
+        assertTrue(activator is TerminalActivator)
+        assertEquals("/new/dir", activator.workingDirectory)
+        assertEquals("npm test", activator.command)
+    }
+
+    // ── add_terminal_activator ───────────────────────────────────────────
+
+    @Test
+    fun `add_terminal_activator adds at an unused coordinate with a command`() = runTest {
+        val (ctx, tabId) = loadedContext(TERM_FIXTURE_JSON)
+
+        val result = AddTerminalActivatorToolCallHandler().executeToolCallHandler(
+            AddTerminalActivatorToolCallHandlerRequest(
+                tab_id = tabId, app_id = "app2", resource_id = "res2", environment_id = "staging",
+                working_directory = "/path/to/project",
+                command = "git status",
+                display_message = "added",
+            ),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val activator = ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[Coordinate("staging", "app2", "res2")]
+        assertTrue(activator is TerminalActivator)
+        assertEquals("/path/to/project", activator.workingDirectory)
+        assertEquals("git status", activator.command)
+    }
+
+    @Test
+    fun `add_terminal_activator adds without a command`() = runTest {
+        val (ctx, tabId) = loadedContext(TERM_FIXTURE_JSON)
+
+        val result = AddTerminalActivatorToolCallHandler().executeToolCallHandler(
+            AddTerminalActivatorToolCallHandlerRequest(
+                tab_id = tabId, app_id = "app2", resource_id = "res2", environment_id = "staging",
+                working_directory = "/path/to/project",
+                command = null,
+                display_message = "added",
+            ),
+            ctx,
+        )
+
+        assertTrue(result.success)
+        val activator = ctx.viewModel.springboardUnfiltered!!.indexes.activatorByCoordinate[Coordinate("staging", "app2", "res2")]
+        assertTrue(activator is TerminalActivator)
+        assertNull(activator.command)
+    }
+
+    @Test
+    fun `add_terminal_activator rejects duplicate coordinate`() = runTest {
+        val (ctx, tabId) = loadedContext(TERM_FIXTURE_JSON)
+
+        // (staging, app1, res1) already holds the fixture's term activator.
+        val result = AddTerminalActivatorToolCallHandler().executeToolCallHandler(
+            AddTerminalActivatorToolCallHandlerRequest(
+                tab_id = tabId, app_id = "app1", resource_id = "res1", environment_id = "staging",
+                working_directory = "/x",
+                command = null,
+                display_message = "x",
+            ),
+            ctx,
+        )
+
+        assertFalse(result.success)
+        assertEquals("duplicate_coordinate", result.code)
     }
 
     // ── remove_activator ────────────────────────────────────────────────

@@ -19,6 +19,8 @@ fun coreSettingsItems(): List<SettingsItem<*>> = listOf(
     ResetKeyNavAfterGridNavActivationSetting,
     ActiveBrandSetting,
     HideAppAfterActivationSetting,
+    PreferredTerminalSetting,
+    OpenTerminalInNewWindowSetting,
     HttpContentTimeoutSecondsSetting,
     AiProviderSetting,
     HttpAiProviderTimeoutSecondsSetting,

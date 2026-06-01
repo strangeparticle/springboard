@@ -205,7 +205,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
             assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
-            assertTrue(response.body.contains("\"toolCount\":41"))
+            assertTrue(response.body.contains("\"toolCount\":42"))
             assertTrue(response.body.contains("\"toolExecution\""))
             assertTrue(response.body.contains("approvalRequired"))
             assertTrue(response.body.contains("rawArguments"))
@@ -284,10 +284,10 @@ internal class CommandApiServerTest {
                 .jsonObject
 
             assertEquals(200, response.statusCode)
-            assertEquals("41", root.getValue("toolCount").jsonPrimitive.content)
+            assertEquals("42", root.getValue("toolCount").jsonPrimitive.content)
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("wrapperExample"))
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("rawArgumentsExample"))
-            assertEquals(41, tools.size)
+            assertEquals(42, tools.size)
             assertTrue(tools.any {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
             })

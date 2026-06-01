@@ -33,7 +33,9 @@ The config file must be valid JSON. All top-level fields are required unless not
     { "type": "url",     "appId": "my-service", "resourceId": "grafana", "environmentId": "staging", "url": "https://grafana.example.com/..." },
     { "type": "url",     "appId": "my-service", "resourceId": "github",  "environmentId": "prod",    "url": "https://github.com/..." },
     { "type": "cmd",     "appId": "my-service", "resourceId": "github",  "environmentId": "staging",
-      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /path/to/project" }
+      "commandTemplate": "\"/Applications/IntelliJ IDEA CE.app/Contents/MacOS/idea\" /path/to/project" },
+    { "type": "term",    "appId": "my-service", "resourceId": "github",  "environmentId": "staging",
+      "workingDirectory": "/path/to/project", "command": "git status" }
   ]
 }
 ```
@@ -54,17 +56,26 @@ The config file must be valid JSON. All top-level fields are required unless not
 | `resources[].id` | yes | |
 | `resources[].name` | yes | |
 | `activators` | yes | One entry per (environment, app, resource) combination you want to activate |
-| `activators[].type` | yes | `"url"` or `"cmd"` |
+| `activators[].type` | yes | `"url"`, `"cmd"`, or `"term"` |
 | `activators[].appId` | yes | Must match a declared `apps[].id` |
 | `activators[].resourceId` | yes | Must match a declared `resources[].id` |
 | `activators[].environmentId` | yes | Must match a declared `environments[].id`, or `"ALL"` for all environments |
 | `activators[].url` | when `type="url"` | Literal URL, opened in the default browser |
 | `activators[].commandTemplate` | when `type="cmd"` | Shell command, desktop only |
+| `activators[].workingDirectory` | when `type="term"` | Directory the terminal opens in (`cd`'d into), desktop/macOS only |
+| `activators[].command` | optional, `type="term"` | Command run in the new terminal session; omit to just open a prompt |
 | `activators[].guidanceLines` | optional | Ordered list of plain-text strings shown in the guidance tooltip |
 | `guidanceData` | optional | Legacy per-coordinate guidance entries; still accepted when loading existing files |
 | `appGroups` | optional | Ordered list of app groups used to cluster app columns visually |
 | `appGroups[].id` | yes | Unique identifier, referenced by `apps[].appGroupId` |
 | `appGroups[].description` | yes | Free-text description (not currently shown in the UI) |
+
+## Terminal Activators (`term`)
+
+A `term` activator opens a terminal at `workingDirectory`, optionally running `command`, instead of embedding `osascript` boilerplate in a `cmd` activator. Two macOS settings govern the behavior:
+
+- **Preferred terminal** — Terminal (default) or iTerm. If iTerm is selected but not installed, Springboard opens Terminal instead and shows a notice.
+- **Open terminal activators in a new window** — when on, a new dedicated window is opened; when off, the command opens in a new tab in the current terminal window (or a new window if none is open). The window is brought to the front either way.
 
 ## Guidance Data
 

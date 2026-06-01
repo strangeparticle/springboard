@@ -27,6 +27,8 @@ internal class UpdateActivatorToolCallHandler : ToolCallHandler {
                 newUrl = args.url,
                 newUrlTemplate = args.url_template,
                 newCommandTemplate = args.command_template,
+                newWorkingDirectory = args.working_directory,
+                newCommand = args.command,
             )
         }
     }

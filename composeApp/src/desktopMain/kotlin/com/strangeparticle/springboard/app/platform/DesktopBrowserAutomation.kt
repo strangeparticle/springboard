@@ -20,8 +20,8 @@ internal fun openNewBrowserWindow(
 ): Boolean {
     val browser = browserDetectionService.detectDefaultBrowser()
     val scriptPath = when (browser) {
-        DesktopBrowser.Chrome -> "applescript/chrome/open_new_window.applescript"
-        DesktopBrowser.Safari -> "applescript/safari/open_new_window.applescript"
+        DesktopBrowser.Chrome -> "applescript/chrome_new_window.applescript"
+        DesktopBrowser.Safari -> "applescript/safari_new_window.applescript"
         DesktopBrowser.Unsupported -> return false
     }
 

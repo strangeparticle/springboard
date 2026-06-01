@@ -64,5 +64,10 @@ fun activatorPreviewText(activator: Activator?): String? = when (activator) {
     is UrlActivator -> "url: ${activator.url}"
     is UrlTemplateActivator -> "url: ${activator.urlTemplate}"
     is CommandActivator -> "cmd: ${activator.commandTemplate}"
+    is TerminalActivator -> if (activator.command.isNullOrBlank()) {
+        "term: ${activator.workingDirectory}"
+    } else {
+        "term: ${activator.workingDirectory} — ${activator.command}"
+    }
     null -> null
 }

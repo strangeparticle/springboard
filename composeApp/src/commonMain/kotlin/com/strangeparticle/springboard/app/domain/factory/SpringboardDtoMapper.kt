@@ -6,11 +6,13 @@ import com.strangeparticle.springboard.app.domain.factory.dto.CommandActivatorDt
 import com.strangeparticle.springboard.app.domain.factory.dto.EnvironmentDto
 import com.strangeparticle.springboard.app.domain.factory.dto.ResourceDto
 import com.strangeparticle.springboard.app.domain.factory.dto.SpringboardDto
+import com.strangeparticle.springboard.app.domain.factory.dto.TerminalActivatorDto
 import com.strangeparticle.springboard.app.domain.factory.dto.UrlActivatorDto
 import com.strangeparticle.springboard.app.domain.factory.dto.UrlTemplateActivatorDto
 import com.strangeparticle.springboard.app.domain.model.CommandActivator
 import com.strangeparticle.springboard.app.domain.model.Coordinate
 import com.strangeparticle.springboard.app.domain.model.Springboard
+import com.strangeparticle.springboard.app.domain.model.TerminalActivator
 import com.strangeparticle.springboard.app.domain.model.UrlActivator
 import com.strangeparticle.springboard.app.domain.model.UrlTemplateActivator
 
@@ -61,6 +63,14 @@ internal fun springboardToDto(springboard: Springboard): SpringboardDto {
                     resourceId = activator.resourceId,
                     environmentId = activator.environmentId,
                     commandTemplate = activator.commandTemplate,
+                    guidanceLines = guidanceLines,
+                )
+                is TerminalActivator -> TerminalActivatorDto(
+                    appId = activator.appId,
+                    resourceId = activator.resourceId,
+                    environmentId = activator.environmentId,
+                    workingDirectory = activator.workingDirectory,
+                    command = activator.command,
                     guidanceLines = guidanceLines,
                 )
             }

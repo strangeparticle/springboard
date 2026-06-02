@@ -949,6 +949,46 @@ class SpringboardViewModelTest {
     }
 
     @Test
+    fun `wasm stores filtered springboard hiding terminal activator while keeping it unfiltered`() {
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(target = RuntimeEnvironment.WASM),
+            PersistenceServiceInMemoryFake(),
+        )
+
+        vm.loadConfig(TestFixtureJson.TERMINAL_ACTIVATOR, "/foo.json")
+
+        val coordinate = Coordinate("dev", "app1", "res1")
+        assertNull(vm.springboardFilteredForRuntime?.indexes?.activatorByCoordinate?.get(coordinate))
+        assertNotNull(vm.springboardUnfiltered?.indexes?.activatorByCoordinate?.get(coordinate))
+    }
+
+    @Test
+    fun `wasm does not show CLI security warning for terminal activators`() {
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(target = RuntimeEnvironment.WASM),
+            PersistenceServiceInMemoryFake(),
+        )
+
+        vm.loadConfig(TestFixtureJson.TERMINAL_ACTIVATOR, "/foo.json")
+
+        val messages = vm.activeTabToast.activeToasts.map { it.message }
+        assertFalse(messages.any { it.contains("execute CLI commands") })
+    }
+
+    @Test
+    fun `desktop shows CLI security warning for terminal activators`() {
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(target = RuntimeEnvironment.DesktopOsx),
+            PersistenceServiceInMemoryFake(),
+        )
+
+        vm.loadConfig(TestFixtureJson.TERMINAL_ACTIVATOR, "/foo.json")
+
+        val messages = vm.activeTabToast.activeToasts.map { it.message }
+        assertTrue(messages.any { it.contains("execute CLI commands") })
+    }
+
+    @Test
     fun `wasm keynav ignores hidden strict command activator and falls back to all-envs url`() {
         val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
         val vm = SpringboardViewModel(

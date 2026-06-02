@@ -29,6 +29,18 @@ object TestFixtureJson {
     }
     """.trimIndent()
 
+    val TERMINAL_ACTIVATOR = """
+    {
+      "name": "Terminal Springboard",
+      "environments": [{ "id": "dev", "name": "Dev" }],
+      "apps": [{ "id": "app1", "name": "App" }],
+      "resources": [{ "id": "res1", "name": "Resource" }],
+      "activators": [
+        { "type": "term", "appId": "app1", "resourceId": "res1", "environmentId": "dev", "workingDirectory": "/tmp", "command": "ls" }
+      ]
+    }
+    """.trimIndent()
+
     val URL_TEMPLATE_ACTIVATOR = """
     {
       "name": "URL Template Springboard",

@@ -23,6 +23,7 @@ import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
@@ -49,10 +50,10 @@ class SettingsScreenAiAssistantSettingsTest {
         val transcriptTop = onNodeWithText("Show Full Chat Transcript (for Debug)").getUnclippedBoundsInRoot().top
 
         onAllNodesWithText("Show Full Chat Transcript (for Debug)").assertCountEquals(1)
-        assert(providerTop < apiKeyTop) { "AI provider should render before API key" }
-        assert(apiKeyTop < modelTop) { "API key should render before model" }
-        assert(modelTop < timeoutTop) { "Model should render before AI provider timeout" }
-        assert(timeoutTop < transcriptTop) { "AI provider timeout should render before full transcript debug setting" }
+        assertTrue(providerTop < apiKeyTop, "AI provider should render before API key")
+        assertTrue(apiKeyTop < modelTop, "API key should render before model")
+        assertTrue(modelTop < timeoutTop, "Model should render before AI provider timeout")
+        assertTrue(timeoutTop < transcriptTop, "AI provider timeout should render before full transcript debug setting")
     }
 
     @Test

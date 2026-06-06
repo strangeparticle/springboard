@@ -24,6 +24,7 @@ import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.items.core.AiProviderSetting
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
+import com.strangeparticle.springboard.app.shared.IgnoreOnWasm
 import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.shared.stubHttpClientForTests
@@ -320,6 +321,7 @@ internal class AiChatEntryPointTest {
     }
 
     @Test
+    @IgnoreOnWasm // Drives a live ktor round-trip through the Compose UI; cannot complete under runComposeUiTest on wasmJs.
     fun `chat processing moves focus to keynav then restores input focus`() = runComposeUiTest {
         val requestStarted = CompletableDeferred<Unit>()
         val responseAllowed = CompletableDeferred<Unit>()
@@ -371,6 +373,7 @@ internal class AiChatEntryPointTest {
     }
 
     @Test
+    @IgnoreOnWasm // Drives a live ktor round-trip through the Compose UI; cannot complete under runComposeUiTest on wasmJs.
     fun `assistant model dropdown updates setting and next request model`() = runComposeUiTest {
         var modelListRequests = 0
         val chatRequestBodies = mutableListOf<String>()

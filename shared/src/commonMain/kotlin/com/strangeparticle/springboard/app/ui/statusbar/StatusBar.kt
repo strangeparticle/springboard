@@ -23,8 +23,7 @@ import com.strangeparticle.springboard.app.ui.brand.LocalUiBrand
 import com.strangeparticle.springboard.app.ui.gridnav.GridZoomSelection
 import com.strangeparticle.springboard.app.viewmodel.TabState
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +104,7 @@ fun StatusBar(
                     modifier = Modifier.size(24.dp).testTag(TestTags.OPEN_FROM_NETWORK_BUTTON)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CloudDownload,
+                        imageVector = SpringboardIcons.CloudDownload,
                         contentDescription = "Open from Network",
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant

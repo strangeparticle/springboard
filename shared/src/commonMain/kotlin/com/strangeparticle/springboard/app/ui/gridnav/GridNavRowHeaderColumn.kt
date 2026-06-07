@@ -3,8 +3,7 @@ package com.strangeparticle.springboard.app.ui.gridnav
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -148,7 +147,7 @@ private fun EnvironmentHeadingDropdown(
                 overflow = TextOverflow.Visible,
             )
             Icon(
-                imageVector = Icons.Default.ArrowDropDown,
+                imageVector = SpringboardIcons.ArrowDropDown,
                 contentDescription = null,
             )
         }

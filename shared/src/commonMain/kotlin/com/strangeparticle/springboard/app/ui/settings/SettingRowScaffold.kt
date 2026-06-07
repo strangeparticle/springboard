@@ -11,8 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -121,7 +120,7 @@ internal fun ClearSettingButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = Icons.Default.Close,
+            imageVector = SpringboardIcons.Close,
             contentDescription = contentDescription,
             modifier = Modifier.size(14.dp),
             tint = if (enabled) {

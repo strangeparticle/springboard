@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Refresh
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -98,7 +96,7 @@ internal fun DropDownFromApiCallSettingRowComposable(
                         modifier = Modifier.weight(1f),
                     )
                     Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
+                        imageVector = SpringboardIcons.ArrowDropDown,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -123,7 +121,7 @@ internal fun DropDownFromApiCallSettingRowComposable(
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(Icons.Default.Refresh, contentDescription = "Reload options", modifier = Modifier.size(16.dp))
+                    Icon(SpringboardIcons.Refresh, contentDescription = "Reload options", modifier = Modifier.size(16.dp))
                 }
             }
         }

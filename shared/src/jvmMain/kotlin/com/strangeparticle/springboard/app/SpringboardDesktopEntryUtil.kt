@@ -15,6 +15,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.strangeparticle.luther.client.provider.AiProviderRegistry
 import com.strangeparticle.springboard.app.command.CommandApiDiscoveryFile
 import com.strangeparticle.springboard.app.command.CommandApiServerDefaultImpl
+import com.strangeparticle.springboard.app.command.CommandApiTokenStore
 import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
 import com.strangeparticle.springboard.app.command.parseCommandApiStartupArgs
 import com.strangeparticle.springboard.app.aws.AwsCliCredentialProvider
@@ -119,11 +120,14 @@ fun runSpringboardDesktop(args: Array<String>) {
         }
         val commandApiHandle = remember(commandApiStartupArgs) {
             if (commandApiStartupArgs.enabled) {
+                val commandApiToken = CommandApiTokenStore()
+                    .resolveToken(rotate = commandApiStartupArgs.rotateToken)
                 CommandApiServerDefaultImpl(
                     executor = SpringboardCommandExecutorDefaultImpl(viewModel),
                     snapshotProvider = { SpringboardAppSnapshot.capture(viewModel).toCompactJson() },
                     discoveryFile = CommandApiDiscoveryFile.fromPath(commandApiStartupArgs.discoveryFilePath),
                     preferredPort = commandApiStartupArgs.preferredPort,
+                    token = commandApiToken,
                     toolCallExecutionContext = object : SpringboardToolCallExecutionContext {
                         override val viewModel = viewModel
 

@@ -24,6 +24,7 @@ internal fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallReg
     register(CloseTabToolCallHandler())
     register(CreateSpringboardToolCallHandler())
     register(CreateTabToolCallHandler())
+    register(GetSnapshotToolCallHandler())
     register(MoveActivatorToolCallHandler())
     register(OpenFromUrlToolCallHandler())
     register(OpenLocalFileToolCallHandler())

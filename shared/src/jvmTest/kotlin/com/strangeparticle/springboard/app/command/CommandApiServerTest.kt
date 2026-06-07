@@ -78,6 +78,25 @@ internal class CommandApiServerTest {
     }
 
     @Test
+    fun `discovery file advertises mcp url`() {
+        val discoveryPath = Files.createTempDirectory("springboard-command-api-test")
+            .resolve("control-api.json")
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            discoveryFile = CommandApiDiscoveryFile.fromPath(discoveryPath),
+            preferredPort = 0,
+            token = "secret-token",
+        )
+        val handle = server.start()
+        try {
+            val text = discoveryPath.readText()
+            assertTrue(text.contains("\"mcpUrl\":\"${handle.baseUrl}/mcp\""), text)
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
     fun `startup args can disable command api and override port and discovery file`() {
         val discoveryPath = Path.of("/tmp/springboard-codex-control-api.json").toAbsolutePath().normalize()
 
@@ -198,6 +217,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"/api/commands/activate-coordinate\""))
             assertTrue(response.body.contains("\"/api/tools\""))
             assertTrue(response.body.contains("\"/api/tools/{toolName}\""))
+            assertTrue(response.body.contains("\"/mcp\""))
             assertTrue(response.body.contains("\"/api/commands/open-springboard\""))
             assertTrue(response.body.contains("\"/api/commands/switch-tab\""))
             assertTrue(response.body.contains("\"/api/commands/show-guidance\""))

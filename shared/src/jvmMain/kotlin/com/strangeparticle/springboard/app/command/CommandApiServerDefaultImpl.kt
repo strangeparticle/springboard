@@ -293,6 +293,7 @@ internal class CommandApiServerDefaultImpl(
         discoveryFile.write(
             CommandApiDiscoveryDto(
                 baseUrl = baseUrl,
+                mcpUrl = "$baseUrl/mcp",
                 token = token,
                 pid = ProcessHandle.current().pid(),
                 startedAt = Instant.now().toString(),
@@ -475,6 +476,16 @@ internal class CommandApiServerDefaultImpl(
                     put("description", "Executes a generic command request envelope.")
                     put("requiresAuth", true)
                 })
+                add(buildJsonObject {
+                    put("method", "POST")
+                    put("path", "/mcp")
+                    put(
+                        "description",
+                        "Model Context Protocol endpoint (stateless Streamable HTTP, JSON responses). " +
+                            "Exposes the tool catalog to MCP-compatible agents.",
+                    )
+                    put("requiresAuth", true)
+                })
                 // every tool is exposed as a callable endpoint
                 add(buildJsonObject {
                     put("method", "POST")
@@ -542,6 +553,16 @@ internal class CommandApiServerDefaultImpl(
                 }
             }
             put("toolCatalog", "/api/tools")
+            putJsonObject("mcp") {
+                put("url", "$baseUrl/mcp")
+                put("transport", "streamable-http")
+                put("auth", "bearer")
+                put(
+                    "description",
+                    "Connect an MCP client (Claude Code CLI, Codex, opencode) to this URL using the " +
+                        "Authorization: Bearer token from the discovery file.",
+                )
+            }
             putJsonObject("response") {
                 putJsonObject("successExample") {
                     put("protocolVersion", 1)

@@ -260,6 +260,8 @@ private fun rememberAiChatPaneState(
             groupsProvider = { chatHistory },
             updateGroups = { groups -> chatHistory = groups },
             onTranscriptChanged = { transcriptVersion++ },
+            onTurnStart = { viewModel.beginEditTransaction() },
+            onTurnEnd = { viewModel.commitEditTransaction() },
         )
     }
     transcriptVersion

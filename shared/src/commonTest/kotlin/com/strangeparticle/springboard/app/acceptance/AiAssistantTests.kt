@@ -416,6 +416,35 @@ internal class AiAssistantTests {
     }
 
     @Test
+    fun `multi tool turn creates a single undo step`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")),
+                ToolCall("call-activator", "add_url_activator", args("tab_id" to tabId, "app_id" to "app1", "resource_id" to "res2", "environment_id" to "dev", "url" to "https://logs.example.com")),
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add logs").join()
+
+        val afterTurn = fixture.viewModel.springboardUnfiltered
+        assertNotNull(afterTurn)
+        assertTrue(afterTurn.resources.any { it.id == "res2" })
+        assertTrue(afterTurn.activators.any { it.resourceId == "res2" })
+        assertTrue(fixture.viewModel.canUndoActiveTab)
+
+        fixture.viewModel.undoActiveTab()
+
+        val afterUndo = fixture.viewModel.springboardUnfiltered
+        assertNotNull(afterUndo)
+        assertTrue(afterUndo.resources.none { it.id == "res2" })
+        assertTrue(afterUndo.activators.none { it.resourceId == "res2" })
+        assertTrue(!fixture.viewModel.canUndoActiveTab)
+    }
+
+    @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
         fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
@@ -476,6 +505,8 @@ internal class AiAssistantTests {
             systemPromptProvider = { SystemPromptBuilder.build() },
             modelIdProvider = { "fake-model" },
             coroutineScope = this,
+            onTurnStart = { viewModel.beginEditTransaction() },
+            onTurnEnd = { viewModel.commitEditTransaction() },
         )
         return Fixture(viewModel, fileService, activationService, aiClient, registry, manager)
     }

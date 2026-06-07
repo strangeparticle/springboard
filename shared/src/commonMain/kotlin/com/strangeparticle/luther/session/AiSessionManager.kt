@@ -49,6 +49,8 @@ internal class AiSessionManager(
     groupsProvider: (() -> List<ChatHistoryGroup>)? = null,
     updateGroups: ((List<ChatHistoryGroup>) -> Unit)? = null,
     private val onTranscriptChanged: () -> Unit = {},
+    private val onTurnStart: () -> Unit = {},
+    private val onTurnEnd: () -> Unit = {},
 ) {
     private val mutableGroups = mutableListOf<ChatHistoryGroup>()
     private val resolvedGroupsProvider: () -> List<ChatHistoryGroup> = groupsProvider ?: { mutableGroups.toList() }
@@ -77,6 +79,7 @@ internal class AiSessionManager(
         check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
 
         val job = coroutineScope.launch {
+            onTurnStart()
             try {
                 startNewAiInteractionGroup()
                 appendSnapshotIfChanged()
@@ -87,6 +90,8 @@ internal class AiSessionManager(
                 throw e
             } catch (e: Exception) {
                 appendItemToCurrentGroup(AssistantErroredChatHistoryItem(e.message ?: "AI request failed"))
+            } finally {
+                onTurnEnd()
             }
         }
         currentRequestJob = job

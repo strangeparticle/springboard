@@ -244,16 +244,6 @@ class SpringboardViewModel(
         return UndoRedoOutcome.Redone
     }
 
-    fun restoreTabFromUndoSnapshot(
-        tabId: String,
-        springboard: com.strangeparticle.springboard.app.domain.model.Springboard,
-        label: String,
-        isDirty: Boolean,
-    ) {
-        replaceTabSpringboard(tabId, springboard)
-        updateTabById(tabId) { it.copy(label = label, isDirty = isDirty) }
-    }
-
     /**
      * True when the active tab has a loaded springboard whose source is a local-file
      * path (and therefore can be saved in place via [saveActiveTab]). False for empty

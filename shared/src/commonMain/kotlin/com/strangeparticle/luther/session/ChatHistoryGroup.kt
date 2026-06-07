@@ -1,7 +1,6 @@
 package com.strangeparticle.luther.session
 
 import com.strangeparticle.luther.session.event.ChatHistoryItem
-import com.strangeparticle.luther.session.event.StateSnapshotAddedChatHistoryItem
 
 internal enum class ChatHistoryGroupType {
     // Currently only holds provider/model change entries, so it's named for that one concrete
@@ -16,7 +15,4 @@ internal enum class ChatHistoryGroupType {
 internal data class ChatHistoryGroup(
     val type: ChatHistoryGroupType,
     val items: List<ChatHistoryItem>,
-) {
-    val preSnapshotJson: String?
-        get() = (items.firstOrNull() as? StateSnapshotAddedChatHistoryItem)?.snapshotJson
-}
+)

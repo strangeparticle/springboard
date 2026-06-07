@@ -29,6 +29,16 @@ internal class AiChatLocalCommandTest {
     }
 
     @Test
+    fun `parse recognizes undo command`() {
+        assertEquals(AiChatLocalCommand.Undo(originalText = "/undo"), parseAiChatLocalCommand("/undo"))
+    }
+
+    @Test
+    fun `parse recognizes redo command`() {
+        assertEquals(AiChatLocalCommand.Redo(originalText = "/redo"), parseAiChatLocalCommand("/redo"))
+    }
+
+    @Test
     fun `parse returns null for normal prompt`() {
         assertNull(parseAiChatLocalCommand("add a logs URL for fretnaut"))
     }

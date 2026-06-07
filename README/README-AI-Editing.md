@@ -253,7 +253,7 @@ The `toolCallId` forwarded by the dispatcher is used as the key for the pending 
 ## File Map
 
 ```
-composeApp/src/commonMain/kotlin/
+shared/src/commonMain/kotlin/
 ├── com/strangeparticle/luther/                          ← Luther core (provider-neutral)
 │   ├── Ai*.kt                                           ← message, request, response, error types
 │   ├── providers/
@@ -297,7 +297,7 @@ composeApp/src/commonMain/kotlin/
 
 ## Testing
 
-Test files live in `composeApp/src/commonTest/kotlin/…/unit/tools/` and `…/shared/`.
+Test files live in `shared/src/commonTest/kotlin/…/unit/tools/` and `…/shared/`.
 
 **`SpringboardToolCallExecutionContextInMemoryFake`** — the test double for `SpringboardToolCallExecutionContext`. Wraps a real `SpringboardViewModel` so mutations actually apply. Exposes:
 - `stateChangedCount: Int` — how many times `markStateChanged()` was called.
@@ -309,17 +309,17 @@ Test files live in `composeApp/src/commonTest/kotlin/…/unit/tools/` and `…/s
 Run targeted test groups:
 
 ```bash
-./gradlew :composeApp:desktopTest --tests "*EntityCrudTools*"
-./gradlew :composeApp:desktopTest --tests "*ActivatorTools*"
-./gradlew :composeApp:desktopTest --tests "*GuidanceTools*"
-./gradlew :composeApp:desktopTest --tests "*ReorderTools*"
-./gradlew :composeApp:desktopTest --tests "*TabManagement*"
-./gradlew :composeApp:desktopTest --tests "*MoveActivator*"
-./gradlew :composeApp:desktopTest --tests "*SaveSpringboard*"
-./gradlew :composeApp:desktopTest --tests "*ToolCallExecutor*"
+./gradlew :shared:jvmTest --tests "*EntityCrudTools*"
+./gradlew :shared:jvmTest --tests "*ActivatorTools*"
+./gradlew :shared:jvmTest --tests "*GuidanceTools*"
+./gradlew :shared:jvmTest --tests "*ReorderTools*"
+./gradlew :shared:jvmTest --tests "*TabManagement*"
+./gradlew :shared:jvmTest --tests "*MoveActivator*"
+./gradlew :shared:jvmTest --tests "*SaveSpringboard*"
+./gradlew :shared:jvmTest --tests "*ToolCallExecutor*"
 ```
 
-Full suite: `./gradlew :composeApp:desktopTest`
+Full suite: `./gradlew :shared:jvmTest`
 
 ---
 

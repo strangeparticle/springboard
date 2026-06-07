@@ -31,7 +31,7 @@ breakpoints and hot-swap for small code changes.
 ### Run without a config (shows Open button after startup)
 
 ```shell
-./gradlew :composeApp:run
+./gradlew :desktopApp:run
 ```
 
 ### Run with a pre-designated springboard
@@ -39,7 +39,7 @@ breakpoints and hot-swap for small code changes.
 Pass startup tabs as a named CLI parameter to skip the Open prompt and boot straight into the grid:
 
 ```shell
-./gradlew :composeApp:run --args="--startup-tabs springboard-example.json"
+./gradlew :desktopApp:run --args="--startup-tabs springboard-example.json"
 ```
 
 Multiple tabs can be opened with comma-delimited values: `--startup-tabs /a.json,/b.json`
@@ -47,7 +47,7 @@ Multiple tabs can be opened with comma-delimited values: `--startup-tabs /a.json
 Positional CLI paths are ignored by startup loading. Use the named `--startup-tabs` parameter.
 
 The sample config at `springboard-example.json` is intended as the public desktop example. The test
-fixture at `composeApp/src/commonTest/resources/springboard-test-fixture.json` is also suitable for
+fixture at `shared/src/commonTest/resources/springboard-test-fixture.json` is also suitable for
 local experimentation.
 
 ### Run a second desktop instance for command API smoke tests
@@ -64,7 +64,7 @@ for the same discovery file. For agent/dev smoke testing, launch the extra insta
 API port and a separate discovery file:
 
 ```shell
-./gradlew :composeApp:run --args="--startup-tabs springboard-example.json --command-api-port 0 --command-api-discovery-file /private/tmp/springboard-codex-control-api.json"
+./gradlew :desktopApp:run --args="--startup-tabs springboard-example.json --command-api-port 0 --command-api-discovery-file /private/tmp/springboard-codex-control-api.json"
 ```
 
 Then inspect the instance-specific discovery file to find the base URL and bearer token:
@@ -122,19 +122,19 @@ before returning a non-streaming response.
 For local testing, launch with a higher value:
 
 ```shell
-./gradlew :composeApp:run --args="--http-ai-provider-timeout-seconds 300"
+./gradlew :desktopApp:run --args="--http-ai-provider-timeout-seconds 300"
 ```
 
 Network content reads use **Content HTTP Timeout**, defaulting to `30` seconds:
 
 ```shell
-./gradlew :composeApp:run --args="--http-content-timeout-seconds 45"
+./gradlew :desktopApp:run --args="--http-content-timeout-seconds 45"
 ```
 
 ### AI provider request/response logging (rebuild required)
 
 The desktop app constructs separate Ktor clients in
-`composeApp/src/desktopMain/kotlin/com/strangeparticle/springboard/app/main.kt`:
+`shared/src/jvmMain/kotlin/com/strangeparticle/springboard/app/SpringboardDesktopEntryUtil.kt`:
 
 - `aiHttpClient` is shared by AI providers and AI model-list calls.
 - `contentHttpClient` is used for opening network/S3 springboards and saving S3 springboards.
@@ -149,13 +149,13 @@ Step 1 — add the dependency in `gradle/libs.versions.toml`:
 ktor-client-logging = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
 ```
 
-…and reference it from `composeApp/build.gradle.kts` under the `desktopMain` source set:
+…and reference it from `shared/build.gradle.kts` under the `jvmMain` source set:
 
 ```kotlin
 implementation(libs.ktor.client.logging)
 ```
 
-Step 2 — install the plugin in `main.kt` where `aiHttpClient` is built:
+Step 2 — install the plugin in `SpringboardDesktopEntryUtil.kt` where `aiHttpClient` is built:
 
 ```kotlin
 val aiHttpClient = HttpClient(CIO) {
@@ -165,7 +165,7 @@ val aiHttpClient = HttpClient(CIO) {
 }
 ```
 
-Step 3 — `./gradlew :composeApp:run` and watch stdout while you interact with the chat pane.
+Step 3 — `./gradlew :desktopApp:run` and watch stdout while you interact with the chat pane.
 
 These changes are intentionally **not** committed. They are a local debugging aid because the
 captured bodies routinely contain API keys (in headers) and full prompt contents. Revert before
@@ -179,7 +179,7 @@ The WASM target is currently experimental and unsupported for the initial public
 in-tree for local tinkering.
 
 ```shell
-./gradlew :composeApp:wasmJsBrowserDevelopmentRun
+./gradlew :webApp:wasmJsBrowserDevelopmentRun
 ```
 
 Notes:
@@ -234,8 +234,8 @@ Tests are organized into two sibling package families:
 - `...app.unit...` for conventional unit tests
 - `...app.acceptance...` for CMP UI acceptance tests
 
-Shared tests are under `composeApp/src/commonTest/`; desktop-specific tests are under
-`composeApp/src/desktopTest/`.
+Shared tests are under `shared/src/commonTest/`; desktop-specific tests are under
+`shared/src/jvmTest/`.
 
 ### Run all tests
 ```shell
@@ -245,31 +245,31 @@ Shared tests are under `composeApp/src/commonTest/`; desktop-specific tests are 
 ### Run only unit tests
 
 ```shell
-./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.unit.*"
+./gradlew :shared:jvmTest --tests "com.strangeparticle.springboard.app.unit.*"
 ```
 
 ### Run only acceptance tests
 
 ```shell
-./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.acceptance.*"
+./gradlew :shared:jvmTest --tests "com.strangeparticle.springboard.app.acceptance.*"
 ```
 
 ### Run a specific test class
 
 ```shell
-./gradlew :composeApp:desktopTest --tests "com.strangeparticle.springboard.app.acceptance.ActivatorDesktopTests"
+./gradlew :shared:jvmTest --tests "com.strangeparticle.springboard.app.acceptance.ActivatorDesktopTests"
 ```
 
 ### Open HTML test report summary
 
 ```shell
-open composeApp/build/reports/tests/desktopTest/index.html
+open shared/build/reports/tests/jvmTest/index.html
 ```
 
 A sample springboard config used by the tests is at:
 
 ```
-composeApp/src/commonTest/resources/springboard-test-fixture.json
+shared/src/commonTest/resources/springboard-test-fixture.json
 ```
 
 ---
@@ -279,16 +279,16 @@ composeApp/src/commonTest/resources/springboard-test-fixture.json
 This creates an unsigned `.dmg` or `.pkg` for local use on your own machine.
 
 ```shell
-./gradlew :composeApp:packageDmg
+./gradlew :desktopApp:packageDmg
 ```
 
-Output: `composeApp/build/compose/binaries/main/dmg/Springboard-<version>.dmg`
+Output: `desktopApp/build/compose/binaries/main/dmg/Springboard-<version>.dmg`
 
 ```shell
-./gradlew :composeApp:packagePkg
+./gradlew :desktopApp:packagePkg
 ```
 
-Output: `composeApp/build/compose/binaries/main/pkg/Springboard-<version>.pkg`
+Output: `desktopApp/build/compose/binaries/main/pkg/Springboard-<version>.pkg`
 
 You will see a Gatekeeper warning when opening an unsigned build on macOS. Right-click → Open to
 bypass it on your own machine.
@@ -298,15 +298,25 @@ bypass it on your own machine.
 ## Project Structure
 
 ```
-composeApp/src/
-├── commonMain/       # All domain logic, ViewModels, and Compose UI
-├── commonTest/       # Shared tests (`unit` + `acceptance` packages)
-├── desktopMain/      # Code specific to the Desktop platform
-├── desktopTest/      # Desktop-specific tests (`unit` + `acceptance` packages)
-└── wasmJsMain/       # Code specific to the WASM platform (experimental)
+shared/                # Multiplatform library consumed by both app modules
+└── src/
+    ├── commonMain/    # All domain logic, ViewModels, and Compose UI
+    ├── commonTest/    # Shared tests (`unit` + `acceptance` packages)
+    ├── jvmMain/       # Desktop/JVM code (OS integrations, embedded command API server, AWS)
+    ├── jvmTest/       # Desktop-specific tests (`unit` + `acceptance` packages)
+    ├── wasmJsMain/    # Web/WASM code
+    └── wasmJsTest/    # Web-specific tests
+
+desktopApp/            # Desktop application: MainKt entry + native distribution packaging
+└── src/main/
+
+webApp/                # Web application: wasmJs entry + index.html bootstrap
+└── src/wasmJsMain/
 ```
 
 Platform-specific code is minimal — only OS integrations and entry points live outside `commonMain`.
+The two app modules are thin: each `main()` delegates to a `runSpringboard*` entry function in
+`shared` so the library's internal declarations stay encapsulated.
 
 ---
 

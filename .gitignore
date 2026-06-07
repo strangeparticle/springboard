@@ -1,5 +1,4 @@
 build/
-composeApp/build/
 .idea/
 .gradle/
 .kotlin/

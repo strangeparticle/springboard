@@ -13,7 +13,7 @@ This split exists because the theme supports broad theme roles, while Springboar
 
 The active brand is declared directly in:
 
-- `composeApp/src/commonMain/kotlin/com/strangeparticle/springboard/app/ui/brand/AppTheme.kt`
+- `shared/src/commonMain/kotlin/com/strangeparticle/springboard/app/ui/brand/AppTheme.kt`
 
 `AppTheme` currently provides `StrangeParticleBrand()`:
 

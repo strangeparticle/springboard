@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Lock
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -100,7 +98,7 @@ fun TabIndicator(
                     )
                     TabStatusIcon.NonSaveable -> {
                         Icon(
-                            imageVector = Icons.Default.Lock,
+                            imageVector = SpringboardIcons.Lock,
                             contentDescription = "Tab source is read-only",
                             tint = foreground,
                             modifier = Modifier.size(10.dp).testTag(TestTags.tabLockIndicator(tabId)),
@@ -114,7 +112,7 @@ fun TabIndicator(
             modifier = Modifier.size(20.dp),
         ) {
             Icon(
-                imageVector = Icons.Default.Close,
+                imageVector = SpringboardIcons.Close,
                 contentDescription = "Close tab $label",
                 modifier = Modifier.size(12.dp),
                 tint = foreground,

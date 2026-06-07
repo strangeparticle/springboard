@@ -9,8 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -93,7 +92,7 @@ internal fun AppBottomBar(
                         .testTag(TestTags.ASSISTANT_TOGGLE_BUTTON),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.AutoAwesome,
+                        imageVector = SpringboardIcons.AutoAwesome,
                         contentDescription = if (isAssistantConfigured) "AI assistant" else "AI assistant (not configured)",
                         modifier = Modifier.size(14.dp),
                         tint = assistantIconTint,

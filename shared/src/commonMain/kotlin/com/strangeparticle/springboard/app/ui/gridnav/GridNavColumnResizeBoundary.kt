@@ -5,8 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragHandle
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
@@ -69,7 +68,7 @@ fun GridNavColumnResizeBoundary(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Default.DragHandle,
+                imageVector = SpringboardIcons.DragHandle,
                 contentDescription = COLUMN_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION,
                 tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier

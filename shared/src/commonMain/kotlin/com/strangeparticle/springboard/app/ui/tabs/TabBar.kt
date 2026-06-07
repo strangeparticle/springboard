@@ -12,8 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,7 +114,7 @@ fun TabBar(
                     modifier = Modifier.size(24.dp).testTag(TestTags.TAB_NEW_BUTTON),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = SpringboardIcons.Add,
                         contentDescription = "New tab",
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,

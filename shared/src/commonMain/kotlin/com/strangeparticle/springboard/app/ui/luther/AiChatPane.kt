@@ -23,12 +23,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Refresh
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -154,7 +149,7 @@ private fun AiChatPaneModelDropdown(
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
+                    imageVector = SpringboardIcons.ArrowDropDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp),
@@ -184,7 +179,7 @@ private fun AiChatPaneModelDropdown(
                 CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    imageVector = Icons.Default.Refresh,
+                    imageVector = SpringboardIcons.Refresh,
                     contentDescription = "Reload assistant model options",
                     modifier = Modifier.size(15.dp),
                 )
@@ -369,7 +364,7 @@ internal fun AiChatPane(
                             modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON),
                         ) {
                             Icon(
-                                Icons.Default.BugReport,
+                                SpringboardIcons.BugReport,
                                 contentDescription = "Copy debug chat history",
                                 modifier = Modifier.size(15.dp),
                             )
@@ -381,7 +376,7 @@ internal fun AiChatPane(
                             modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON),
                         ) {
                             Icon(
-                                Icons.Default.ContentCopy,
+                                SpringboardIcons.ContentCopy,
                                 contentDescription = "Copy assistant transcript",
                                 modifier = Modifier.size(15.dp),
                             )
@@ -390,7 +385,7 @@ internal fun AiChatPane(
                             onClick = onClose,
                             modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_CLOSE_BUTTON),
                         ) {
-                            Icon(Icons.Default.Close, contentDescription = "Close assistant", modifier = Modifier.size(16.dp))
+                            Icon(SpringboardIcons.Close, contentDescription = "Close assistant", modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -589,7 +584,7 @@ private fun AiChatScrollbackPaneRenderer(
                     modifier = Modifier.size(28.dp).testTag(TestTags.aiChatScrollbackPaneCopyButton(index)),
                 ) {
                     Icon(
-                        Icons.Default.ContentCopy,
+                        SpringboardIcons.ContentCopy,
                         contentDescription = "Copy scrollback pane",
                         modifier = Modifier.size(15.dp),
                     )

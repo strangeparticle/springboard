@@ -4,8 +4,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragHandle
+import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +25,7 @@ private const val CHAT_PANE_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION = "Chat pane 
  * width; only the centered grip thumb accepts pointer input. Vertical drag motion is
  * reported via [onDragDelta] in pixels (caller converts to dp using its own density).
  *
- * Styling — including the [Icons.Default.DragHandle] glyph, thumb dimensions, divider
+ * Styling — including the [SpringboardIcons.DragHandle] glyph, thumb dimensions, divider
  * thickness, and vertical-resize hover cursor — mirrors
  * [com.strangeparticle.springboard.app.ui.gridnav.GridNavHeaderResizeBoundary] so resize
  * affordances look the same throughout the app.
@@ -62,7 +61,7 @@ internal fun ChatPaneResizeHandle(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Default.DragHandle,
+                imageVector = SpringboardIcons.DragHandle,
                 contentDescription = CHAT_PANE_RESIZE_DRAG_HANDLE_CONTENT_DESCRIPTION,
                 tint = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(

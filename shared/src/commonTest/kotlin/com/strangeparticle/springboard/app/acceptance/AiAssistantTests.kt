@@ -396,6 +396,26 @@ internal class AiAssistantTests {
     }
 
     @Test
+    fun `single tool edit creates one undo step`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add a resource").join()
+
+        assertTrue(fixture.viewModel.canUndoActiveTab)
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().any { it.id == "res2" })
+
+        fixture.viewModel.undoActiveTab()
+
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().none { it.id == "res2" })
+        assertTrue(!fixture.viewModel.canUndoActiveTab)
+    }
+
+    @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
         fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")

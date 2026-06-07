@@ -78,6 +78,25 @@ internal class CommandApiServerTest {
     }
 
     @Test
+    fun `discovery file advertises mcp url`() {
+        val discoveryPath = Files.createTempDirectory("springboard-command-api-test")
+            .resolve("control-api.json")
+        val server = CommandApiServerDefaultImpl(
+            executor = FakeCommandExecutor(),
+            discoveryFile = CommandApiDiscoveryFile.fromPath(discoveryPath),
+            preferredPort = 0,
+            token = "secret-token",
+        )
+        val handle = server.start()
+        try {
+            val text = discoveryPath.readText()
+            assertTrue(text.contains("\"mcpUrl\":\"${handle.baseUrl}/mcp\""), text)
+        } finally {
+            handle.stop()
+        }
+    }
+
+    @Test
     fun `startup args can disable command api and override port and discovery file`() {
         val discoveryPath = Path.of("/tmp/springboard-codex-control-api.json").toAbsolutePath().normalize()
 
@@ -198,6 +217,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"/api/commands/activate-coordinate\""))
             assertTrue(response.body.contains("\"/api/tools\""))
             assertTrue(response.body.contains("\"/api/tools/{toolName}\""))
+            assertTrue(response.body.contains("\"/mcp\""))
             assertTrue(response.body.contains("\"/api/commands/open-springboard\""))
             assertTrue(response.body.contains("\"/api/commands/switch-tab\""))
             assertTrue(response.body.contains("\"/api/commands/show-guidance\""))
@@ -205,7 +225,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
             assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
-            assertTrue(response.body.contains("\"toolCount\":42"))
+            assertTrue(response.body.contains("\"toolCount\":43"))
             assertTrue(response.body.contains("\"toolExecution\""))
             assertTrue(response.body.contains("approvalRequired"))
             assertTrue(response.body.contains("rawArguments"))
@@ -284,10 +304,10 @@ internal class CommandApiServerTest {
                 .jsonObject
 
             assertEquals(200, response.statusCode)
-            assertEquals("42", root.getValue("toolCount").jsonPrimitive.content)
+            assertEquals("43", root.getValue("toolCount").jsonPrimitive.content)
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("wrapperExample"))
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("rawArgumentsExample"))
-            assertEquals(42, tools.size)
+            assertEquals(43, tools.size)
             assertTrue(tools.any {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
             })

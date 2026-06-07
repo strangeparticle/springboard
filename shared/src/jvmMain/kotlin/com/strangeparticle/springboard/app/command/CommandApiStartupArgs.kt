@@ -6,18 +6,23 @@ data class CommandApiStartupArgs(
     val enabled: Boolean = true,
     val preferredPort: Int = 47382,
     val discoveryFilePath: Path = CommandApiDiscoveryFile.defaultPath(),
+    val rotateToken: Boolean = false,
 )
 
 fun parseCommandApiStartupArgs(args: List<String>): CommandApiStartupArgs {
     var enabled = true
     var preferredPort = 47382
     var discoveryFilePath = CommandApiDiscoveryFile.defaultPath()
+    var rotateToken = false
 
     var index = 0
     while (index < args.size) {
         when (args[index]) {
             "--disable-command-api" -> {
                 enabled = false
+            }
+            "--rotate-command-api-token" -> {
+                rotateToken = true
             }
             "--command-api-port" -> {
                 val value = args.getOrNull(index + 1)
@@ -43,5 +48,6 @@ fun parseCommandApiStartupArgs(args: List<String>): CommandApiStartupArgs {
         enabled = enabled,
         preferredPort = preferredPort,
         discoveryFilePath = discoveryFilePath,
+        rotateToken = rotateToken,
     )
 }

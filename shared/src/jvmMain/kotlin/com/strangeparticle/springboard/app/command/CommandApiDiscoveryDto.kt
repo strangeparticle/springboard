@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class CommandApiDiscoveryDto(
     val protocolVersion: Int = 1,
     val baseUrl: String,
+    val mcpUrl: String = "",
     val token: String,
     val pid: Long,
     val startedAt: String,

@@ -83,6 +83,57 @@ curl -sS -i \
 
 Use `--disable-command-api` when a local run should not start the command API at all.
 
+### Connect an MCP agent
+
+The command API also exposes a native **Model Context Protocol** endpoint at `POST <base-url>/mcp`,
+so MCP-capable agents can call Springboard's tool catalog directly — no proxy process. It uses the
+stateless MCP Streamable HTTP transport (JSON request/response; `GET`/`DELETE` return `405`) and is
+authenticated with the same bearer token as the rest of the command API.
+
+- The live URL is published as `mcpUrl` in the discovery file (`control-api.json`); it is
+  `<base-url>/mcp`.
+- The bearer token is now **stable across launches**: it is generated once and persisted to
+  `~/Library/Application Support/Springboard/command-api-token` (owner-only). Pass
+  `--rotate-command-api-token` to force a new token. Because it no longer changes every launch,
+  a one-time client configuration keeps working across restarts.
+- Only the `tools` capability is exposed (including `get_snapshot`, which returns the current app
+  state so an external agent can read tab/app/resource ids before acting).
+
+Per-client setup (read the token from the discovery file / token file):
+
+```shell
+# Claude Code CLI
+claude mcp add --transport http springboard http://127.0.0.1:47382/mcp \
+  --header "Authorization: Bearer <token>"
+
+# Codex CLI
+codex mcp add springboard --url http://127.0.0.1:47382/mcp --bearer-token-env-var SPRINGBOARD_TOKEN
+```
+
+For **opencode**, add a remote MCP server in its config with `transport: "http"` and an
+`Authorization: Bearer <token>` header pointing at the `/mcp` URL.
+
+**Claude Desktop** cannot reach a localhost HTTP MCP server directly (its custom connectors dial in
+from Anthropic's cloud). As a stopgap, bridge it with `mcp-remote` in
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "springboard": {
+      "command": "npx",
+      "args": [
+        "mcp-remote", "http://127.0.0.1:47382/mcp",
+        "--transport", "http-only",
+        "--header", "Authorization: Bearer <token>"
+      ]
+    }
+  }
+}
+```
+
+A one-click Claude Desktop extension (`.mcpb`) is tracked as a follow-up in issue #97.
+
 ### Startup log lines
 
 The app emits structured log lines at each startup milestone. If the app hangs or crashes, these

@@ -189,4 +189,10 @@ internal class ToolCallRegistryTest {
         assertTrue(registry.isRegistered("change_environment_id"))
         assertTrue(registry.isRegistered("change_app_group_id"))
     }
+
+    @Test
+    fun `registry includes get_snapshot`() {
+        val registry = createSpringboardToolCallRegistry()
+        assertTrue(registry.isRegistered("get_snapshot"))
+    }
 }

@@ -8,6 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
 import com.strangeparticle.springboard.app.domain.model.*
+import com.strangeparticle.springboard.app.domain.undo.SpringboardEditHistory
+import com.strangeparticle.springboard.app.domain.undo.UndoRedoOutcome
 import com.strangeparticle.springboard.app.loading.SpringboardLoader
 import com.strangeparticle.springboard.app.persistence.PersistenceService
 import com.strangeparticle.springboard.app.persistence.buildTabsDto
@@ -53,6 +55,14 @@ class SpringboardViewModel(
         get() = _tabs.mapNotNull { it.source }
 
     private val _tabToastStates = mutableMapOf<String, TabToastState>()
+
+    // Per-tab undo/redo state. Each tab owns an independent edit history keyed by tabId.
+    // Transactions let a caller coalesce several edits (e.g. a whole AI turn) into a single
+    // undo step: while a transaction is open, edits are applied to the springboard but only
+    // the touched tabs' final states are recorded as one history entry on commit.
+    private val editHistories = mutableMapOf<String, SpringboardEditHistory>()
+    private var editTransactionDepth = 0
+    private val tabsTouchedInTransaction = mutableSetOf<String>()
 
     fun tabToastState(tabId: String): TabToastState =
         _tabToastStates.getOrPut(tabId) { TabToastState() }
@@ -106,6 +116,9 @@ class SpringboardViewModel(
                 s3LastEtag = s3LastEtag,
             )
         }
+        // Installing a springboard establishes a new clean baseline for the tab, so its
+        // undo history starts over from the just-installed state.
+        editHistories[tabId] = SpringboardEditHistory(springboardConfig)
     }
 
     /** Returns the [TabState] for [tabId], or null if no tab with that id exists. */
@@ -146,6 +159,89 @@ class SpringboardViewModel(
                 springboardUnfiltered = newSpringboard,
             )
         }
+    }
+
+    /**
+     * Applies [newSpringboard] to [tabId], records it as an undo step (or defers it when a
+     * transaction is open), and marks the tab dirty. This is the single seam through which
+     * edits flow into a tab's undo history.
+     */
+    fun commitTabEdit(tabId: String, newSpringboard: Springboard) {
+        replaceTabSpringboard(tabId, newSpringboard)
+        if (editTransactionDepth > 0) {
+            tabsTouchedInTransaction.add(tabId)
+        } else {
+            editHistories.getOrPut(tabId) { SpringboardEditHistory(newSpringboard) }.record(newSpringboard)
+        }
+        markTabDirty(tabId)
+    }
+
+    /**
+     * Opens an edit transaction. While one or more transactions are open, [commitTabEdit]
+     * applies edits without recording individual undo steps; the touched tabs' final states
+     * are recorded as a single step when the outermost transaction is committed. Transactions
+     * nest by depth.
+     */
+    fun beginEditTransaction() {
+        // Clearing on the outermost begin protects a new transaction from leftovers of a
+        // previous transaction that was begun but never committed (e.g. threw before commit).
+        if (editTransactionDepth == 0) {
+            tabsTouchedInTransaction.clear()
+        }
+        editTransactionDepth += 1
+    }
+
+    /**
+     * Closes the most recently opened edit transaction. When this closes the outermost
+     * transaction, each tab touched during the transaction records exactly one undo step
+     * capturing its current (post-transaction) springboard.
+     */
+    fun commitEditTransaction() {
+        if (editTransactionDepth == 0) {
+            return
+        }
+        editTransactionDepth -= 1
+        if (editTransactionDepth == 0) {
+            for (touchedTabId in tabsTouchedInTransaction) {
+                val springboard = findTab(touchedTabId)?.springboardUnfiltered
+                if (springboard != null) {
+                    editHistories.getOrPut(touchedTabId) { SpringboardEditHistory(springboard) }.record(springboard)
+                }
+            }
+            tabsTouchedInTransaction.clear()
+        }
+    }
+
+    val canUndoActiveTab: Boolean
+        get() = editHistories[activeTabId]?.canUndo == true
+
+    val canRedoActiveTab: Boolean
+        get() = editHistories[activeTabId]?.canRedo == true
+
+    /**
+     * Undoes the most recent edit on the active tab, restoring the previous springboard and
+     * syncing the tab's dirty flag to the history's saved marker. Returns an [UndoRedoOutcome]
+     * describing what happened so the caller can surface a user-facing message.
+     */
+    fun undoActiveTab(): UndoRedoOutcome {
+        val history = editHistories[activeTabId] ?: return UndoRedoOutcome.NothingToUndo
+        val restored = history.undo() ?: return UndoRedoOutcome.NothingToUndo
+        replaceTabSpringboard(activeTabId, restored)
+        updateTabById(activeTabId) { it.copy(isDirty = history.isDirty) }
+        return UndoRedoOutcome.Undone
+    }
+
+    /**
+     * Redoes the most recently undone edit on the active tab, re-applying the next springboard
+     * and syncing the tab's dirty flag to the history's saved marker. Returns an
+     * [UndoRedoOutcome] describing what happened.
+     */
+    fun redoActiveTab(): UndoRedoOutcome {
+        val history = editHistories[activeTabId] ?: return UndoRedoOutcome.NothingToRedo
+        val restored = history.redo() ?: return UndoRedoOutcome.NothingToRedo
+        replaceTabSpringboard(activeTabId, restored)
+        updateTabById(activeTabId) { it.copy(isDirty = history.isDirty) }
+        return UndoRedoOutcome.Redone
     }
 
     fun restoreTabFromUndoSnapshot(
@@ -263,6 +359,9 @@ class SpringboardViewModel(
                     current.copy(isDirty = false)
                 }
             }
+            // Mark the just-saved springboard as the history's clean baseline, so undoing
+            // back to this state clears the dirty indicator rather than leaving it stuck on.
+            editHistories[tabId]?.markSaved()
             SaveResult.Success(targetPath)
         } else {
             SaveResult.WriteFailed(targetPath, "writeFileContents returned false")
@@ -285,6 +384,9 @@ class SpringboardViewModel(
                 updateTabById(tab.tabId) { current ->
                     current.copy(isDirty = false, s3LastEtag = outcome.etag ?: current.s3LastEtag)
                 }
+                // Mark the just-saved springboard as the history's clean baseline, so undoing
+                // back to this state clears the dirty indicator rather than leaving it stuck on.
+                editHistories[tab.tabId]?.markSaved()
                 SaveResult.Success(sourceUrl)
             }
             is S3PutResult.Conflict -> SaveResult.Conflict(sourceUrl, outcome.message)
@@ -370,6 +472,8 @@ class SpringboardViewModel(
         val wasActive = activeTabId == tabId
 
         if (_tabs.size == 1) {
+            _tabToastStates.remove(tabId)
+            editHistories.remove(tabId)
             val replacement = TabState.createEmpty(
                 tabId = generateTabId(),
                 label = nextUntitledTabName(excludingTabId = tabId),
@@ -381,6 +485,7 @@ class SpringboardViewModel(
         }
 
         _tabToastStates.remove(tabId)
+        editHistories.remove(tabId)
         _tabs.removeAt(index)
         if (wasActive) {
             val nextIndex = if (index < _tabs.size) index else _tabs.size - 1

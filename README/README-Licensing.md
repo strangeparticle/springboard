@@ -8,7 +8,7 @@ This project includes legal information for three separate concerns:
 
 ## Springboard and Third-Party Legal Files
 
-Springboard stores legal files in `composeApp/src/commonMain/resources/legal/`:
+Springboard stores legal files in `shared/src/commonMain/resources/legal/`:
 
 - `LICENSE.txt`
   - Springboard's own BSD 3-Clause license
@@ -17,7 +17,7 @@ Springboard stores legal files in `composeApp/src/commonMain/resources/legal/`:
 
 ### License Text Duplication
 The project license text is intentionally duplicated between the repo-root `LICENSE` file and
-`composeApp/src/commonMain/resources/legal/LICENSE.txt`.
+`shared/src/commonMain/resources/legal/LICENSE.txt`.
 
 Trying to source license text from a single file would have increased build and runtime complexity.
 

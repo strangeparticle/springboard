@@ -28,6 +28,8 @@ internal class CommandApiMcpEndpointTest {
             val (listStatus, listBody) = postMcp("$baseUrl/mcp", toolsListBody(), token)
             assertEquals(200, listStatus)
             assertTrue(listBody.contains("\"get_snapshot\""), listBody)
+            assertTrue(listBody.contains("\"undo\""), listBody)
+            assertTrue(listBody.contains("\"redo\""), listBody)
         }
     }
 

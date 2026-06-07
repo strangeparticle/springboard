@@ -41,8 +41,8 @@ internal class OpenAiChatCompletionRequestTest {
 
     private fun buildBody(request: AiProviderClientRequest): JsonObject {
         val rawJson = json.encodeToString(
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
+            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
+            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
         )
         return json.parseToJsonElement(rawJson).jsonObject
     }

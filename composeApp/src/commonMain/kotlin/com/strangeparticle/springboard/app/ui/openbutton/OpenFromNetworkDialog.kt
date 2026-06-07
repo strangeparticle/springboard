@@ -67,6 +67,11 @@ fun OpenFromNetworkDialog(
                             isValidUrl
                         }
 
+                        Key.Escape -> {
+                            onDismiss()
+                            true
+                        }
+
                         else -> false
                     }
                 },

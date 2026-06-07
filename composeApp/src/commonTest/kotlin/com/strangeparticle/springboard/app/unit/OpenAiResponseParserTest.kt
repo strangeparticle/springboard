@@ -32,7 +32,7 @@ internal class OpenAiResponseParserTest {
             }
             """.trimIndent()
 
-        val response = _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
+        val response = com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
 
         assertEquals("hello world", response.text)
         assertTrue(response.toolCalls.isEmpty())
@@ -63,7 +63,7 @@ internal class OpenAiResponseParserTest {
             }
             """.trimIndent()
 
-        val response = _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
+        val response = com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
 
         assertNull(response.text)
         assertEquals(1, response.toolCalls.size)
@@ -98,7 +98,7 @@ internal class OpenAiResponseParserTest {
             }
             """.trimIndent()
 
-        val response = _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
+        val response = com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body)
 
         assertEquals("let me add that", response.text)
         assertEquals(1, response.toolCalls.size)
@@ -107,19 +107,19 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `finish_reason length maps to MaxTokens`() {
         val body = """{ "choices": [{ "message": { "content": "..." }, "finish_reason": "length" }] }"""
-        assertEquals(AiProviderClientStopReason.MaxTokens, _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
+        assertEquals(AiProviderClientStopReason.MaxTokens, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
     }
 
     @Test
     fun `unknown finish_reason maps to Other`() {
         val body = """{ "choices": [{ "message": { "content": "..." }, "finish_reason": "content_filter" }] }"""
-        assertEquals(AiProviderClientStopReason.Other, _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
+        assertEquals(AiProviderClientStopReason.Other, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
     }
 
     @Test
     fun `parse throws MalformedResponse when choices is missing`() {
         val body = """{ "id": "x" }"""
-        val ex = assertFailsWith<AiProviderClientException> { _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
         assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
     }
 
@@ -139,7 +139,7 @@ internal class OpenAiResponseParserTest {
               }]
             }
             """.trimIndent()
-        val ex = assertFailsWith<AiProviderClientException> { _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
         assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
     }
 
@@ -157,7 +157,7 @@ internal class OpenAiResponseParserTest {
             """.trimIndent()
 
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 401,
                 body,
             )
@@ -169,7 +169,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow classifies 429 as RateLimit`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(429, """{ "error": { "message": "rate limited" } }""")
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(429, """{ "error": { "message": "rate limited" } }""")
         }
         assertEquals(AiProviderClientErrorType.RateLimit, ex.classified)
     }
@@ -177,7 +177,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow classifies rate_limit_exceeded code as RateLimit`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"rate limited","type":"rate_limit_error","code":"rate_limit_exceeded"}}""",
             )
@@ -188,7 +188,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow classifies invalid_api_key code as InvalidApiKey`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 400,
                 """{"error":{"message":"bad key","type":"invalid_request_error","code":"invalid_api_key"}}""",
             )
@@ -199,7 +199,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow classifies 500 as ProviderUnavailable`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(500, "internal server error")
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(500, "internal server error")
         }
         assertEquals(AiProviderClientErrorType.ProviderUnavailable, ex.classified)
     }
@@ -207,7 +207,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow with a non-JSON body still surfaces it as raw provider message`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(503, "Service Temporarily Unavailable")
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(503, "Service Temporarily Unavailable")
         }
         // Falls back to surfacing the raw body since it can't pull a structured "message" field.
         assertNotNull(ex.rawProviderMessage)
@@ -219,7 +219,7 @@ internal class OpenAiResponseParserTest {
         // OpenAI returns HTTP 400 for this case — without the body-level classification,
         // it would fall back to AiErrorClass.Unknown.
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 400,
                 """{"error":{"message":"context length exceeded","type":"invalid_request_error","code":"context_length_exceeded"}}""",
             )
@@ -232,7 +232,7 @@ internal class OpenAiResponseParserTest {
         // OpenAI returns HTTP 429 for this case too — the granular classification means
         // we tell QuotaExceeded apart from a transient rate limit.
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"You exceeded your current quota","type":"insufficient_quota","code":"insufficient_quota"}}""",
             )
@@ -243,7 +243,7 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parseErrorAndThrow falls back to HTTP status when error code is unrecognized`() {
         val ex = assertFailsWith<AiProviderClientException> {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"slow down","type":"rate_limit_error","code":"some_new_unknown_code"}}""",
             )
@@ -266,7 +266,7 @@ internal class OpenAiResponseParserTest {
               }]
             }
             """.trimIndent()
-        val ex = assertFailsWith<AiProviderClientException> { _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
         assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
     }
 }

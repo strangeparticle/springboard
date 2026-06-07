@@ -54,7 +54,7 @@ internal class AiProviderClientOpenAiTest {
             )
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -74,7 +74,7 @@ internal class AiProviderClientOpenAiTest {
             )
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -95,7 +95,7 @@ internal class AiProviderClientOpenAiTest {
             )
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -110,7 +110,7 @@ internal class AiProviderClientOpenAiTest {
             respond("""{"error":{"message":"slow down"}}""", HttpStatusCode.TooManyRequests)
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -124,7 +124,7 @@ internal class AiProviderClientOpenAiTest {
             respond("internal", HttpStatusCode.InternalServerError)
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -138,7 +138,7 @@ internal class AiProviderClientOpenAiTest {
             throw RuntimeException("connection refused")
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -152,7 +152,7 @@ internal class AiProviderClientOpenAiTest {
             error("sendAiRequest should never call the engine when api key is missing")
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { null })
 
@@ -180,7 +180,7 @@ internal class AiProviderClientOpenAiTest {
             )
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-not-used-for-listModels" })
 
@@ -197,7 +197,7 @@ internal class AiProviderClientOpenAiTest {
             error("should not reach engine when api key is blank")
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { null })
 
@@ -215,7 +215,7 @@ internal class AiProviderClientOpenAiTest {
             )
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -231,7 +231,7 @@ internal class AiProviderClientOpenAiTest {
             throw kotlinx.coroutines.CancellationException("turn cancelled by user")
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 
@@ -247,7 +247,7 @@ internal class AiProviderClientOpenAiTest {
             throw kotlinx.coroutines.CancellationException("settings dialog cancelled fetch")
         })
         val sut =
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
+            com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { "sk-test" })
 

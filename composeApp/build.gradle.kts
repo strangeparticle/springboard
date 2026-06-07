@@ -14,6 +14,8 @@ plugins {
 val appVersion = project.findProperty("appVersion")?.toString() ?: error("appVersion not set in gradle.properties")
 
 kotlin {
+    jvmToolchain(21)
+
     jvm("desktop")
 
     @OptIn(ExperimentalWasmDsl::class)

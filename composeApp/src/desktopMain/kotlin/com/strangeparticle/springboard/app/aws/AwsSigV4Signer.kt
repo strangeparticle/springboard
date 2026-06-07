@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.aws
 
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import java.net.URI
 import java.security.MessageDigest
@@ -175,8 +176,8 @@ object AwsSigV4Signer {
         val utc = instant.toLocalDateTime(TimeZone.UTC)
         return "%04d%02d%02dT%02d%02d%02dZ".format(
             utc.year,
-            utc.monthNumber,
-            utc.dayOfMonth,
+            utc.month.number,
+            utc.day,
             utc.hour,
             utc.minute,
             utc.second,

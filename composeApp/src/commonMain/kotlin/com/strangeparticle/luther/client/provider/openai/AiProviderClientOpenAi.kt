@@ -42,11 +42,11 @@ internal class AiProviderClientOpenAi(
         val apiKey = getApiKeyOrThrow()
         // OpenAiChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.Companion.serializer(),
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.Companion.from(request),
+            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.Companion.serializer(),
+            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.Companion.from(request),
         )
         val response = postOrThrow("$baseUrl/v1/chat/completions", apiKey, body)
-        return _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(response.bodyAsText())
+        return com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(response.bodyAsText())
     }
 
     override suspend fun listModels(apiKey: String): List<AiProviderClientModelInfo> {
@@ -74,10 +74,10 @@ internal class AiProviderClientOpenAi(
             )
         }
         if (response.status != HttpStatusCode.OK) {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(response.status.value, response.bodyAsText())
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(response.status.value, response.bodyAsText())
         }
         val parsed = parseJsonOrThrow(response)
-        return _root_ide_package_.com.strangeparticle.luther.client.provider.openai.OpenAiModelFilter.filterAndMap(parsed)
+        return com.strangeparticle.luther.client.provider.openai.OpenAiModelFilter.filterAndMap(parsed)
     }
 
     private fun getApiKeyOrThrow(): String {
@@ -112,7 +112,7 @@ internal class AiProviderClientOpenAi(
             )
         }
         if (response.status != HttpStatusCode.OK) {
-            _root_ide_package_.com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(response.status.value, response.bodyAsText())
+            com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(response.status.value, response.bodyAsText())
         }
         return response
     }

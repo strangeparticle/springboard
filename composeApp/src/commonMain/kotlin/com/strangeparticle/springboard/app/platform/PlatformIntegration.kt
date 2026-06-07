@@ -2,6 +2,7 @@ package com.strangeparticle.springboard.app.platform
 
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 
 expect fun openUrl(url: String)
@@ -17,7 +18,7 @@ fun formatTimestamp(millis: Long): String =
 
 fun formatTimestamp(millis: Long, timeZone: TimeZone): String {
     val localDateTime = Instant.fromEpochMilliseconds(millis).toLocalDateTime(timeZone)
-    val monthShortName = when (localDateTime.monthNumber) {
+    val monthShortName = when (localDateTime.month.number) {
         1 -> "Jan"
         2 -> "Feb"
         3 -> "Mar"
@@ -39,7 +40,7 @@ fun formatTimestamp(millis: Long, timeZone: TimeZone): String {
     val second = localDateTime.second.toString().padStart(2, '0')
     val amPm = if (localDateTime.hour < 12) "AM" else "PM"
 
-    return "$monthShortName ${localDateTime.dayOfMonth}, ${localDateTime.year}, $hour12:$minute:$second $amPm"
+    return "$monthShortName ${localDateTime.day}, ${localDateTime.year}, $hour12:$minute:$second $amPm"
 }
 
 expect fun getPlatformName(): String

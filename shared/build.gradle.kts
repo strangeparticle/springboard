@@ -1,6 +1,4 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -10,37 +8,17 @@ plugins {
     id("com.adarshr.test-logger") version "4.0.0"
 }
 
-// Version is defined in gradle.properties
-val appVersion = project.findProperty("appVersion")?.toString() ?: error("appVersion not set in gradle.properties")
-
 kotlin {
     jvmToolchain(21)
 
-    jvm("desktop")
+    jvm()
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
-        outputModuleName.set("composeApp")
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
+        browser()
     }
 
     sourceSets {
-        val desktopMain by getting
-
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -62,7 +40,7 @@ kotlin {
             @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
             implementation(compose.uiTest)
         }
-        desktopMain.dependencies {
+        jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
             implementation(libs.ktor.client.cio)
@@ -70,18 +48,21 @@ kotlin {
             implementation(libs.ktor.server.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
         }
-        val wasmJsMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.js.wasm.js)
-            }
+        jvmTest.dependencies {
+            implementation(compose.desktop.uiTestJUnit4)
+            implementation(compose.desktop.currentOs)
         }
-        val desktopTest by getting {
-            dependencies {
-                implementation(compose.desktop.uiTestJUnit4)
-                implementation(compose.desktop.currentOs)
-            }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js.wasm.js)
         }
     }
+}
+
+// Keep the generated Compose resources accessor package stable across the module
+// rename (it defaults to <rootProject>.<module>.generated.resources; pinning it
+// avoids rewriting every springboard.composeapp.generated.resources import).
+compose.resources {
+    packageOfResClass = "springboard.composeapp.generated.resources"
 }
 
 // Always re-run tests (skip Gradle's UP-TO-DATE check) so output is shown every time.
@@ -92,30 +73,5 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
     testlogger {
         showSimpleNames = true
         showSkipped = true
-    }
-}
-
-compose.desktop {
-    application {
-        mainClass = "com.strangeparticle.springboard.app.MainKt"
-
-        nativeDistributions {
-            targetFormats(
-                TargetFormat.Pkg,
-                TargetFormat.Dmg,
-            )
-
-            packageName = "Springboard"
-            packageVersion = appVersion
-
-            macOS {
-                iconFile.set(project.file("src/desktopMain/resources/icon.icns"))
-
-                packageName = "Springboard"
-                bundleID = "com.strangeparticle.springboard.core"
-                appCategory = "public.app-category.developer-tools"
-                minimumSystemVersion = "12.0"
-            }
-        }
     }
 }

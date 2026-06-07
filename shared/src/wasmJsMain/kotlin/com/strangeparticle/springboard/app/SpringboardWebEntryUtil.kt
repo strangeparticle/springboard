@@ -35,7 +35,7 @@ private external fun getWindowInnerWidth(): Int
 private external fun getWindowInnerHeight(): Int
 
 @OptIn(ExperimentalComposeUiApi::class)
-fun main() {
+fun runSpringboardWeb() {
     val runtimeEnvironment = detectRuntimeEnvironment()
     val persistenceService = PersistenceServiceDefaultImpl()
     val settingsRegistry = SettingsRegistry(

@@ -50,7 +50,7 @@ private enum class ActiveSettingsOpenedFrom {
     MAIN_SCREEN,
 }
 
-fun main(args: Array<String>) {
+fun runSpringboardDesktop(args: Array<String>) {
     println("[Springboard] platform initialized")
 
     val runtimeEnvironment = detectRuntimeEnvironment()

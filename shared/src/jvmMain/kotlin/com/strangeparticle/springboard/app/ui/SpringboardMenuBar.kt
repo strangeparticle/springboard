@@ -20,6 +20,10 @@ fun FrameWindowScope.SpringboardMenuBar(
     onOpenFromNetworkInNewTab: () -> Unit,
     onOpenFromS3InCurrentTab: () -> Unit,
     onOpenFromS3InNewTab: () -> Unit,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
     onCopy: () -> Unit,
     onPaste: () -> Unit,
     onCloseCurrentTab: () -> Unit,
@@ -138,6 +142,13 @@ fun FrameWindowScope.SpringboardMenuBar(
             }
         }
         Menu("Edit") {
+            Item("Undo", enabled = canUndo, shortcut = KeyShortcut(Key.Z, meta = true)) {
+                onUndo()
+            }
+            Item("Redo", enabled = canRedo, shortcut = KeyShortcut(Key.Z, meta = true, shift = true)) {
+                onRedo()
+            }
+            Separator()
             Item("Copy", shortcut = KeyShortcut(Key.C, meta = true)) {
                 onCopy()
             }

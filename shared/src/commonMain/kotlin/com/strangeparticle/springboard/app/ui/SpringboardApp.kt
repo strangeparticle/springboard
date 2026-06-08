@@ -75,6 +75,7 @@ internal fun SpringboardApp(
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
     openFileDialog: () -> String? = { com.strangeparticle.springboard.app.platform.openFileDialog(null) },
+    undoRedoBridge: UndoRedoMenuBridge = remember { UndoRedoMenuBridge() },
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -95,6 +96,7 @@ internal fun SpringboardApp(
         viewModel = viewModel,
         settingsViewModel = settingsViewModel,
         coroutineScope = coroutineScope,
+        undoRedoBridge = undoRedoBridge,
     )
     val effectiveAiChatPaneState = if (aiChatPaneState.isConfigured) aiChatPaneState else derivedAiChatPaneState
     val openAiSettings = {
@@ -188,6 +190,7 @@ private fun rememberAiChatPaneState(
     viewModel: SpringboardViewModel,
     settingsViewModel: SettingsViewModel,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
+    undoRedoBridge: UndoRedoMenuBridge,
 ): AiChatPaneState {
     settingsViewModel.settingsVersion
     val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
@@ -223,6 +226,14 @@ private fun rememberAiChatPaneState(
     }
 
     if (provider == null || aiClient == null || modelId.isBlank()) {
+        // The assistant isn't configured, so there's no undo engine wired up. Disable the desktop
+        // Edit menu's Undo/Redo items so they don't appear actionable.
+        SideEffect {
+            undoRedoBridge.canUndo = false
+            undoRedoBridge.canRedo = false
+            undoRedoBridge.onUndo = {}
+            undoRedoBridge.onRedo = {}
+        }
         return AiChatPaneState.notConfigured()
     }
     val providerLabel = provider.displayName
@@ -298,6 +309,19 @@ private fun rememberAiChatPaneState(
                 transcriptVersion++
             }
         }
+    }
+
+    // Read the snapshot-backed undo/redo availability in the composable body so recomposition
+    // observes them, then publish the gated values and actions to the Edit-menu bridge. The
+    // assistant gates undo/redo while a turn is running, so the menu mirrors that gating.
+    val notRunning = runningJob?.isActive != true
+    val canUndoNow = viewModel.canUndoActiveTab && notRunning
+    val canRedoNow = viewModel.canRedoActiveTab && notRunning
+    SideEffect {
+        undoRedoBridge.canUndo = canUndoNow
+        undoRedoBridge.canRedo = canRedoNow
+        undoRedoBridge.onUndo = performUndo
+        undoRedoBridge.onRedo = performRedo
     }
 
     val showFullChatTranscript = settingsViewModel.getResolvedValue(ShowFullChatTranscriptSetting)

@@ -22,6 +22,14 @@ compose.desktop {
     application {
         mainClass = "com.strangeparticle.springboard.app.MainKt"
 
+        // ProGuard (enabled by default for the release distributable) strips classes that are
+        // only reached reflectively via ServiceLoader while leaving their META-INF/services
+        // registration files in place. This breaks Ktor's kotlinx-serialization JSON provider
+        // (ServiceConfigurationError at launch), so minification is disabled for the packaged build.
+        buildTypes.release.proguard {
+            isEnabled.set(false)
+        }
+
         nativeDistributions {
             targetFormats(
                 TargetFormat.Pkg,

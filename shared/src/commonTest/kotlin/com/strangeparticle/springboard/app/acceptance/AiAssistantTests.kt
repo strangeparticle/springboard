@@ -98,6 +98,43 @@ internal class AiAssistantTests {
     }
 
     @Test
+    fun `undo reverts an assistant edit and clears dirty`() = runTest {
+        val fixture = createFixture(source = "/tmp/undo-test.json")
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add a resource").join()
+
+        assertEquals(true, fixture.viewModel.activeTab?.isDirty)
+
+        fixture.viewModel.undoActiveTab()
+
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().none { it.id == "res2" })
+        assertEquals(false, fixture.viewModel.activeTab?.isDirty)
+    }
+
+    @Test
+    fun `redo reapplies an undone edit`() = runTest {
+        val fixture = createFixture(source = "/tmp/undo-test.json")
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add a resource").join()
+        fixture.viewModel.undoActiveTab()
+
+        fixture.viewModel.redoActiveTab()
+
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().any { it.id == "res2" })
+        assertEquals(true, fixture.viewModel.activeTab?.isDirty)
+    }
+
+    @Test
     fun `save springboard writes only after approval`() = runTest {
         val fixture = createFixture(source = "/tmp/test-springboard.json")
         val tabId = fixture.viewModel.activeTabId
@@ -396,6 +433,55 @@ internal class AiAssistantTests {
     }
 
     @Test
+    fun `single tool edit creates one undo step`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")))
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add a resource").join()
+
+        assertTrue(fixture.viewModel.canUndoActiveTab)
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().any { it.id == "res2" })
+
+        fixture.viewModel.undoActiveTab()
+
+        assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().none { it.id == "res2" })
+        assertTrue(!fixture.viewModel.canUndoActiveTab)
+    }
+
+    @Test
+    fun `multi tool turn creates a single undo step`() = runTest {
+        val fixture = createFixture()
+        val tabId = fixture.viewModel.activeTabId
+        fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
+            listOf(
+                ToolCall("call-resource", "add_resource", args("tab_id" to tabId, "id" to "res2", "name" to "Logs")),
+                ToolCall("call-activator", "add_url_activator", args("tab_id" to tabId, "app_id" to "app1", "resource_id" to "res2", "environment_id" to "dev", "url" to "https://logs.example.com")),
+            )
+        )
+        fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
+
+        fixture.manager.submit("add logs").join()
+
+        val afterTurn = fixture.viewModel.springboardUnfiltered
+        assertNotNull(afterTurn)
+        assertTrue(afterTurn.resources.any { it.id == "res2" })
+        assertTrue(afterTurn.activators.any { it.resourceId == "res2" })
+        assertTrue(fixture.viewModel.canUndoActiveTab)
+
+        fixture.viewModel.undoActiveTab()
+
+        val afterUndo = fixture.viewModel.springboardUnfiltered
+        assertNotNull(afterUndo)
+        assertTrue(afterUndo.resources.none { it.id == "res2" })
+        assertTrue(afterUndo.activators.none { it.resourceId == "res2" })
+        assertTrue(!fixture.viewModel.canUndoActiveTab)
+    }
+
+    @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
         fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
@@ -456,6 +542,8 @@ internal class AiAssistantTests {
             systemPromptProvider = { SystemPromptBuilder.build() },
             modelIdProvider = { "fake-model" },
             coroutineScope = this,
+            onTurnStart = { viewModel.beginEditTransaction() },
+            onTurnEnd = { viewModel.commitEditTransaction() },
         )
         return Fixture(viewModel, fileService, activationService, aiClient, registry, manager)
     }

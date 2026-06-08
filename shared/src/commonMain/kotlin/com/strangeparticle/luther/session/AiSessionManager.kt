@@ -49,6 +49,8 @@ internal class AiSessionManager(
     groupsProvider: (() -> List<ChatHistoryGroup>)? = null,
     updateGroups: ((List<ChatHistoryGroup>) -> Unit)? = null,
     private val onTranscriptChanged: () -> Unit = {},
+    private val onTurnStart: () -> Unit = {},
+    private val onTurnEnd: () -> Unit = {},
 ) {
     private val mutableGroups = mutableListOf<ChatHistoryGroup>()
     private val resolvedGroupsProvider: () -> List<ChatHistoryGroup> = groupsProvider ?: { mutableGroups.toList() }
@@ -73,10 +75,32 @@ internal class AiSessionManager(
         stateChangedSinceLastSnapshotSent = true
     }
 
+    /**
+     * Dispatches a registered tool-call by name from a local chat command (e.g. `/undo`, `/redo`)
+     * rather than from a model turn. Builds a tool-call execution context that mirrors the one in
+     * [runRequestLoop] (state changes flip the snapshot flag; approval is auto-granted since the
+     * user is the one issuing the command) and returns the handler's response so the caller can
+     * surface its human-readable message. Refuses to run while a request turn is active.
+     */
+    suspend fun executeLocalToolCall(toolName: String): ToolCallHandlerResponse {
+        check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
+        val context = toolCallExecutionContextFactory.createToolCallExecutionContext(
+            onStateChanged = { stateChangedSinceLastSnapshotSent = true },
+            awaitUserApproval = { true },
+        )
+        return toolCallDispatcher.execute(
+            toolCallId = "local-$toolName",
+            providerToolId = toolName,
+            argumentsAsJsonString = "{}",
+            context = context,
+        )
+    }
+
     fun submit(userText: String): Job {
         check(currentRequestJob?.isActive != true) { "An AI request is already in progress." }
 
         val job = coroutineScope.launch {
+            onTurnStart()
             try {
                 startNewAiInteractionGroup()
                 appendSnapshotIfChanged()
@@ -87,6 +111,8 @@ internal class AiSessionManager(
                 throw e
             } catch (e: Exception) {
                 appendItemToCurrentGroup(AssistantErroredChatHistoryItem(e.message ?: "AI request failed"))
+            } finally {
+                onTurnEnd()
             }
         }
         currentRequestJob = job

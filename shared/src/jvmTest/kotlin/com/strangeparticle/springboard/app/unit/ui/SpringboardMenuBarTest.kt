@@ -14,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalTestApi::class)
 class SpringboardMenuBarTest {
@@ -90,8 +91,68 @@ class SpringboardMenuBarTest {
         }
     }
 
+    @Test
+    fun editMenuHasUndoRedoWithEnabledState() = runDesktopComposeUiTest {
+        val window = runOnUiThread {
+            ComposeWindow().apply {
+                setContent { renderMenuBar(tabCount = 2, canUndo = true, canRedo = false) }
+                isVisible = true
+            }
+        }
+        try {
+            waitUntil("menu bar is installed") {
+                runOnUiThread {
+                    window.jMenuBar != null
+                }
+            }
+
+            runOnUiThread {
+                val editMenu = assertNotNull(window.jMenuBar.getMenuWithText("Edit"))
+
+                assertEquals(
+                    listOf("Undo", "Redo", "---", "Copy", "Paste"),
+                    editMenu.componentLabels(),
+                )
+
+                assertTrue(editMenu.getItemWithText("Undo").isEnabled)
+                assertFalse(editMenu.getItemWithText("Redo").isEnabled)
+            }
+        } finally {
+            runOnUiThread { window.dispose() }
+        }
+    }
+
+    @Test
+    fun editMenuDisablesUndoWhenCanUndoIsFalse() = runDesktopComposeUiTest {
+        val window = runOnUiThread {
+            ComposeWindow().apply {
+                setContent { renderMenuBar(tabCount = 2, canUndo = false, canRedo = true) }
+                isVisible = true
+            }
+        }
+        try {
+            waitUntil("menu bar is installed") {
+                runOnUiThread {
+                    window.jMenuBar != null
+                }
+            }
+
+            runOnUiThread {
+                val editMenu = assertNotNull(window.jMenuBar.getMenuWithText("Edit"))
+                assertFalse(editMenu.getItemWithText("Undo").isEnabled)
+                assertTrue(editMenu.getItemWithText("Redo").isEnabled)
+            }
+        } finally {
+            runOnUiThread { window.dispose() }
+        }
+    }
+
     @Composable
-    private fun FrameWindowScope.renderMenuBar(tabCount: Int) {
+    private fun FrameWindowScope.renderMenuBar(
+        tabCount: Int,
+        canUndo: Boolean = false,
+        canRedo: Boolean = false,
+    ) {
         SpringboardMenuBar(
             hasActiveSpringboard = true,
             canSaveActiveTabInPlace = false,
@@ -105,6 +166,10 @@ class SpringboardMenuBarTest {
             onOpenFromNetworkInNewTab = {},
             onOpenFromS3InCurrentTab = {},
             onOpenFromS3InNewTab = {},
+            canUndo = canUndo,
+            canRedo = canRedo,
+            onUndo = {},
+            onRedo = {},
             onCopy = {},
             onPaste = {},
             onCloseCurrentTab = {},

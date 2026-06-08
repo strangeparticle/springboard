@@ -35,6 +35,7 @@ import com.strangeparticle.springboard.app.settings.items.core.SurfaceAppleScrip
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
 import com.strangeparticle.springboard.app.ui.SpringboardApp
 import com.strangeparticle.springboard.app.ui.SpringboardMenuBar
+import com.strangeparticle.springboard.app.ui.UndoRedoMenuBridge
 import com.strangeparticle.springboard.app.ui.dialog.LicenseDialog
 import com.strangeparticle.springboard.app.ui.toast.ToastBroadcaster
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
@@ -157,6 +158,7 @@ fun runSpringboardDesktop(args: Array<String>) {
         val showSettings = remember { mutableStateOf(false) }
         val showActiveSettings = remember { mutableStateOf(false) }
         val showAssistant = remember { mutableStateOf(false) }
+        val undoRedoBridge = remember { UndoRedoMenuBridge() }
         val showLicenseDialog = remember { mutableStateOf(false) }
         val showNetworkDialog = remember { mutableStateOf(false) }
         val networkOpenIntoNewTab = remember { mutableStateOf(false) }
@@ -253,6 +255,10 @@ fun runSpringboardDesktop(args: Array<String>) {
                     s3OpenIntoNewTab.value = true
                     showS3Dialog.value = true
                 },
+                canUndo = undoRedoBridge.canUndo,
+                canRedo = undoRedoBridge.canRedo,
+                onUndo = { undoRedoBridge.onUndo() },
+                onRedo = { undoRedoBridge.onRedo() },
                 onCopy = { sendMenuShortcut(KeyEvent.VK_C) },
                 onPaste = { sendMenuShortcut(KeyEvent.VK_V) },
                 onCloseCurrentTab = {
@@ -448,6 +454,7 @@ fun runSpringboardDesktop(args: Array<String>) {
                 onOpenActiveSettingsFromSettings = openActiveSettingsFromSettings,
                 onCloseActiveSettings = closeActiveSettings,
                 networkContentService = networkContentService,
+                undoRedoBridge = undoRedoBridge,
             )
 
             LaunchedEffect(viewModel.tabs.mapNotNull { it.springboardFilteredForRuntime }) {

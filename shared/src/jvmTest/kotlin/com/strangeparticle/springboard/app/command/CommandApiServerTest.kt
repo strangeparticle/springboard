@@ -225,7 +225,7 @@ internal class CommandApiServerTest {
             assertTrue(response.body.contains("\"type\":\"bearer\""))
             assertTrue(response.body.contains("Use the reserved id ALL"))
             assertTrue(response.body.contains("\"discoveryFile\":\"${discoveryPath}\""))
-            assertTrue(response.body.contains("\"toolCount\":43"))
+            assertTrue(response.body.contains("\"toolCount\":45"))
             assertTrue(response.body.contains("\"toolExecution\""))
             assertTrue(response.body.contains("approvalRequired"))
             assertTrue(response.body.contains("rawArguments"))
@@ -303,11 +303,18 @@ internal class CommandApiServerTest {
                 .getValue("properties")
                 .jsonObject
 
+            val undo = tools.single {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "undo"
+            }.jsonObject
+            val redo = tools.single {
+                it.jsonObject.getValue("name").jsonPrimitive.content == "redo"
+            }.jsonObject
+
             assertEquals(200, response.statusCode)
-            assertEquals("43", root.getValue("toolCount").jsonPrimitive.content)
+            assertEquals("45", root.getValue("toolCount").jsonPrimitive.content)
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("wrapperExample"))
             assertTrue(root.getValue("requestBody").jsonObject.containsKey("rawArgumentsExample"))
-            assertEquals(43, tools.size)
+            assertEquals(45, tools.size)
             assertTrue(tools.any {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "add_app"
             })
@@ -321,6 +328,9 @@ internal class CommandApiServerTest {
                 it.jsonObject.getValue("name").jsonPrimitive.content == "change_app_group_id"
             })
             assertEquals("true", saveSpringboard.getValue("requiresUserConfirmation").jsonPrimitive.content)
+            // undo/redo must be executable without confirmation so MCP/Command-API agents can call them.
+            assertEquals("false", undo.getValue("requiresUserConfirmation").jsonPrimitive.content)
+            assertEquals("false", redo.getValue("requiresUserConfirmation").jsonPrimitive.content)
             assertTrue(saveSpringboard.getValue("schema").jsonObject.isNotEmpty())
             assertTrue(createSpringboardProperties.containsKey("name"))
         } finally {

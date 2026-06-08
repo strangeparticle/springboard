@@ -195,4 +195,11 @@ internal class ToolCallRegistryTest {
         val registry = createSpringboardToolCallRegistry()
         assertTrue(registry.isRegistered("get_snapshot"))
     }
+
+    @Test
+    fun `registry includes undo and redo`() {
+        val registry = createSpringboardToolCallRegistry()
+        assertTrue(registry.isRegistered("undo"))
+        assertTrue(registry.isRegistered("redo"))
+    }
 }

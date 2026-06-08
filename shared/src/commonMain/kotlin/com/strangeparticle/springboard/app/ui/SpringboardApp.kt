@@ -18,9 +18,11 @@ import com.strangeparticle.luther.session.event.LocalCommandResponseKind
 import com.strangeparticle.luther.session.event.LocalCommandSource
 import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.springboard.app.domain.factory.SpringboardFactory
+import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
+import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResponse
 import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
 import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
@@ -73,6 +75,7 @@ internal fun SpringboardApp(
     networkContentService: NetworkContentService? = null,
     showFileOpen: Boolean = true,
     openFileDialog: () -> String? = { com.strangeparticle.springboard.app.platform.openFileDialog(null) },
+    undoRedoBridge: UndoRedoMenuBridge = remember { UndoRedoMenuBridge() },
 ) {
     var isShiftHeld by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -93,6 +96,7 @@ internal fun SpringboardApp(
         viewModel = viewModel,
         settingsViewModel = settingsViewModel,
         coroutineScope = coroutineScope,
+        undoRedoBridge = undoRedoBridge,
     )
     val effectiveAiChatPaneState = if (aiChatPaneState.isConfigured) aiChatPaneState else derivedAiChatPaneState
     val openAiSettings = {
@@ -186,6 +190,7 @@ private fun rememberAiChatPaneState(
     viewModel: SpringboardViewModel,
     settingsViewModel: SettingsViewModel,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
+    undoRedoBridge: UndoRedoMenuBridge,
 ): AiChatPaneState {
     settingsViewModel.settingsVersion
     val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
@@ -221,6 +226,14 @@ private fun rememberAiChatPaneState(
     }
 
     if (provider == null || aiClient == null || modelId.isBlank()) {
+        // The assistant isn't configured, so there's no undo engine wired up. Disable the desktop
+        // Edit menu's Undo/Redo items so they don't appear actionable.
+        SideEffect {
+            undoRedoBridge.canUndo = false
+            undoRedoBridge.canRedo = false
+            undoRedoBridge.onUndo = {}
+            undoRedoBridge.onRedo = {}
+        }
         return AiChatPaneState.notConfigured()
     }
     val providerLabel = provider.displayName
@@ -260,9 +273,57 @@ private fun rememberAiChatPaneState(
             groupsProvider = { chatHistory },
             updateGroups = { groups -> chatHistory = groups },
             onTranscriptChanged = { transcriptVersion++ },
+            onTurnStart = { viewModel.beginEditTransaction() },
+            onTurnEnd = { viewModel.commitEditTransaction() },
         )
     }
     transcriptVersion
+
+    // `/undo` and `/redo` are chat commands that dispatch the registered `undo`/`redo` tool-calls
+    // (the same handlers the assistant and external agents use), then append a visible chat event.
+    // Undo-history and chat-history are separate concerns: these commands never delete a chat item.
+    // The tool marks state changed through the context's onStateChanged, so no extra
+    // markExternalStateChange() is needed here.
+    val performUndo: () -> Unit = {
+        if (runningJob?.isActive == true) {
+            chatHistory = chatHistory + localCommandGroup("/undo", LocalCommandSource.User, "Cannot undo while the assistant is processing.", LocalCommandResponseKind.Error)
+            transcriptVersion++
+        } else {
+            coroutineScope.launch {
+                val response = manager.executeLocalToolCall("undo")
+                val message = response.toolCallMessageOrNull() ?: "Undid last change."
+                chatHistory = chatHistory + localCommandGroup("/undo", LocalCommandSource.User, message, LocalCommandResponseKind.Help)
+                transcriptVersion++
+            }
+        }
+    }
+    val performRedo: () -> Unit = {
+        if (runningJob?.isActive == true) {
+            chatHistory = chatHistory + localCommandGroup("/redo", LocalCommandSource.User, "Cannot redo while the assistant is processing.", LocalCommandResponseKind.Error)
+            transcriptVersion++
+        } else {
+            coroutineScope.launch {
+                val response = manager.executeLocalToolCall("redo")
+                val message = response.toolCallMessageOrNull() ?: "Redid last change."
+                chatHistory = chatHistory + localCommandGroup("/redo", LocalCommandSource.User, message, LocalCommandResponseKind.Help)
+                transcriptVersion++
+            }
+        }
+    }
+
+    // Read the snapshot-backed undo/redo availability in the composable body so recomposition
+    // observes them, then publish the gated values and actions to the Edit-menu bridge. The
+    // assistant gates undo/redo while a turn is running, so the menu mirrors that gating.
+    val notRunning = runningJob?.isActive != true
+    val canUndoNow = viewModel.canUndoActiveTab && notRunning
+    val canRedoNow = viewModel.canRedoActiveTab && notRunning
+    SideEffect {
+        undoRedoBridge.canUndo = canUndoNow
+        undoRedoBridge.canRedo = canRedoNow
+        undoRedoBridge.onUndo = performUndo
+        undoRedoBridge.onRedo = performRedo
+    }
+
     val showFullChatTranscript = settingsViewModel.getResolvedValue(ShowFullChatTranscriptSetting)
     val effectiveScrollbackPanes = if (showFullChatTranscript) {
         buildDebugScrollbackPanes(chatHistory)
@@ -312,39 +373,11 @@ private fun rememberAiChatPaneState(
                     return@configured
                 }
                 is AiChatLocalCommand.Undo -> {
-                    if (runningJob?.isActive == true) {
-                        chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, "Cannot undo while the assistant is processing.", LocalCommandResponseKind.Error)
-                        transcriptVersion++
-                        return@configured
-                    }
-                    val lastAiIndex = chatHistory.indexOfLast { it.type == ChatHistoryGroupType.AI_INTERACTION }
-                    if (lastAiIndex < 0) {
-                        chatHistory = chatHistory + localCommandGroup(command.originalText, LocalCommandSource.User, "Nothing to undo.", LocalCommandResponseKind.Error)
-                        transcriptVersion++
-                        return@configured
-                    }
-                    val undoGroup = chatHistory[lastAiIndex]
-                    val snapshotJson = undoGroup.preSnapshotJson
-                    if (snapshotJson != null) {
-                        try {
-                            val snapshot = SpringboardAppSnapshot.fromJson(snapshotJson)
-                            val tabSnapshot = snapshot.tabs.firstOrNull { it.tabId == viewModel.activeTabId }
-                            if (tabSnapshot?.springboard != null) {
-                                val springboard = SpringboardFactory.fromDto(tabSnapshot.springboard, tabSnapshot.source ?: "")
-                                viewModel.suppressWindowGrow = true
-                                viewModel.restoreTabFromUndoSnapshot(
-                                    tabId = tabSnapshot.tabId,
-                                    springboard = springboard,
-                                    label = tabSnapshot.label,
-                                    isDirty = tabSnapshot.isDirty,
-                                )
-                                viewModel.suppressWindowGrow = false
-                            }
-                        } catch (_: Exception) { }
-                    }
-                    chatHistory = chatHistory.filterIndexed { index, _ -> index != lastAiIndex }
-                    manager.markExternalStateChange()
-                    transcriptVersion++
+                    performUndo()
+                    return@configured
+                }
+                is AiChatLocalCommand.Redo -> {
+                    performRedo()
                     return@configured
                 }
                 is AiChatLocalCommand.Unknown -> {
@@ -378,6 +411,18 @@ private fun rememberAiChatPaneState(
     )
 }
 
+
+/**
+ * Extracts the human-readable message from a tool-call response, if it carries one. Springboard
+ * tool handlers return [SpringboardToolCallHandlerResponse]; the dispatcher itself can return a
+ * generic [ToolCallExecutionResult] (e.g. unknown tool). Both expose a `message`, but the shared
+ * [ToolCallHandlerResponse] marker type does not, so we read it per concrete type.
+ */
+private fun ToolCallHandlerResponse.toolCallMessageOrNull(): String? = when (this) {
+    is SpringboardToolCallHandlerResponse -> message
+    is ToolCallExecutionResult -> message
+    else -> null
+}
 
 private fun localCommandGroup(
     commandText: String,

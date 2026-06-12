@@ -16,7 +16,7 @@ internal object AnthropicPreferredModelSetting : DropDownFromApiCallSettingsItem
         val apiKey = context.get(AnthropicApiKeySetting).orEmpty()
         if (apiKey.isBlank()) return@runCatching emptyList()
         val client = AnthropicProvider.createClient(context)
-        val models = client.listModels(apiKey)
+        val models = client.listModels()
         val preferredIds = AnthropicProvider.preferredModelIds()
         val tooled = models.filter { it.supportsToolCalling }
         val preferred = preferredIds.mapNotNull { id -> tooled.firstOrNull { it.id == id } }

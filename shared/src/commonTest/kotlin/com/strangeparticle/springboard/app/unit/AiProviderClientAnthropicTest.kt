@@ -168,7 +168,7 @@ internal class AiProviderClientAnthropicTest {
     @Test
     fun `listModels returns filtered and sorted models`() = runTest {
         val client = HttpClient(MockEngine { respond(modelListBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json")) })
-        val models = AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).listModels("sk-ant-test")
+        val models = AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).listModels()
 
         assertEquals(1, models.size)
         assertEquals("claude-sonnet-4-6", models[0].id)
@@ -183,7 +183,7 @@ internal class AiProviderClientAnthropicTest {
             capturedVersion = request.headers["anthropic-version"]
             respond(modelListBody, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         })
-        AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).listModels("sk-ant-test")
+        AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).listModels()
 
         assertEquals("sk-ant-test", capturedKey)
         assertEquals(AiProviderClientAnthropic.ANTHROPIC_VERSION, capturedVersion)
@@ -193,7 +193,7 @@ internal class AiProviderClientAnthropicTest {
     fun `listModels throws InvalidApiKey when key is blank`() = runTest {
         val client = HttpClient(MockEngine { respond("", HttpStatusCode.OK) })
         val error = assertFailsWith<AiProviderClientException> {
-            AiProviderClientAnthropic(client, apiKeyProvider = { "" }).listModels("")
+            AiProviderClientAnthropic(client, apiKeyProvider = { "" }).listModels()
         }
         assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
     }

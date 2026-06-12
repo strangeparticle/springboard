@@ -34,8 +34,8 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     /** Calls received in order. Inspect after the test to assert request shape. */
     val recordedRequests: MutableList<AiProviderClientRequest> = mutableListOf()
 
-    /** Calls to [listModels] received in order. */
-    val recordedListModelsCalls: MutableList<String> = mutableListOf()
+    /** Calls to [listModels] received in order (each entry is a Unit, usable as a call-count recorder). */
+    val recordedListModelsCalls: MutableList<Unit> = mutableListOf()
 
     /** Optional override that decides what to return based on the actual request. */
     var sendAiRequestHandler: ((AiProviderClientRequest) -> AiProviderClientResponse)? = null
@@ -43,7 +43,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     /** Linear queue of responses. `sendAiRequest()` pops the head. */
     val responseQueue: ArrayDeque<AiProviderClientResponse> = ArrayDeque()
 
-    /** What [listModels] returns (for any apiKey). Override per-test. */
+    /** What [listModels] returns. Override per-test. */
     var modelsResponse: List<AiProviderClientModelInfo> = emptyList()
 
     /** When set, [sendAiRequest] throws this instead of returning a response. */
@@ -65,8 +65,8 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
         return responseQueue.removeFirst()
     }
 
-    override suspend fun listModels(apiKey: String): List<AiProviderClientModelInfo> {
-        recordedListModelsCalls += apiKey
+    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+        recordedListModelsCalls += Unit
         listModelsException?.let { throw it }
         return modelsResponse
     }

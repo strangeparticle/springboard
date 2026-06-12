@@ -16,7 +16,7 @@ internal object OpenAiPreferredModelSetting : DropDownFromApiCallSettingsItem() 
         val apiKey = context.get(OpenAiApiKeySetting).orEmpty()
         if (apiKey.isBlank()) return@runCatching emptyList()
         val client = OpenAiProvider.createClient(context)
-        val models = client.listModels(apiKey)
+        val models = client.listModels()
         val preferredIds = OpenAiProvider.preferredModelIds()
         // Surface preferred models first, then the rest of the tool-capable list.
         val tooled = models.filter { it.supportsToolCalling }

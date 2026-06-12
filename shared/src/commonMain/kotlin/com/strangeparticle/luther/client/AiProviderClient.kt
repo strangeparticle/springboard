@@ -19,10 +19,10 @@ internal interface AiProviderClient {
     suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse
 
     /**
-     * List the chat-completion-capable models the provider exposes for [apiKey].
+     * List the chat-completion-capable models the provider exposes.
      * Used by the AI settings screen to populate the model dropdown after the user
      * enters a key. Throws [AiProviderClientException] if the key is invalid or the network is
      * unreachable.
      */
-    suspend fun listModels(apiKey: String): List<AiProviderClientModelInfo>
+    suspend fun listModels(): List<AiProviderClientModelInfo>
 }

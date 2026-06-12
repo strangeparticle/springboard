@@ -292,6 +292,39 @@ object KeyNavTestScenarios {
         assertTrue(components.activationService.openedUrls.contains("https://example.com/app1/dash"))
     }
 
+    // Regression for issue #103: pressing Return on a closed resource dropdown that holds an
+    // activatable selection must activate WITHOUT opening the dropdown.
+    fun returnOnClosedResourceDropdownActivatesWithoutOpeningIt() = runComposeUiTest {
+        val components = createTestComponents()
+        setSpringboardApp(components)
+        waitForIdle()
+        components.viewModel.loadConfig(TestFixtureJson.ALL_ENVS_ACTIVATORS, "/test/springboard.json")
+        waitForIdle()
+
+        // All-envs selection: only app + resource set, environment cleared.
+        components.viewModel.selectEnvironment(null)
+        components.viewModel.selectApp("app1")
+        components.viewModel.selectResource("res1")
+        waitForIdle()
+        assertEquals(true, components.viewModel.isActivateEnabled)
+
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).requestFocus()
+        waitForIdle()
+
+        onNodeWithTag(TestTags.RESOURCE_DROPDOWN).performKeyInput {
+            pressKey(androidx.compose.ui.input.key.Key.Enter)
+        }
+        waitForIdle()
+
+        // Activation must have happened.
+        assertTrue(components.activationService.openedUrls.contains("https://example.com/app1/dash"))
+
+        // The resource dropdown must NOT have opened: its option nodes are only composed while
+        // the menu popup is expanded.
+        onNodeWithTag(TestTags.keyNavDropdownOption(TestTags.RESOURCE_DROPDOWN, "res1"))
+            .assertDoesNotExist()
+    }
+
     fun allEnvsActivatorsAreSurfacedInDropdownStatesForSelectedEnv() = runComposeUiTest {
         val components = createTestComponents()
         setSpringboardApp(components)

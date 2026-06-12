@@ -58,13 +58,6 @@ internal fun MinimalDropdown(
     var isFocused by remember { mutableStateOf(false) }
     var typeaheadBuffer by remember { mutableStateOf("") }
     var highlightedIndex by remember { mutableStateOf(-1) }
-    // Tracks whether this anchor saw the Enter KeyDown that pairs with an incoming Enter KeyUp.
-    // When focus is handed to this dropdown mid-keypress (e.g. the AI assistant submits a chat with
-    // Return and moves focus here via its processing focus fallback — issue #104), this anchor never
-    // saw the matching KeyDown. Without that record the trailing Enter KeyUp would reach the
-    // ExposedDropdownMenuBox built-in activation and spuriously open the menu. We swallow such an
-    // orphaned Enter KeyUp instead of letting it expand the dropdown.
-    var sawEnterKeyDown by remember { mutableStateOf(false) }
     val selectedName = items.find { it.first == selectedId }?.second ?: KeyNavNoneOptionLabel
 
     val allDropdownItems = remember(items) {
@@ -106,6 +99,34 @@ internal fun MinimalDropdown(
         }
 
         return true
+    }
+
+    fun isEnterKey(event: KeyEvent): Boolean {
+        return event.key == Key.Enter || event.key == Key.NumPadEnter
+    }
+
+    // Return must NEVER open a dropdown. When the dropdown is closed, Return activates the
+    // current selection. When it is open, Return activates the highlighted item (selecting it
+    // too) and then closes the dropdown. The Material3 menuAnchor's built-in click handling
+    // treats Enter/Space on key-up as a click and would otherwise re-open the menu, so all
+    // Enter handling is centralized here and invoked from the anchor's preview key handler.
+    fun handleEnterKeyDown(): Boolean {
+        if (expanded) {
+            if (highlightedIndex >= 0) {
+                selectHighlightedItem()
+            } else {
+                expanded = false
+            }
+            if (canActivateCoordinate) {
+                onActivateCoordinate()
+            }
+            return true
+        } else if (canActivateCoordinate) {
+            onActivateCoordinate()
+            return true
+        } else {
+            return false
+        }
     }
 
     fun handleArrowKey(event: KeyEvent): Boolean {
@@ -164,6 +185,26 @@ internal fun MinimalDropdown(
     ) {
         Box(
             modifier = Modifier
+                // The Material3 menuAnchor reacts to Enter/Space on KEY-UP (its isClick check) by
+                // toggling the menu open. That would re-open the dropdown right after Return
+                // activates a selection. This preview handler runs before menuAnchor and consumes
+                // every Enter/Space event so the anchor never toggles expanded. Our own KeyDown
+                // handling for Enter lives in handleEnterKeyDown (invoked from onKeyEvent below).
+                // Because this consumes Enter on BOTH key-down and key-up, it also swallows an
+                // "orphaned" Enter key-up that lands here after focus is handed to this dropdown
+                // mid-keypress (e.g. submitting an AI-assistant chat with Return — issue #104),
+                // which would otherwise spuriously open the menu.
+                .onPreviewKeyEvent { event ->
+                    val isActivationKey = isEnterKey(event) || event.key == Key.Spacebar
+                    if (isActivationKey) {
+                        if (event.type == KeyEventType.KeyDown && isEnterKey(event)) {
+                            handleEnterKeyDown()
+                        }
+                        true
+                    } else {
+                        false
+                    }
+                }
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
                 .height(34.dp)
@@ -180,28 +221,6 @@ internal fun MinimalDropdown(
                 .onFocusChanged { isFocused = it.isFocused }
                 .focusable()
                 .let { if (testTag != null) it.testTag(testTag) else it }
-                .onPreviewKeyEvent { event ->
-                    // See [sawEnterKeyDown]. Intercept the orphaned Enter KeyUp during the preview
-                    // (tunneling) phase, before the ExposedDropdownMenuBox built-in activation can
-                    // expand the menu. Only Enter is special-cased here; everything else falls
-                    // through to the normal onKeyEvent handling below.
-                    if (event.key == Key.Enter || event.key == Key.NumPadEnter) {
-                        when (event.type) {
-                            KeyEventType.KeyDown -> {
-                                sawEnterKeyDown = true
-                                false
-                            }
-                            KeyEventType.KeyUp -> {
-                                val isOrphanedEnterKeyUp = !sawEnterKeyDown && !expanded
-                                sawEnterKeyDown = false
-                                isOrphanedEnterKeyUp
-                            }
-                            else -> false
-                        }
-                    } else {
-                        false
-                    }
-                }
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         when (event.key) {
@@ -219,19 +238,6 @@ internal fun MinimalDropdown(
                                 expanded = false
                                 onShiftTab()
                                 true
-                            }
-
-                            Key.Enter -> {
-                                if (expanded) {
-                                    if (highlightedIndex >= 0) selectHighlightedItem()
-                                    else expanded = false
-                                    true
-                                } else if (canActivateCoordinate) {
-                                    onActivateCoordinate()
-                                    true
-                                } else {
-                                    false
-                                }
                             }
 
                             Key.Escape -> {

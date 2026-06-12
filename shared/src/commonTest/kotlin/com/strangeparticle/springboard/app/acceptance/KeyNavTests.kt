@@ -43,6 +43,9 @@ class KeyNavTests {
     @Test fun `all-envs activators are surfaced in dropdown states for selected env`() =
         KeyNavTestScenarios.allEnvsActivatorsAreSurfacedInDropdownStatesForSelectedEnv()
 
+    @Test fun `return on closed resource dropdown activates without opening it`() =
+        KeyNavTestScenarios.returnOnClosedResourceDropdownActivatesWithoutOpeningIt()
+
     @Test fun `changing environment keeps app and resource when still valid`() =
         KeyNavTestScenarios.changingEnvironmentKeepsAppAndResourceWhenStillValid()
 

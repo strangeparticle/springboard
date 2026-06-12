@@ -13,6 +13,7 @@ import com.strangeparticle.springboard.app.platform.NetworkContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
+import com.strangeparticle.springboard.app.ui.gridnav.GroupActivationConfirmDialog
 import com.strangeparticle.springboard.app.ui.luther.AiChatPane
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
@@ -234,5 +235,14 @@ internal fun MainScreen(
                 },
             )
         }
+    }
+
+    val pendingGroupActivation = viewModel.pendingGroupActivation
+    if (pendingGroupActivation != null) {
+        GroupActivationConfirmDialog(
+            itemCount = pendingGroupActivation.count,
+            onCancel = { viewModel.cancelPendingGroupActivation() },
+            onActivate = { viewModel.confirmPendingGroupActivation() },
+        )
     }
 }

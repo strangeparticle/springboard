@@ -486,9 +486,79 @@ class SpringboardViewModelTest {
         vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
 
         vm.activateColumn("ALL", "app1")
+        vm.confirmPendingGroupActivation()
 
         // Only the ALL activator at (ALL, app1, res1) should have run.
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+    }
+
+    @Test
+    fun `activateColumn queues a pending group activation without running activators`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateColumn("ALL", "app1")
+
+        // Nothing runs until the user confirms; the pending state holds the resolved count.
+        assertTrue(activationService.openedUrls.isEmpty())
+        assertNotNull(vm.pendingGroupActivation)
+        assertEquals(1, vm.pendingGroupActivation?.count)
+    }
+
+    @Test
+    fun `confirmPendingGroupActivation runs the queued activators and clears the pending state`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateRow("ALL", "res1")
+        vm.confirmPendingGroupActivation()
+
+        assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
+        assertNull(vm.pendingGroupActivation)
+    }
+
+    @Test
+    fun `cancelPendingGroupActivation discards the queued activators without running them`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        vm.activateColumn("ALL", "app1")
+        vm.cancelPendingGroupActivation()
+
+        assertTrue(activationService.openedUrls.isEmpty())
+        assertNull(vm.pendingGroupActivation)
+    }
+
+    @Test
+    fun `activateColumn with no resolvable activators leaves no pending activation`() {
+        val activationService = com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMemoryFake()
+        val vm = SpringboardViewModel(
+            createSettingsManagerForTest(),
+            PersistenceServiceInMemoryFake(),
+            activationService,
+        )
+        vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
+
+        // app2 has no activators in any row, so there is nothing to confirm.
+        vm.activateColumn("ALL", "app2")
+
+        assertNull(vm.pendingGroupActivation)
+        assertTrue(activationService.openedUrls.isEmpty())
     }
 
     @Test
@@ -502,6 +572,7 @@ class SpringboardViewModelTest {
         vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
 
         vm.activateRow("ALL", "res1")
+        vm.confirmPendingGroupActivation()
 
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
     }
@@ -524,6 +595,7 @@ class SpringboardViewModelTest {
         // jsonWithAllEnvsActivator has only (ALL, app1, res1); no prod-specific
         // activator for app1. Before the fix, this fired nothing.
         vm.activateColumn("prod", "app1")
+        vm.confirmPendingGroupActivation()
 
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
     }
@@ -539,6 +611,7 @@ class SpringboardViewModelTest {
         vm.loadConfig(jsonWithAllEnvsActivator, "/test.json")
 
         vm.activateRow("prod", "res1")
+        vm.confirmPendingGroupActivation()
 
         assertEquals(listOf("https://example.com/all"), activationService.openedUrls)
     }
@@ -573,6 +646,7 @@ class SpringboardViewModelTest {
         vm.loadConfig(jsonWithMixedEnvAndAllActivators, "/test.json")
 
         vm.activateColumn("dev", "app1")
+        vm.confirmPendingGroupActivation()
 
         // Strict (dev, app1, res1) wins; ALL fallback is not consulted.
         assertEquals(listOf("https://example.com/dev"), activationService.openedUrls)
@@ -589,6 +663,7 @@ class SpringboardViewModelTest {
         vm.loadConfig(jsonWithMixedEnvAndAllActivators, "/test.json")
 
         vm.activateRow("dev", "res1")
+        vm.confirmPendingGroupActivation()
 
         assertEquals(listOf("https://example.com/dev"), activationService.openedUrls)
     }

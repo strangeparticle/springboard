@@ -596,6 +596,7 @@ object GridNavTestScenarios {
 
         // In "common" env, app1 has activators for res1 and res2
         components.viewModel.activateColumn("common", "app1")
+        components.viewModel.confirmPendingGroupActivation()
         waitForIdle()
 
         assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
@@ -614,6 +615,10 @@ object GridNavTestScenarios {
 
         // In "common" env, res1 has activators for app1 and app2
         onNodeWithTag(TestTags.gridRowLabel("res1")).performClick()
+        waitForIdle()
+
+        // The row-label click queues a group activation behind a confirmation dialog.
+        onNodeWithTag(TestTags.GROUP_ACTIVATION_CONFIRM_BUTTON).performClick()
         waitForIdle()
 
         assertTrue(components.activationService.openedUrls.contains("https://example.com/common/app1/dash"))
@@ -861,6 +866,10 @@ object GridNavTestScenarios {
         }
         waitForIdle()
 
+        // The header click queues a group activation behind a confirmation dialog.
+        onNodeWithTag(TestTags.GROUP_ACTIVATION_CONFIRM_BUTTON).performClick()
+        waitForIdle()
+
         assertTrue(
             components.activationService.openedUrls.contains("https://example.com/common/app1/dash"),
             "expected app1/res1 dashboard URL to be opened, got: ${components.activationService.openedUrls}",
@@ -890,6 +899,10 @@ object GridNavTestScenarios {
             val y = app2Cell.boundsInRoot.top - stripHeightPx - 4f
             click(androidx.compose.ui.geometry.Offset(app2CenterX, y))
         }
+        waitForIdle()
+
+        // The header click queues a group activation behind a confirmation dialog.
+        onNodeWithTag(TestTags.GROUP_ACTIVATION_CONFIRM_BUTTON).performClick()
         waitForIdle()
 
         assertTrue(

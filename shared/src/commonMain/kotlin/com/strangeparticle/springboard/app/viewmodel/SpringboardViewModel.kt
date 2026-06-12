@@ -595,6 +595,18 @@ class SpringboardViewModel(
     var focusAppDropdownRequested by mutableStateOf(false)
     var suppressWindowGrow by mutableStateOf(false)
 
+    /**
+     * A resolved row/column header group activation awaiting user confirmation, or null when
+     * no group activation is pending. Header clicks resolve their activators and stash them here
+     * instead of executing immediately; the UI observes this to show the confirmation dialog and
+     * calls [confirmPendingGroupActivation] / [cancelPendingGroupActivation] in response.
+     *
+     * This is intentionally NOT used by shift-select multi-select activation, which keeps
+     * activating directly with no dialog.
+     */
+    var pendingGroupActivation: PendingGroupActivation? by mutableStateOf(null)
+        private set
+
     val environments by derivedStateOf { springboardFilteredForRuntime?.environments ?: emptyList() }
     val apps by derivedStateOf {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return@derivedStateOf emptyList()
@@ -977,10 +989,7 @@ class SpringboardViewModel(
     fun activateColumn(environmentId: String, appId: String) {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
         val activators = resolveColumnActivators(currentSpringboardFilteredForRuntime, environmentId, appId)
-        executeActivators(activators, isSingleSelection = false)
-        if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
-            resetKeyNavSelections()
-        }
+        queueGroupActivationForConfirmation(activators)
     }
 
     /**
@@ -996,10 +1005,37 @@ class SpringboardViewModel(
     fun activateRow(environmentId: String, resourceId: String) {
         val currentSpringboardFilteredForRuntime = springboardFilteredForRuntime ?: return
         val activators = resolveRowActivators(currentSpringboardFilteredForRuntime, environmentId, resourceId)
-        executeActivators(activators, isSingleSelection = false)
+        queueGroupActivationForConfirmation(activators)
+    }
+
+    /**
+     * Stashes a resolved row/column header group activation for confirmation. Header group
+     * activation always requires confirmation (no threshold) — when there are no activators
+     * to run there is nothing to confirm, so this no-ops in that case. The UI shows a dialog
+     * while [pendingGroupActivation] is non-null and resolves it via
+     * [confirmPendingGroupActivation] / [cancelPendingGroupActivation].
+     */
+    private fun queueGroupActivationForConfirmation(activators: List<Activator>) {
+        if (activators.isEmpty()) {
+            pendingGroupActivation = null
+            return
+        }
+        pendingGroupActivation = PendingGroupActivation(activators)
+    }
+
+    /** Runs the pending row/column header group activation, then clears the pending state. */
+    fun confirmPendingGroupActivation() {
+        val pending = pendingGroupActivation ?: return
+        pendingGroupActivation = null
+        executeActivators(pending.activators, isSingleSelection = false)
         if (settingsManager.resolveValue(ResetKeyNavAfterGridNavActivationSetting)) {
             resetKeyNavSelections()
         }
+    }
+
+    /** Discards the pending row/column header group activation without activating anything. */
+    fun cancelPendingGroupActivation() {
+        pendingGroupActivation = null
     }
 
     private fun resolveColumnActivators(

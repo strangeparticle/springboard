@@ -1,49 +1,27 @@
 package com.strangeparticle.luther.client.provider
 
-import androidx.compose.runtime.Composable
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.springboard.app.settings.SettingsItem
-import com.strangeparticle.springboard.app.settings.SettingsItemContext
-import com.strangeparticle.springboard.app.settings.items.base.DropDownFromApiCallSettingsItem
-import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
+import com.strangeparticle.luther.client.AiProviderClientModelInfo
+import io.ktor.client.HttpClient
 
 /**
- * Framework contract for an AI provider integration. Each provider object
- * (e.g. [com.strangeparticle.luther.client.provider.openai.OpenAiProvider])
- * bundles four facets:
+ * Framework contract for an AI provider integration. Providers live whole inside
+ * luther-core and know nothing about the host's settings system: the host supplies
+ * a typed [ProviderConfig] and luther supplies the [HttpClient].
  *
- *  1. Identity ([id], [displayName]).
- *  2. Persistence + diagnostics surface ([settingsItems]).
- *  3. Runtime client construction ([createClient]) — reads its own setup from
- *     the [SettingsItemContext] and returns a vendor-aware [AiProviderClient]
- *     that the chat code uses provider-neutrally.
- *  4. UI section ([settingsSectionComposable]) — a top-level composable that
- *     renders the provider's settings rows with whatever cascade rules apply
- *     to that specific provider's setup.
- *
- * Providers are compile-time-known and registered via [AiProviderRegistry].
+ * Each provider casts the marker [ProviderConfig] to its own concrete config type
+ * (e.g. AnthropicConfig) at the top of each method.
  */
 internal interface AiProvider {
     val id: String
     val displayName: String
 
-    fun settingsItems(): List<SettingsItem<*>>
-    fun createClient(context: SettingsItemContext): AiProviderClient
-    fun preferredModelSetting(): DropDownFromApiCallSettingsItem
+    /** True if [config] carries everything needed to construct a working client. */
+    fun isConfigured(config: ProviderConfig): Boolean
 
-    /**
-     * The currently-selected model id for this provider, read via [context]
-     * from whichever per-provider setting holds it. Returns an empty string if
-     * the user hasn't picked one yet.
-     */
-    fun currentModelId(context: SettingsItemContext): String
+    /** Build a vendor-aware client from typed [config], using luther's [httpClient]. */
+    fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient
 
-    /**
-     * True if the provider has the credentials it needs to construct a working
-     * client right now (env var or persisted setting set). Returns false if
-     * the user still has to fill in the api key / profile / etc.
-     */
-    fun isConfigured(context: SettingsItemContext): Boolean
-
-    val settingsSectionComposable: @Composable (SettingsViewModel) -> Unit
+    /** Tool-calling filter + preferred-first ordering for the model picker. */
+    fun orderModelsForPicker(models: List<AiProviderClientModelInfo>): List<AiProviderClientModelInfo>
 }

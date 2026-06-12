@@ -182,9 +182,9 @@ internal class AiProviderClientOpenAiTest {
         val sut =
             com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
-                apiKeyProvider = { "sk-not-used-for-listModels" })
+                apiKeyProvider = { "sk-list-test" })
 
-        val models = sut.listModels("sk-list-test")
+        val models = sut.listModels()
 
         assertEquals(HttpMethod.Get, capturedMethod)
         assertEquals("https://api.openai.com/v1/models", capturedUrl)
@@ -201,7 +201,7 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { null })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.listModels("") }
+        val ex = assertFailsWith<AiProviderClientException> { sut.listModels() }
         assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
     }
 
@@ -219,7 +219,7 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.listModels("sk-test") }
+        val ex = assertFailsWith<AiProviderClientException> { sut.listModels() }
         assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
     }
 
@@ -252,7 +252,7 @@ internal class AiProviderClientOpenAiTest {
                 apiKeyProvider = { "sk-test" })
 
         assertFailsWith<kotlinx.coroutines.CancellationException> {
-            sut.listModels("sk-test")
+            sut.listModels()
         }
     }
 }

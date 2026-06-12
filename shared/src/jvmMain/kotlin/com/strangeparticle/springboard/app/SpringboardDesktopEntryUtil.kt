@@ -12,7 +12,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.command.CommandApiDiscoveryFile
 import com.strangeparticle.springboard.app.command.CommandApiServerDefaultImpl
 import com.strangeparticle.springboard.app.command.CommandApiTokenStore
@@ -61,7 +61,7 @@ fun runSpringboardDesktop(args: Array<String>) {
     // Initialize services
     val persistenceService = PersistenceServiceDefaultImpl()
     val settingsRegistry = SettingsRegistry(
-        coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
     )
     val settingsManager = SettingsManager(runtimeEnvironment, settingsRegistry, persistenceService)
 
@@ -92,8 +92,7 @@ fun runSpringboardDesktop(args: Array<String>) {
     val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
 
     // Shared Ktor client for any AI provider call. Plugged into the SettingsViewModel
-    // so DropDownFromApiCallSettingsItem.loadOptions and AiProvider.createClient can
-    // reach it through the standard SettingsItemContext.
+    // so the chat pane can reach it through SettingsViewModel.aiHttpClient.
     val awsCredentialProvider = AwsCliCredentialProvider()
     val s3ContentService = S3ContentServiceDesktopImpl(contentHttpClient, awsCredentialProvider)
 

@@ -1,4 +1,4 @@
-package com.strangeparticle.luther.client.provider.openai
+package com.strangeparticle.springboard.app.luther.provider.openai
 
 import com.strangeparticle.springboard.app.settings.SettingsGroup
 import com.strangeparticle.springboard.app.settings.items.base.StringSettingsItem

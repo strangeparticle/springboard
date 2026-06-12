@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceService
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
@@ -14,7 +14,7 @@ fun createViewModelForTest(
     persistenceService: PersistenceService = PersistenceServiceInMemoryFake(),
 ): SpringboardViewModel {
     val registry = SettingsRegistry(
-        coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
     )
     val settingsManager = SettingsManager(target, registry, persistenceService).also { it.loadSettingsAtStartup() }
     return SpringboardViewModel(settingsManager, persistenceService)

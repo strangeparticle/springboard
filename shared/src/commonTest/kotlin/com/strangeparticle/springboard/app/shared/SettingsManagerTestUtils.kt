@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -13,7 +13,7 @@ import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
  * production uses.
  */
 fun createSettingsRegistryForTest(): SettingsRegistry =
-    SettingsRegistry(coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() })
+    SettingsRegistry(coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems())
 
 fun createSettingsManagerForTest(
     target: RuntimeEnvironment = RuntimeEnvironment.Test,

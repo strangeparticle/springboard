@@ -1,4 +1,4 @@
-package com.strangeparticle.luther.client.provider.openai
+package com.strangeparticle.springboard.app.luther.provider.openai
 
 import androidx.compose.runtime.Composable
 import com.strangeparticle.springboard.app.ui.settings.SettingRowComposable

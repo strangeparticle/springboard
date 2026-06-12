@@ -49,13 +49,8 @@ internal class AiProviderClientAnthropic(
         return AnthropicResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(apiKey: String): List<AiProviderClientModelInfo> {
-        if (apiKey.isBlank()) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.InvalidApiKey,
-                "Cannot list models: API key is blank.",
-            )
-        }
+    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+        val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {
                 headers {

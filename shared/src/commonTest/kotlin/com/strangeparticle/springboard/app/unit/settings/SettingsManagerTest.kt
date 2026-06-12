@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -32,7 +32,7 @@ class SettingsManagerTest {
         val persistence = PersistenceServiceInMemoryFake()
         if (persistedDto != null) persistence.persistSettings(persistedDto)
         val registry = SettingsRegistry(
-            coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+            coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
         )
         val manager = SettingsManager(target, registry, persistence)
         manager.loadSettingsAtStartup(envVars, cliArgs, urlParams)

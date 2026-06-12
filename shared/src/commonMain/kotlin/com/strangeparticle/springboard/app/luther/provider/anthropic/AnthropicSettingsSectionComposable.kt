@@ -1,4 +1,4 @@
-package com.strangeparticle.luther.client.provider.anthropic
+package com.strangeparticle.springboard.app.luther.provider.anthropic
 
 import androidx.compose.runtime.Composable
 import com.strangeparticle.springboard.app.ui.settings.SettingRowComposable

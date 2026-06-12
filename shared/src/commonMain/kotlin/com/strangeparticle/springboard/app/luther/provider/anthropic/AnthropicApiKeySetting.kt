@@ -1,4 +1,4 @@
-package com.strangeparticle.luther.client.provider.anthropic
+package com.strangeparticle.springboard.app.luther.provider.anthropic
 
 import com.strangeparticle.springboard.app.settings.SettingsGroup
 import com.strangeparticle.springboard.app.settings.items.base.StringSettingsItem

@@ -15,8 +15,7 @@ import kotlin.reflect.KClass
  * (e.g. [com.strangeparticle.springboard.app.settings.items.base.StringSettingsItem],
  * [com.strangeparticle.springboard.app.settings.items.base.BooleanSettingsItem],
  * [com.strangeparticle.springboard.app.settings.items.base.DropDownSettingsItem],
- * [com.strangeparticle.springboard.app.settings.items.base.ListOfStringSettingsItem],
- * [com.strangeparticle.springboard.app.settings.items.base.DropDownFromApiCallSettingsItem]),
+ * [com.strangeparticle.springboard.app.settings.items.base.ListOfStringSettingsItem]),
  * which fill in [valueClass] + serialization.
  */
 interface SettingsItem<T : Any> {

@@ -6,8 +6,8 @@ import com.strangeparticle.springboard.app.settings.DropDownOption
  * A string-valued setting whose value must be one of a fixed list of options.
  * Subclasses provide the [options] list at class-load time.
  *
- * For dropdowns whose options come from a live service call, use
- * [DropDownFromApiCallSettingsItem] instead.
+ * For dropdowns whose options come from a live service call, a custom composable
+ * that loads options at display time would be needed instead.
  */
 abstract class DropDownSettingsItem : StringSettingsItem() {
     abstract val options: List<DropDownOption>

@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import com.strangeparticle.springboard.app.settings.PRECEDENCE_CHAIN
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsItem
-import com.strangeparticle.springboard.app.settings.SettingsItemContext
 import com.strangeparticle.springboard.app.settings.SettingsGroup
 import com.strangeparticle.springboard.app.settings.SettingsManager
 import com.strangeparticle.springboard.app.settings.SettingsSource
@@ -18,9 +17,8 @@ import io.ktor.client.HttpClient
 
 /**
  * Manages Settings screen state and brokers reads / writes through [SettingsManager].
- * Also supplies the [SettingsItemContext] for items that need cross-cutting access
- * (HTTP, sibling-setting reads — today: `DropDownFromApiCallSettingsItem.loadOptions`
- * and `AiProvider.createClient`).
+ * Holds the shared AI HTTP client used by callers that build provider clients directly
+ * (e.g. the chat pane).
  */
 class SettingsViewModel(
     private val settingsManager: SettingsManager,
@@ -30,7 +28,7 @@ class SettingsViewModel(
     val runtimeEnvironment: RuntimeEnvironment = settingsManager.runtimeEnvironment
 
     /** The shared AI HTTP client, exposed for callers that build luther provider clients
-     *  and catalogs directly (e.g. the chat pane) rather than through [itemContext]. */
+     *  and catalogs directly (e.g. the chat pane). */
     val aiHttpClient: HttpClient get() = httpClient
 
     val registry get() = settingsManager.registry
@@ -41,13 +39,6 @@ class SettingsViewModel(
      */
     var settingsVersion by mutableStateOf(0)
         private set
-
-    private val context: SettingsItemContext = object : SettingsItemContext {
-        override val httpClient: HttpClient get() = this@SettingsViewModel.httpClient
-        override fun <T : Any> get(item: SettingsItem<T>): T? = getResolvedValueOrNull(item)
-    }
-
-    fun itemContext(): SettingsItemContext = context
 
     /** Groups applicable settings by [SettingsGroup]. UI iterates this for rendering. */
     val groupedSettings by derivedStateOf {

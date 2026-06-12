@@ -223,7 +223,7 @@ private fun rememberAiChatPaneState(
     }
 
     val aiClient = remember(provider, isConfigured, providerConfig) {
-        if (provider != null && isConfigured && providerConfig != null) {
+        if (provider != null && providerConfig != null && provider.isConfigured(providerConfig)) {
             provider.createClient(providerConfig, httpClient)
         } else {
             null

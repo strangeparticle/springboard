@@ -92,8 +92,7 @@ fun runSpringboardDesktop(args: Array<String>) {
     val contentLoader = SpringboardContentLoaderDesktopImpl(networkContentService)
 
     // Shared Ktor client for any AI provider call. Plugged into the SettingsViewModel
-    // so DropDownFromApiCallSettingsItem.loadOptions and AiProvider.createClient can
-    // reach it through the standard SettingsItemContext.
+    // so the chat pane can reach it through SettingsViewModel.aiHttpClient.
     val awsCredentialProvider = AwsCliCredentialProvider()
     val s3ContentService = S3ContentServiceDesktopImpl(contentHttpClient, awsCredentialProvider)
 

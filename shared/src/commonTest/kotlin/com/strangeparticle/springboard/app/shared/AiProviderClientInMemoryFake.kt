@@ -34,8 +34,8 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     /** Calls received in order. Inspect after the test to assert request shape. */
     val recordedRequests: MutableList<AiProviderClientRequest> = mutableListOf()
 
-    /** Calls to [listModels] received in order (each entry is a Unit, usable as a call-count recorder). */
-    val recordedListModelsCalls: MutableList<Unit> = mutableListOf()
+    /** Number of times [listModels] has been called. */
+    var listModelsCallCount: Int = 0
 
     /** Optional override that decides what to return based on the actual request. */
     var sendAiRequestHandler: ((AiProviderClientRequest) -> AiProviderClientResponse)? = null
@@ -66,7 +66,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     }
 
     override suspend fun listModels(): List<AiProviderClientModelInfo> {
-        recordedListModelsCalls += Unit
+        listModelsCallCount++
         listModelsException?.let { throw it }
         return modelsResponse
     }

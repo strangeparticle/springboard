@@ -58,6 +58,13 @@ internal fun MinimalDropdown(
     var isFocused by remember { mutableStateOf(false) }
     var typeaheadBuffer by remember { mutableStateOf("") }
     var highlightedIndex by remember { mutableStateOf(-1) }
+    // Tracks whether this anchor saw the Enter KeyDown that pairs with an incoming Enter KeyUp.
+    // When focus is handed to this dropdown mid-keypress (e.g. the AI assistant submits a chat with
+    // Return and moves focus here via its processing focus fallback — issue #104), this anchor never
+    // saw the matching KeyDown. Without that record the trailing Enter KeyUp would reach the
+    // ExposedDropdownMenuBox built-in activation and spuriously open the menu. We swallow such an
+    // orphaned Enter KeyUp instead of letting it expand the dropdown.
+    var sawEnterKeyDown by remember { mutableStateOf(false) }
     val selectedName = items.find { it.first == selectedId }?.second ?: KeyNavNoneOptionLabel
 
     val allDropdownItems = remember(items) {
@@ -173,6 +180,28 @@ internal fun MinimalDropdown(
                 .onFocusChanged { isFocused = it.isFocused }
                 .focusable()
                 .let { if (testTag != null) it.testTag(testTag) else it }
+                .onPreviewKeyEvent { event ->
+                    // See [sawEnterKeyDown]. Intercept the orphaned Enter KeyUp during the preview
+                    // (tunneling) phase, before the ExposedDropdownMenuBox built-in activation can
+                    // expand the menu. Only Enter is special-cased here; everything else falls
+                    // through to the normal onKeyEvent handling below.
+                    if (event.key == Key.Enter || event.key == Key.NumPadEnter) {
+                        when (event.type) {
+                            KeyEventType.KeyDown -> {
+                                sawEnterKeyDown = true
+                                false
+                            }
+                            KeyEventType.KeyUp -> {
+                                val isOrphanedEnterKeyUp = !sawEnterKeyDown && !expanded
+                                sawEnterKeyDown = false
+                                isOrphanedEnterKeyUp
+                            }
+                            else -> false
+                        }
+                    } else {
+                        false
+                    }
+                }
                 .onKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown) {
                         when (event.key) {

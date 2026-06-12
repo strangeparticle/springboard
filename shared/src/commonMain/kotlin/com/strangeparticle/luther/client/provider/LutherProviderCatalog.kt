@@ -9,7 +9,7 @@ import io.ktor.client.HttpClient
  *
  * [httpClient] is optional: when null, a default ktor client is created lazily and shared.
  */
-class LutherProviderCatalog(
+internal class LutherProviderCatalog(
     private val providers: List<AiProvider>,
     httpClient: HttpClient?,
 ) {

@@ -6,7 +6,7 @@ import com.strangeparticle.luther.client.provider.AiProvider
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import io.ktor.client.HttpClient
 
-object AnthropicProvider : AiProvider {
+internal object AnthropicProvider : AiProvider {
     override val id = "anthropic"
     override val displayName = "Anthropic"
 

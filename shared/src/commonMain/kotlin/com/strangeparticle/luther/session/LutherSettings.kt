@@ -5,7 +5,7 @@ import com.strangeparticle.luther.client.provider.ProviderConfig
 
 /** All runtime-mutable assistant settings. Used both as the initial config at
  *  construction and as the whole-object argument to LutherSession.updateConfiguration. */
-data class LutherSettings(
+internal data class LutherSettings(
     val providerId: String,
     val modelId: String,
     val providerConfig: ProviderConfig,

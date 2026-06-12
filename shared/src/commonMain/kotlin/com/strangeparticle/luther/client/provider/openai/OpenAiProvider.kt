@@ -6,7 +6,7 @@ import com.strangeparticle.luther.client.provider.AiProvider
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import io.ktor.client.HttpClient
 
-object OpenAiProvider : AiProvider {
+internal object OpenAiProvider : AiProvider {
     override val id = "openai"
     override val displayName = "OpenAI"
 

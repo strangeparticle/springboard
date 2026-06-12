@@ -12,7 +12,7 @@ import io.ktor.client.HttpClient
  * Each provider casts the marker [ProviderConfig] to its own concrete config type
  * (e.g. AnthropicConfig) at the top of each method.
  */
-interface AiProvider {
+internal interface AiProvider {
     val id: String
     val displayName: String
 

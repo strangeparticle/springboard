@@ -29,6 +29,10 @@ class SettingsViewModel(
 
     val runtimeEnvironment: RuntimeEnvironment = settingsManager.runtimeEnvironment
 
+    /** The shared AI HTTP client, exposed for callers that build luther provider clients
+     *  and catalogs directly (e.g. the chat pane) rather than through [itemContext]. */
+    val aiHttpClient: HttpClient get() = httpClient
+
     val registry get() = settingsManager.registry
 
     /**

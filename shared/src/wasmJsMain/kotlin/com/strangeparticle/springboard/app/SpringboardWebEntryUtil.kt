@@ -3,7 +3,7 @@ package com.strangeparticle.springboard.app
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.ComposeViewport
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceDefaultImpl
 import com.strangeparticle.springboard.app.platform.NetworkContentServiceWasmImpl
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -39,7 +39,7 @@ fun runSpringboardWeb() {
     val runtimeEnvironment = detectRuntimeEnvironment()
     val persistenceService = PersistenceServiceDefaultImpl()
     val settingsRegistry = SettingsRegistry(
-        coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
     )
     val settingsManager = SettingsManager(runtimeEnvironment, settingsRegistry, persistenceService)
     val environmentVariables = readJsGlobalsAsEnvironmentVariables()

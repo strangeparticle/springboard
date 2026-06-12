@@ -6,7 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalWindowInfo
 import com.strangeparticle.luther.client.provider.AiProvider
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.luther.client.provider.LutherBuiltInProviders
+import com.strangeparticle.luther.client.provider.LutherProviderCatalog
 import com.strangeparticle.luther.session.AiSessionManager
 import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
@@ -20,6 +21,7 @@ import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistory
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
 import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResponse
@@ -194,28 +196,38 @@ private fun rememberAiChatPaneState(
 ): AiChatPaneState {
     settingsViewModel.settingsVersion
     val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
-    val provider: AiProvider? = AiProviderRegistry.byId(selectedProviderId)
-    val context = settingsViewModel.itemContext()
-    val isConfigured = provider != null && provider.isConfigured(context)
-    val modelId = provider?.currentModelId(context).orEmpty()
-    val modelSetting = provider?.preferredModelSetting()
-    var modelOptionsResult by remember(modelSetting) { mutableStateOf<Result<List<DropDownOption>>?>(null) }
-    var isModelOptionsLoading by remember(modelSetting) { mutableStateOf(false) }
+    val provider: AiProvider? = LutherBuiltInProviders.all().firstOrNull { it.id == selectedProviderId }
+    val adaptor = AiProviderSettingsAdaptorRegistry.byId(selectedProviderId)
+    val providerConfig = adaptor?.buildProviderConfig(settingsViewModel)
+    val isConfigured = provider != null && providerConfig != null && provider.isConfigured(providerConfig)
+    val modelId = adaptor?.let { settingsViewModel.getResolvedValue(it.preferredModelSetting) }.orEmpty()
+    val httpClient = settingsViewModel.aiHttpClient
+    var modelOptionsResult by remember(selectedProviderId) { mutableStateOf<Result<List<DropDownOption>>?>(null) }
+    var isModelOptionsLoading by remember(selectedProviderId) { mutableStateOf(false) }
+
+    val catalog = remember(httpClient) { LutherProviderCatalog(LutherBuiltInProviders.all(), httpClient) }
 
     fun loadModelOptions() {
-        val activeModelSetting = modelSetting ?: return
+        val activeConfig = providerConfig ?: return
         coroutineScope.launch {
             isModelOptionsLoading = true
-            modelOptionsResult = activeModelSetting.loadOptions(settingsViewModel.itemContext())
+            modelOptionsResult = runCatching {
+                catalog.availableModels(selectedProviderId, activeConfig)
+                    .map { DropDownOption(it.valueId, it.displayLabel) }
+            }
             isModelOptionsLoading = false
         }
     }
-    LaunchedEffect(modelSetting, isConfigured, settingsViewModel.settingsVersion) {
-        if (modelSetting != null && isConfigured) loadModelOptions()
+    LaunchedEffect(selectedProviderId, isConfigured, settingsViewModel.settingsVersion) {
+        if (providerConfig != null && isConfigured) loadModelOptions()
     }
 
-    val aiClient = remember(provider, isConfigured) {
-        if (provider != null && isConfigured) provider.createClient(context) else null
+    val aiClient = remember(provider, isConfigured, providerConfig) {
+        if (provider != null && isConfigured && providerConfig != null) {
+            provider.createClient(providerConfig, httpClient)
+        } else {
+            null
+        }
     }
     var transcriptVersion by remember { mutableStateOf(0) }
     var runningJob by remember { mutableStateOf<Job?>(null) }
@@ -353,7 +365,7 @@ private fun rememberAiChatPaneState(
             errorMessage = modelOptionsResult?.exceptionOrNull()?.message,
             onRefresh = ::loadModelOptions,
             onSelectModel = { selectedModelId ->
-                modelSetting?.let { settingsViewModel.setUserSetting(it, selectedModelId) }
+                adaptor?.let { settingsViewModel.setUserSetting(it.preferredModelSetting, selectedModelId) }
             },
         ),
         transcriptParts = manager.transcriptParts,

@@ -16,4 +16,5 @@ internal object OpenAiProviderSettingsAdaptor : AiProviderSettingsAdaptor {
     }
     override fun buildProviderConfig(settings: SettingsViewModel): ProviderConfig =
         OpenAiConfig(apiKey = settings.getResolvedValue(OpenAiApiKeySetting))
+    override val preferredModelSetting = OpenAiPreferredModelSetting
 }

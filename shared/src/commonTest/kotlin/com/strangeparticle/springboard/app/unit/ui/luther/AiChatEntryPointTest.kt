@@ -15,9 +15,9 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.runtime.mutableStateOf
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
-import com.strangeparticle.luther.client.provider.openai.OpenAiApiKeySetting
-import com.strangeparticle.luther.client.provider.openai.OpenAiPreferredModelSetting
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
+import com.strangeparticle.springboard.app.luther.provider.openai.OpenAiApiKeySetting
+import com.strangeparticle.springboard.app.luther.provider.openai.OpenAiPreferredModelSetting
 import com.strangeparticle.springboard.app.persistence.PersistenceServiceInMemoryFake
 import com.strangeparticle.springboard.app.settings.RuntimeEnvironment
 import com.strangeparticle.springboard.app.settings.SettingsManager
@@ -478,7 +478,7 @@ internal class AiChatEntryPointTest {
     ): Components {
         val persistenceService = PersistenceServiceInMemoryFake()
         val registry = SettingsRegistry(
-            coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+            coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
         )
         val settingsManager = SettingsManager(RuntimeEnvironment.DesktopOsx, registry, persistenceService)
         if (configureAi) {

@@ -13,4 +13,5 @@ internal interface AiProviderSettingsAdaptor {
     fun settingsItems(): List<SettingsItem<*>>
     val settingsSection: @Composable (SettingsViewModel) -> Unit
     fun buildProviderConfig(settings: SettingsViewModel): ProviderConfig
+    val preferredModelSetting: SettingsItem<String>
 }

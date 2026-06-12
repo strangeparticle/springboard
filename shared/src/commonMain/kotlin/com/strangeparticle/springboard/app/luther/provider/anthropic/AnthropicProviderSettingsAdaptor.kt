@@ -16,4 +16,5 @@ internal object AnthropicProviderSettingsAdaptor : AiProviderSettingsAdaptor {
     }
     override fun buildProviderConfig(settings: SettingsViewModel): ProviderConfig =
         AnthropicConfig(apiKey = settings.getResolvedValue(AnthropicApiKeySetting))
+    override val preferredModelSetting = AnthropicPreferredModelSetting
 }

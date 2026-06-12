@@ -5,7 +5,7 @@ package com.strangeparticle.springboard.app.settings
  * list assembled by `main.kt`:
  *
  * ```kotlin
- * SettingsRegistry(coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() })
+ * SettingsRegistry(coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems())
  * ```
  *
  * Item ids must be unique across the assembled list — duplicates fail at

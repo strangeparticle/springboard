@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit.settings
 
-import com.strangeparticle.luther.client.provider.AiProviderRegistry
+import com.strangeparticle.springboard.app.luther.provider.AiProviderSettingsAdaptorRegistry
 import com.strangeparticle.springboard.app.settings.SettingsRegistry
 import com.strangeparticle.springboard.app.settings.items.core.ActiveBrandSetting
 import com.strangeparticle.springboard.app.settings.items.core.coreSettingsItems
@@ -28,13 +28,13 @@ class SettingsRegistryAssemblyTest {
 
     @Test
     fun `provider items integrate alongside core items`() {
-        val all = coreSettingsItems() + AiProviderRegistry.all().flatMap { it.settingsItems() }
+        val all = coreSettingsItems() + AiProviderSettingsAdaptorRegistry.allSettingsItems()
         val registry = SettingsRegistry(all)
         // Core items are present
         assertNotNull(registry.byId(ActiveBrandSetting.id))
         // Provider-owned items are present
-        for (provider in AiProviderRegistry.all()) {
-            for (item in provider.settingsItems()) {
+        for (adaptor in AiProviderSettingsAdaptorRegistry.all()) {
+            for (item in adaptor.settingsItems()) {
                 assertNotNull(registry.byId(item.id), "missing ${item.id}")
             }
         }

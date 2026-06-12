@@ -1,40 +1,31 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
-import androidx.compose.runtime.Composable
 import com.strangeparticle.luther.client.AiProviderClient
+import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.provider.AiProvider
-import com.strangeparticle.springboard.app.settings.SettingsItem
-import com.strangeparticle.springboard.app.settings.SettingsItemContext
-import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
+import com.strangeparticle.luther.client.provider.ProviderConfig
+import io.ktor.client.HttpClient
 
-internal object AnthropicProvider : AiProvider {
+object AnthropicProvider : AiProvider {
     override val id = "anthropic"
     override val displayName = "Anthropic"
 
-    override fun settingsItems(): List<SettingsItem<*>> = listOf(
-        AnthropicApiKeySetting,
-        AnthropicPreferredModelSetting,
-    )
+    private fun config(config: ProviderConfig) = config as AnthropicConfig
 
-    override fun preferredModelSetting() = AnthropicPreferredModelSetting
+    override fun isConfigured(config: ProviderConfig): Boolean =
+        config(config).apiKey.isNotBlank()
 
-    override fun createClient(context: SettingsItemContext): AiProviderClient {
-        val apiKey = context.get(AnthropicApiKeySetting).orEmpty()
-        return AiProviderClientAnthropic(
-            httpClient = context.httpClient,
-            apiKeyProvider = { apiKey },
-        )
+    override fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient {
+        val anthropic = config(config)
+        return AiProviderClientAnthropic(httpClient = httpClient, apiKeyProvider = { anthropic.apiKey })
     }
 
-    override fun currentModelId(context: SettingsItemContext): String =
-        context.get(AnthropicPreferredModelSetting).orEmpty()
-
-    override fun isConfigured(context: SettingsItemContext): Boolean =
-        context.get(AnthropicApiKeySetting).orEmpty().isNotBlank()
-
-    override val settingsSectionComposable: @Composable (SettingsViewModel) -> Unit = { viewModel ->
-        AnthropicSettingsSectionComposable(viewModel)
+    override fun orderModelsForPicker(models: List<AiProviderClientModelInfo>): List<AiProviderClientModelInfo> {
+        val tooled = models.filter { it.supportsToolCalling }
+        val preferred = preferredModelIds().mapNotNull { id -> tooled.firstOrNull { it.id == id } }
+        val remainder = tooled.filterNot { it.id in preferredModelIds().toSet() }
+        return preferred + remainder
     }
 
-    fun preferredModelIds(): List<String> = listOf("claude-sonnet-4-6", "claude-3-5-sonnet-latest")
+    private fun preferredModelIds(): List<String> = listOf("claude-sonnet-4-6", "claude-3-5-sonnet-latest")
 }

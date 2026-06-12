@@ -123,6 +123,7 @@ object ActivatorDesktopTestScenarios {
 
         // Column activation — app1 in "common" env has res1 + res2
         components.viewModel.activateColumn("common", "app1")
+        components.viewModel.confirmPendingGroupActivation()
         waitForIdle()
 
         // One new window script call, two URLs opened
@@ -156,6 +157,7 @@ object ActivatorDesktopTestScenarios {
         waitForIdle()
 
         components.viewModel.activateColumn("common", "app1")
+        components.viewModel.confirmPendingGroupActivation()
         waitForIdle()
 
         assertEquals(1, components.activationService.appleScriptRunnerService.scriptsRun.size)
@@ -189,6 +191,7 @@ object ActivatorDesktopTestScenarios {
         waitForIdle()
 
         components.viewModel.activateColumn("common", "app1")
+        components.viewModel.confirmPendingGroupActivation()
         waitForIdle()
 
         assertTrue(components.activationService.appleScriptRunnerService.scriptsRun.isEmpty())

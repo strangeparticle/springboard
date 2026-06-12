@@ -77,6 +77,10 @@ object TestTags {
     const val CLOSE_DIRTY_TAB_CONFIRM_BUTTON = "closeDirtyTabConfirmButton"
     const val CLOSE_DIRTY_TAB_CANCEL_BUTTON = "closeDirtyTabCancelButton"
 
+    const val GROUP_ACTIVATION_CONFIRM_DIALOG = "groupActivationConfirmDialog"
+    const val GROUP_ACTIVATION_CONFIRM_BUTTON = "groupActivationConfirmButton"
+    const val GROUP_ACTIVATION_CANCEL_BUTTON = "groupActivationCancelButton"
+
     fun settingsDropdown(settingKey: String) = "settingsDropdown_$settingKey"
     fun settingsDropdownOption(settingKey: String, optionId: String) = "settingsDropdownOption_${settingKey}_${optionId}"
     fun settingsRow(settingKey: String) = "settingsRow_$settingKey"

@@ -67,6 +67,7 @@ object ActivatorTestScenarios {
 
         // Activate an entire column — app1 in "common" env has res1 and res2
         components.viewModel.activateColumn("common", "app1")
+        components.viewModel.confirmPendingGroupActivation()
         waitForIdle()
 
         assertEquals(2, components.activationService.openedUrls.size)

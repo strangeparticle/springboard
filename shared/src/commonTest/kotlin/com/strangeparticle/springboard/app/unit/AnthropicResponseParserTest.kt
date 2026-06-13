@@ -2,7 +2,7 @@ package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ internal class AnthropicResponseParserTest {
 
         assertEquals("An activator maps a coordinate to an action.", result.text)
         assertTrue(result.toolCalls.isEmpty())
-        assertEquals(AiProviderClientStopReason.Stop, result.stopReason)
+        assertEquals(StopReason.Stop, result.stopReason)
     }
 
     @Test
@@ -67,7 +67,7 @@ internal class AnthropicResponseParserTest {
         assertEquals(1, result.toolCalls.size)
         assertEquals("toolu_01", result.toolCalls[0].id)
         assertEquals("add_app", result.toolCalls[0].name)
-        assertEquals(AiProviderClientStopReason.ToolUse, result.stopReason)
+        assertEquals(StopReason.ToolUse, result.stopReason)
     }
 
     @Test
@@ -148,16 +148,16 @@ internal class AnthropicResponseParserTest {
 
     @Test
     fun `parseSuccess_stopReasonMapping covers all cases`() {
-        fun stopReasonFor(reason: String): AiProviderClientStopReason {
+        fun stopReasonFor(reason: String): StopReason {
             val body = """{"id":"m","type":"message","role":"assistant","model":"claude","content":[{"type":"text","text":"ok"}],"stop_reason":"$reason"}"""
             return AnthropicResponseParser.parseSuccess(body).stopReason
         }
 
-        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("end_turn"))
-        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("stop_sequence"))
-        assertEquals(AiProviderClientStopReason.ToolUse, stopReasonFor("tool_use"))
-        assertEquals(AiProviderClientStopReason.MaxTokens, stopReasonFor("max_tokens"))
-        assertEquals(AiProviderClientStopReason.Other, stopReasonFor("unknown_reason"))
+        assertEquals(StopReason.Stop, stopReasonFor("end_turn"))
+        assertEquals(StopReason.Stop, stopReasonFor("stop_sequence"))
+        assertEquals(StopReason.ToolUse, stopReasonFor("tool_use"))
+        assertEquals(StopReason.MaxTokens, stopReasonFor("max_tokens"))
+        assertEquals(StopReason.Other, stopReasonFor("unknown_reason"))
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.strangeparticle.luther.client
 
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 
@@ -7,6 +8,6 @@ import kotlinx.serialization.json.JsonObject
 internal data class AiProviderClientResponse(
     val text: String?,
     val toolCalls: List<ToolCall>,
-    val stopReason: AiProviderClientStopReason,
+    val stopReason: StopReason,
     val raw: JsonObject,
 )

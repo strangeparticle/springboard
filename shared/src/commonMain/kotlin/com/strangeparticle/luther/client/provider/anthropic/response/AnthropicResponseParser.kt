@@ -3,7 +3,7 @@ package com.strangeparticle.luther.client.provider.anthropic.response
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientResponse
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.error.AnthropicErrorResponseDto
 import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.SerializationException
@@ -88,11 +88,11 @@ internal object AnthropicResponseParser {
         else -> AiProviderClientErrorType.Unknown
     }
 
-    private fun mapStopReason(stopReason: String?): AiProviderClientStopReason = when (stopReason) {
-        "end_turn", "stop_sequence" -> AiProviderClientStopReason.Stop
-        "tool_use" -> AiProviderClientStopReason.ToolUse
-        "max_tokens" -> AiProviderClientStopReason.MaxTokens
-        else -> AiProviderClientStopReason.Other
+    private fun mapStopReason(stopReason: String?): StopReason = when (stopReason) {
+        "end_turn", "stop_sequence" -> StopReason.Stop
+        "tool_use" -> StopReason.ToolUse
+        "max_tokens" -> StopReason.MaxTokens
+        else -> StopReason.Other
     }
 
     private fun classifyHttpStatus(status: Int): AiProviderClientErrorType = when (status) {

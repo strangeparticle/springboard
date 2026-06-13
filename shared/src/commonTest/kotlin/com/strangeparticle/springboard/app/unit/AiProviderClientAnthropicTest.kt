@@ -3,7 +3,7 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.AiProviderClientAnthropic
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -104,7 +104,7 @@ internal class AiProviderClientAnthropicTest {
         val result = AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).sendAiRequest(emptyRequest())
 
         assertEquals("hello", result.text)
-        assertEquals(AiProviderClientStopReason.Stop, result.stopReason)
+        assertEquals(StopReason.Stop, result.stopReason)
     }
 
     @Test

@@ -3,7 +3,7 @@ package com.strangeparticle.springboard.app.shared
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ToolCall
@@ -78,7 +78,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
         AiProviderClientResponse(
             text = text,
             toolCalls = emptyList(),
-            stopReason = AiProviderClientStopReason.Stop,
+            stopReason = StopReason.Stop,
             raw = raw,
         )
 
@@ -92,7 +92,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     ): AiProviderClientResponse = AiProviderClientResponse(
         text = text,
         toolCalls = listOf(ToolCall(toolCallId, toolName, arguments.toString())),
-        stopReason = AiProviderClientStopReason.ToolUse,
+        stopReason = StopReason.ToolUse,
         raw = raw,
     )
 
@@ -104,7 +104,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     ): AiProviderClientResponse = AiProviderClientResponse(
         text = text,
         toolCalls = calls,
-        stopReason = AiProviderClientStopReason.ToolUse,
+        stopReason = StopReason.ToolUse,
         raw = raw,
     )
 }

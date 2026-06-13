@@ -2,7 +2,7 @@ package com.strangeparticle.springboard.app.unit
 
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -36,7 +36,7 @@ internal class OpenAiResponseParserTest {
 
         assertEquals("hello world", response.text)
         assertTrue(response.toolCalls.isEmpty())
-        assertEquals(AiProviderClientStopReason.Stop, response.stopReason)
+        assertEquals(StopReason.Stop, response.stopReason)
     }
 
     @Test
@@ -71,7 +71,7 @@ internal class OpenAiResponseParserTest {
         assertEquals("call-abc", call.id)
         assertEquals("add_app", call.name)
         assertEquals("{" + "\"id\":\"foo\"}", call.argumentsJson)
-        assertEquals(AiProviderClientStopReason.ToolUse, response.stopReason)
+        assertEquals(StopReason.ToolUse, response.stopReason)
     }
 
     @Test
@@ -107,13 +107,13 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `finish_reason length maps to MaxTokens`() {
         val body = """{ "choices": [{ "message": { "content": "..." }, "finish_reason": "length" }] }"""
-        assertEquals(AiProviderClientStopReason.MaxTokens, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
+        assertEquals(StopReason.MaxTokens, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
     }
 
     @Test
     fun `unknown finish_reason maps to Other`() {
         val body = """{ "choices": [{ "message": { "content": "..." }, "finish_reason": "content_filter" }] }"""
-        assertEquals(AiProviderClientStopReason.Other, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
+        assertEquals(StopReason.Other, com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body).stopReason)
     }
 
     @Test

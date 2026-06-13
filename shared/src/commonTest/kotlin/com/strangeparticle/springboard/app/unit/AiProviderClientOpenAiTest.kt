@@ -3,7 +3,7 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -82,7 +82,7 @@ internal class AiProviderClientOpenAiTest {
 
         assertEquals("hello", response.text)
         assertTrue(response.toolCalls.isEmpty())
-        assertEquals(AiProviderClientStopReason.Stop, response.stopReason)
+        assertEquals(StopReason.Stop, response.stopReason)
     }
 
     @Test

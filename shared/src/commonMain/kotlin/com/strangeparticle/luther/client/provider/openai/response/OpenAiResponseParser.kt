@@ -3,7 +3,7 @@ package com.strangeparticle.luther.client.provider.openai.response
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientResponse
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -154,11 +154,11 @@ internal object OpenAiResponseParser {
         }
     }
 
-    private fun mapStopReason(finishReason: String?): AiProviderClientStopReason = when (finishReason) {
-        "stop" -> AiProviderClientStopReason.Stop
-        "tool_calls" -> AiProviderClientStopReason.ToolUse
-        "length" -> AiProviderClientStopReason.MaxTokens
-        else -> AiProviderClientStopReason.Other
+    private fun mapStopReason(finishReason: String?): StopReason = when (finishReason) {
+        "stop" -> StopReason.Stop
+        "tool_calls" -> StopReason.ToolUse
+        "length" -> StopReason.MaxTokens
+        else -> StopReason.Other
     }
 
     private fun classifyHttpStatus(status: Int): AiProviderClientErrorType = when (status) {

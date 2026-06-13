@@ -1,8 +1,8 @@
 package com.strangeparticle.luther.client.provider
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -18,7 +18,7 @@ private class FakeProvider(
     override fun isConfigured(config: ProviderConfig) = (config as FakeConfig).key.isNotBlank()
     override fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient =
         object : AiProviderClient {
-            override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse =
+            override suspend fun sendAiRequest(request: ChatRequest): ChatResponse =
                 throw UnsupportedOperationException()
             override suspend fun listModels(): List<Model> = models
         }

@@ -1,8 +1,8 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderErrorType
 import com.strangeparticle.luther.client.provider.ProviderException
@@ -38,7 +38,7 @@ internal class AiProviderClientAnthropic(
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse {
+    override suspend fun sendAiRequest(request: ChatRequest): ChatResponse {
         val apiKey = getApiKeyOrThrow()
         // AnthropicChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(

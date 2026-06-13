@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
 import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
@@ -32,7 +32,7 @@ internal class AnthropicChatCompletionRequestTest {
         history: List<ChatMessage> = emptyList(),
         tools: List<ToolDefinition> = emptyList(),
         maxTokens: Int? = null,
-    ) = AiProviderClientRequest(
+    ) = ChatRequest(
         modelId = "claude-sonnet-4-6",
         systemPrompt = "you are an assistant",
         messages = history,
@@ -40,7 +40,7 @@ internal class AnthropicChatCompletionRequestTest {
         maxTokens = maxTokens,
     )
 
-    private fun buildBody(request: AiProviderClientRequest): JsonObject {
+    private fun buildBody(request: ChatRequest): JsonObject {
         val rawJson = json.encodeToString(
             AnthropicChatCompletionRequestDto.serializer(),
             AnthropicChatCompletionRequestDto.from(request),

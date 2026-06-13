@@ -1,8 +1,8 @@
 package com.strangeparticle.luther.session
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.session.event.ChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
@@ -154,7 +154,7 @@ internal class AiSessionManager(
             appendSnapshotIfChanged()
             val requestHistory = evictHistoryIfNeeded(history)
             val response = aiClient.sendAiRequest(
-                AiProviderClientRequest(
+                ChatRequest(
                     modelId = modelIdProvider(),
                     systemPrompt = systemPromptProvider(),
                     messages = requestHistory,

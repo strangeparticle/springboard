@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client.provider.openai.response
 
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.ProviderErrorType
 import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Parses OpenAI chat-completions DTOs into the provider-neutral [AiProviderClientResponse]
+ * Parses OpenAI chat-completions DTOs into the provider-neutral [ChatResponse]
  * type. Pure function — no IO. OpenAiResponseParserTest contains full JSON
  * response and error examples for this deserialization boundary.
  *
@@ -21,14 +21,13 @@ internal object OpenAiResponseParser {
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * Parse a successful (HTTP 200) OpenAI response body into an [AiProviderClientResponse].
+     * Parse a successful (HTTP 200) OpenAI response body into a [ChatResponse].
      *
      * The body is `{"choices": [{ "message": { "content": ..., "tool_calls": [...] }, "finish_reason": "..." }], ...}`.
      * Multiple choices are theoretically possible but we only ever request a single
      * choice and consume index 0.
      */
-    fun parseSuccess(body: String): AiProviderClientResponse {
-        val raw = parseRawJsonObjectOrThrow(body)
+    fun parseSuccess(body: String): ChatResponse {
         val response = try {
             // OpenAiResponseParserTest documents the provider JSON structures decoded into this DTO hierarchy.
             json.decodeFromString<com.strangeparticle.luther.client.provider.openai.response.OpenAiChatCompletionResponseDto>(body)
@@ -47,11 +46,10 @@ internal object OpenAiResponseParser {
                 rawProviderMessage = body,
             )
         val toolCalls = firstChoice.message.toolCalls?.map(::parseToolCall) ?: emptyList()
-        return AiProviderClientResponse(
+        return ChatResponse(
             text = firstChoice.message.content,
             toolCalls = toolCalls,
             stopReason = mapStopReason(firstChoice.finishReason),
-            raw = raw,
         )
     }
 
@@ -134,24 +132,6 @@ internal object OpenAiResponseParser {
             name = toolCall.function.name,
             argumentsJson = argumentsRaw,
         )
-    }
-
-    private fun parseRawJsonObjectOrThrow(body: String): JsonObject {
-        return try {
-            json.parseToJsonElement(body) as? JsonObject
-                ?: throw ProviderException(
-                    ProviderErrorType.MalformedResponse,
-                    "OpenAI response was not a JSON object.",
-                    rawProviderMessage = body,
-                )
-        } catch (e: SerializationException) {
-            throw ProviderException(
-                ProviderErrorType.MalformedResponse,
-                "OpenAI response was not valid JSON: ${e.message}",
-                rawProviderMessage = body,
-                cause = e,
-            )
-        }
     }
 
     private fun mapStopReason(finishReason: String?): StopReason = when (finishReason) {

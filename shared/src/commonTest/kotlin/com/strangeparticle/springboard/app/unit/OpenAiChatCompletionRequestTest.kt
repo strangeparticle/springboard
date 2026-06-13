@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
@@ -28,14 +28,14 @@ internal class OpenAiChatCompletionRequestTest {
     private fun emptyRequest(
         history: List<ChatMessage> = emptyList(),
         tools: List<ToolDefinition> = emptyList(),
-    ) = AiProviderClientRequest(
+    ) = ChatRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
         messages = history,
         tools = tools,
     )
 
-    private fun buildBody(request: AiProviderClientRequest): JsonObject {
+    private fun buildBody(request: ChatRequest): JsonObject {
         val rawJson = json.encodeToString(
             com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
             com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
@@ -286,7 +286,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `interpolated string values are escaped in the request JSON`() {
         val body = buildBody(
-            AiProviderClientRequest(
+            ChatRequest(
                 modelId = "gpt-5\"quoted",
                 systemPrompt = "system prompt with \"quotes\" and newline\nnext line",
                 messages = listOf(ChatMessage.User("user text with \"quotes\" and newline\nnext line")),

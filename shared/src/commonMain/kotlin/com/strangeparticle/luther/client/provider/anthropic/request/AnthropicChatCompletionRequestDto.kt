@@ -1,7 +1,7 @@
 package com.strangeparticle.luther.client.provider.anthropic.request
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.SerialName
@@ -34,7 +34,7 @@ internal data class AnthropicChatCompletionRequestDto(
 
         private const val DEFAULT_MAX_TOKENS = 8192
 
-        fun from(request: AiProviderClientRequest): AnthropicChatCompletionRequestDto =
+        fun from(request: ChatRequest): AnthropicChatCompletionRequestDto =
             AnthropicChatCompletionRequestDto(
                 model = request.modelId,
                 messages = buildMessages(request.messages),

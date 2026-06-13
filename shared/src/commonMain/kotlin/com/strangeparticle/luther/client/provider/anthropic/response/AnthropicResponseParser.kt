@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client.provider.anthropic.response
 
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.ProviderErrorType
 import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Parses Anthropic Messages API DTOs into the provider-neutral [AiProviderClientResponse] type.
+ * Parses Anthropic Messages API DTOs into the provider-neutral [ChatResponse] type.
  * Pure function — no IO. AnthropicResponseParserTest contains full JSON response and
  * error examples for this deserialization boundary.
  */
@@ -19,8 +19,7 @@ internal object AnthropicResponseParser {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun parseSuccess(body: String): AiProviderClientResponse {
-        val raw = parseRawJsonObjectOrThrow(body)
+    fun parseSuccess(body: String): ChatResponse {
         val response = try {
             json.decodeFromString<AnthropicChatCompletionResponseDto>(body)
         } catch (e: SerializationException) {
@@ -47,11 +46,10 @@ internal object AnthropicResponseParser {
                 )
             }
 
-        return AiProviderClientResponse(
+        return ChatResponse(
             text = text,
             toolCalls = toolCalls,
             stopReason = mapStopReason(response.stopReason),
-            raw = raw,
         )
     }
 

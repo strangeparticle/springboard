@@ -1,10 +1,12 @@
 package com.strangeparticle.luther.client
 
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
 
 /**
  * Single-shot AI client. Implementations wrap a specific provider's REST API and
- * translate between [AiProviderClientRequest] / [AiProviderClientResponse] (provider-neutral) and the provider's
+ * translate between [ChatRequest] / [ChatResponse] (provider-neutral) and the provider's
  * native envelope. Provider-specific wire shapes never escape the impl.
  *
  * No streaming in MVP — [sendAiRequest] resolves with a single full response. Streaming
@@ -18,7 +20,7 @@ internal interface AiProviderClient {
      * Send [request] and suspend until the provider returns a single full response.
      * Throws [com.strangeparticle.luther.client.provider.ProviderException] on transport / authentication / parse / provider errors.
      */
-    suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse
+    suspend fun sendAiRequest(request: ChatRequest): ChatResponse
 
     /**
      * List the chat-completion-capable models the provider exposes.

@@ -1,7 +1,7 @@
 package com.strangeparticle.luther.client.provider.openai.request
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.SerialName
@@ -21,7 +21,7 @@ internal data class OpenAiChatCompletionRequestDto(
     val maxTokens: Int? = null,
 ) {
     companion object {
-        fun from(request: AiProviderClientRequest): OpenAiChatCompletionRequestDto = OpenAiChatCompletionRequestDto(
+        fun from(request: ChatRequest): OpenAiChatCompletionRequestDto = OpenAiChatCompletionRequestDto(
             model = request.modelId,
             messages = buildMessages(request),
             tools = request.tools.takeIf { it.isNotEmpty() }?.map(::toOpenAiTool),
@@ -29,7 +29,7 @@ internal data class OpenAiChatCompletionRequestDto(
             maxTokens = request.maxTokens,
         )
 
-        private fun buildMessages(request: AiProviderClientRequest): List<com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto> = buildList {
+        private fun buildMessages(request: ChatRequest): List<com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto> = buildList {
             add(
                 com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
                     role = "system",

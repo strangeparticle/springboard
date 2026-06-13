@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ProviderErrorType
 import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
  */
 internal class AiProviderClientAnthropicTest {
 
-    private fun emptyRequest() = AiProviderClientRequest(
+    private fun emptyRequest() = ChatRequest(
         modelId = "claude-sonnet-4-6",
         systemPrompt = "you are an assistant",
         messages = emptyList(),

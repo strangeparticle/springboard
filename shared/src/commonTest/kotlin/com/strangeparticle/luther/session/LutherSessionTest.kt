@@ -1,9 +1,9 @@
 package com.strangeparticle.luther.session
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
@@ -23,7 +23,7 @@ private fun testProvider(clientFactoryCount: IntArray) = object : AiProvider {
     override fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient {
         clientFactoryCount[0]++
         return object : AiProviderClient {
-            override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse =
+            override suspend fun sendAiRequest(request: ChatRequest): ChatResponse =
                 throw UnsupportedOperationException()
             override suspend fun listModels(): List<Model> = emptyList()
         }

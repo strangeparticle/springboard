@@ -199,7 +199,8 @@ private fun rememberAiChatPaneState(
     settingsViewModel.settingsVersion
     val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
     val httpClient = settingsViewModel.aiHttpClient
-    val provider: AiProvider? = LutherBuiltInProviders.all(httpClient).firstOrNull { it.id == selectedProviderId }
+    val builtInProviders = remember(httpClient) { LutherBuiltInProviders.all(httpClient) }
+    val provider: AiProvider? = builtInProviders.firstOrNull { it.id == selectedProviderId }
     val adaptor = AiProviderSettingsAdaptorRegistry.byId(selectedProviderId)
     val providerConfig = adaptor?.buildProviderConfig(settingsViewModel)
     val isConfigured = provider != null && providerConfig != null && provider.isConfigured(providerConfig)
@@ -207,7 +208,7 @@ private fun rememberAiChatPaneState(
     var modelOptionsResult by remember(selectedProviderId) { mutableStateOf<Result<List<DropDownOption>>?>(null) }
     var isModelOptionsLoading by remember(selectedProviderId) { mutableStateOf(false) }
 
-    val catalog = remember(httpClient) { LutherProviderCatalog(LutherBuiltInProviders.all(httpClient)) }
+    val catalog = remember(builtInProviders) { LutherProviderCatalog(builtInProviders) }
 
     fun loadModelOptions() {
         val activeConfig = providerConfig ?: return

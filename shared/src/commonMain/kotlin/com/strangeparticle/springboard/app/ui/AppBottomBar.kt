@@ -41,6 +41,7 @@ internal fun AppBottomBar(
     isAssistantOpen: Boolean,
     onToggleAssistant: () -> Unit,
     onOpenSettings: () -> Unit,
+    aiAssistantEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val currentUiBrand = LocalUiBrand.current
@@ -76,27 +77,32 @@ internal fun AppBottomBar(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = {
-                    PlainTooltip {
-                        Text(if (isAssistantConfigured) "AI assistant" else "AI assistant (configure in settings)")
-                    }
-                },
-                state = rememberTooltipState(),
-            ) {
-                IconButton(
-                    onClick = onToggleAssistant,
-                    modifier = Modifier
-                        .size(24.dp)
-                        .testTag(TestTags.ASSISTANT_TOGGLE_BUTTON),
+            // The whole AI assistant toggle is gated by aiAssistantEnabled so a deployment
+            // that disables the assistant shows no entry point for it. The settings gear
+            // below stays outside the gate and keeps its right-aligned position.
+            if (aiAssistantEnabled) {
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = {
+                        PlainTooltip {
+                            Text(if (isAssistantConfigured) "AI assistant" else "AI assistant (configure in settings)")
+                        }
+                    },
+                    state = rememberTooltipState(),
                 ) {
-                    Icon(
-                        imageVector = SpringboardIcons.AutoAwesome,
-                        contentDescription = if (isAssistantConfigured) "AI assistant" else "AI assistant (not configured)",
-                        modifier = Modifier.size(14.dp),
-                        tint = assistantIconTint,
-                    )
+                    IconButton(
+                        onClick = onToggleAssistant,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .testTag(TestTags.ASSISTANT_TOGGLE_BUTTON),
+                    ) {
+                        Icon(
+                            imageVector = SpringboardIcons.AutoAwesome,
+                            contentDescription = if (isAssistantConfigured) "AI assistant" else "AI assistant (not configured)",
+                            modifier = Modifier.size(14.dp),
+                            tint = assistantIconTint,
+                        )
+                    }
                 }
             }
 

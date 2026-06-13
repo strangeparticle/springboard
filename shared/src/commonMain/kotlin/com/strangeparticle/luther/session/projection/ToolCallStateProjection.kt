@@ -20,7 +20,7 @@ internal fun buildToolCallStates(events: List<ChatHistoryItem>): Map<String, Too
     val states = mutableMapOf<String, ToolCallState>()
     for (event in events) {
         when (event) {
-            is ToolCallStartedChatHistoryItem -> states[event.toolCall.toolCallId] = ToolCallState.Pending
+            is ToolCallStartedChatHistoryItem -> states[event.toolCall.id] = ToolCallState.Pending
             is ToolApprovalRequestedChatHistoryItem -> states[event.toolCallId] = ToolCallState.ApprovalRequested
             is ToolApprovalRespondedChatHistoryItem -> states[event.toolCallId] = ToolCallState.ApprovalResponded(event.approved)
             is ToolCallCompletedChatHistoryItem -> states[event.toolCallId] = if (event.endsTurn) {

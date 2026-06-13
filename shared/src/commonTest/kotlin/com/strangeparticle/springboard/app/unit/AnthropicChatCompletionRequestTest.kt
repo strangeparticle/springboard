@@ -5,8 +5,8 @@ import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicCha
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

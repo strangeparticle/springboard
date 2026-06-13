@@ -65,8 +65,8 @@ internal class AnthropicResponseParserTest {
 
         assertNull(result.text)
         assertEquals(1, result.toolCalls.size)
-        assertEquals("toolu_01", result.toolCalls[0].toolCallId)
-        assertEquals("add_app", result.toolCalls[0].toolName)
+        assertEquals("toolu_01", result.toolCalls[0].id)
+        assertEquals("add_app", result.toolCalls[0].name)
         assertEquals(AiProviderClientStopReason.ToolUse, result.stopReason)
     }
 
@@ -93,7 +93,7 @@ internal class AnthropicResponseParserTest {
 
         val result = AnthropicResponseParser.parseSuccess(body)
 
-        val argsJson = result.toolCalls[0].argumentsAsJsonString
+        val argsJson = result.toolCalls[0].argumentsJson
         assertTrue(argsJson.contains("grafana"), "argumentsAsJsonString must contain the input values")
         assertTrue(argsJson.startsWith("{"), "argumentsAsJsonString must be a JSON object string")
     }
@@ -119,7 +119,7 @@ internal class AnthropicResponseParserTest {
 
         assertEquals("I'll add that app now.", result.text)
         assertEquals(1, result.toolCalls.size)
-        assertEquals("add_app", result.toolCalls[0].toolName)
+        assertEquals("add_app", result.toolCalls[0].name)
     }
 
     @Test
@@ -142,8 +142,8 @@ internal class AnthropicResponseParserTest {
         val result = AnthropicResponseParser.parseSuccess(body)
 
         assertEquals(2, result.toolCalls.size)
-        assertEquals("id1", result.toolCalls[0].toolCallId)
-        assertEquals("id2", result.toolCalls[1].toolCallId)
+        assertEquals("id1", result.toolCalls[0].id)
+        assertEquals("id2", result.toolCalls[1].id)
     }
 
     @Test

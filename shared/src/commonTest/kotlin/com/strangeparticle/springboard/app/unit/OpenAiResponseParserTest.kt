@@ -68,9 +68,9 @@ internal class OpenAiResponseParserTest {
         assertNull(response.text)
         assertEquals(1, response.toolCalls.size)
         val call = response.toolCalls.first()
-        assertEquals("call-abc", call.toolCallId)
-        assertEquals("add_app", call.toolName)
-        assertEquals("{" + "\"id\":\"foo\"}", call.argumentsAsJsonString)
+        assertEquals("call-abc", call.id)
+        assertEquals("add_app", call.name)
+        assertEquals("{" + "\"id\":\"foo\"}", call.argumentsJson)
         assertEquals(AiProviderClientStopReason.ToolUse, response.stopReason)
     }
 

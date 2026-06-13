@@ -26,7 +26,7 @@ import com.strangeparticle.luther.session.event.UserSubmittedChatHistoryItem
 import com.strangeparticle.luther.session.projection.buildProviderHistory
 import com.strangeparticle.luther.session.projection.buildToolCallStates
 import com.strangeparticle.luther.session.projection.buildTranscriptParts
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.ui.luther.AiChatScrollbackPane
 import com.strangeparticle.springboard.app.ui.luther.CommandAttribution

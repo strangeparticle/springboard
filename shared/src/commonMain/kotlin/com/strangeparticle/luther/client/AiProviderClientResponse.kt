@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client
 
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 
 /** The single full provider-neutral response from one model turn. */

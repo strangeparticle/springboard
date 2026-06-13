@@ -4,8 +4,8 @@ import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
 import kotlinx.serialization.json.Json

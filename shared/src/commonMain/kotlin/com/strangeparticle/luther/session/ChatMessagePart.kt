@@ -6,7 +6,7 @@ internal sealed class ChatMessagePart {
     data class AssistantText(val text: String) : ChatMessagePart()
 
     data class ToolCall(
-        val toolCall: com.strangeparticle.luther.toolcall.ToolCall,
+        val toolCall: com.strangeparticle.luther.client.provider.ToolCall,
         val state: ToolCallState,
     ) : ChatMessagePart()
 

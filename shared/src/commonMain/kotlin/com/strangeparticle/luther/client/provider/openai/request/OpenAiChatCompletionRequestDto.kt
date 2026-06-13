@@ -5,8 +5,8 @@ import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -67,11 +67,11 @@ internal data class OpenAiChatCompletionRequestDto(
 
         private fun toOpenAiToolCall(toolCall: ToolCall): com.strangeparticle.luther.client.provider.openai.request.OpenAiToolCallDto =
             com.strangeparticle.luther.client.provider.openai.request.OpenAiToolCallDto(
-                id = toolCall.toolCallId,
+                id = toolCall.id,
                 type = "function",
                 function = com.strangeparticle.luther.client.provider.openai.request.OpenAiToolCallFunctionDto(
-                    name = toolCall.toolName,
-                    arguments = toolCall.argumentsAsJsonString,
+                    name = toolCall.name,
+                    arguments = toolCall.argumentsJson,
                 ),
             )
 

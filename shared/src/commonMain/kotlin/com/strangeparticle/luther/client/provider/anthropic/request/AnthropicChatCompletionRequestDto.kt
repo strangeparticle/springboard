@@ -5,8 +5,8 @@ import com.strangeparticle.luther.conversation.AiConversationMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -121,9 +121,9 @@ internal data class AnthropicChatCompletionRequestDto(
 
         private fun toolUseBlock(toolCall: ToolCall): JsonObject = buildJsonObject {
             put("type", "tool_use")
-            put("id", toolCall.toolCallId)
-            put("name", toolCall.toolName)
-            put("input", Json.parseToJsonElement(toolCall.argumentsAsJsonString))
+            put("id", toolCall.id)
+            put("name", toolCall.name)
+            put("input", Json.parseToJsonElement(toolCall.argumentsJson))
         }
 
         private fun toolResultBlock(toolCallId: String, content: String): JsonObject = buildJsonObject {

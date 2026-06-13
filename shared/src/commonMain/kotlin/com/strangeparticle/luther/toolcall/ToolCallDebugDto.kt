@@ -1,5 +1,6 @@
 package com.strangeparticle.luther.toolcall
 
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -10,9 +11,9 @@ internal data class ToolCallDebugDto(
 ) {
     companion object {
         fun from(toolCall: ToolCall): ToolCallDebugDto = ToolCallDebugDto(
-            toolCallId = toolCall.toolCallId,
-            toolName = toolCall.toolName,
-            argumentsAsJsonString = toolCall.argumentsAsJsonString,
+            toolCallId = toolCall.id,
+            toolName = toolCall.name,
+            argumentsAsJsonString = toolCall.argumentsJson,
         )
     }
 }

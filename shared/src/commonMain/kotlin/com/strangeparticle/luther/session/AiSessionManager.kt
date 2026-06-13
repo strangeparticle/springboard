@@ -190,24 +190,24 @@ internal class AiSessionManager(
                 appendItemToCurrentGroup(ToolCallStartedChatHistoryItem(toolCall))
 
                 val result = toolCallDispatcher.execute(
-                    toolCallId = toolCall.toolCallId,
-                    providerToolId = toolCall.toolName,
-                    argumentsAsJsonString = toolCall.argumentsAsJsonString,
+                    toolCallId = toolCall.id,
+                    providerToolId = toolCall.name,
+                    argumentsAsJsonString = toolCall.argumentsJson,
                     context = context,
                 )
                 val content = result.toProviderMessageContent()
-                pendingApprovals.remove(toolCall.toolCallId)
-                val approvalDecision = approvalDecisions.remove(toolCall.toolCallId)
+                pendingApprovals.remove(toolCall.id)
+                val approvalDecision = approvalDecisions.remove(toolCall.id)
                 if (result.endsTurn) {
                     appendItemToCurrentGroup(ToolCallCompletedChatHistoryItem(
-                        toolCallId = toolCall.toolCallId,
+                        toolCallId = toolCall.id,
                         providerContent = content,
                         transcriptOutput = result.toTranscriptOutput(content),
                         endsTurn = true,
                     ))
                     return
                 }
-                appendToolResultItem(toolCall.toolCallId, result, content, approvalDecision)
+                appendToolResultItem(toolCall.id, result, content, approvalDecision)
             }
         }
     }
@@ -258,7 +258,7 @@ internal class AiSessionManager(
         is AiConversationMessageForUser -> estimateTokens(message.text)
         is AiConversationMessageForAssistant -> {
             estimateTokens(message.text ?: "") +
-                message.toolCalls.sumOf { estimateTokens(it.toolName) + estimateTokens(it.argumentsAsJsonString) }
+                message.toolCalls.sumOf { estimateTokens(it.name) + estimateTokens(it.argumentsJson) }
         }
         is AiConversationMessageForSystemState -> estimateTokens(message.snapshotJson)
         is ToolCallProviderClientMessage -> estimateTokens(message.content)

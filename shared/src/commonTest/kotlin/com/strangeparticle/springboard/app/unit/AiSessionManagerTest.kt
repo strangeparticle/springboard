@@ -15,7 +15,7 @@ import com.strangeparticle.luther.session.event.StateSnapshotAddedChatHistoryIte
 import com.strangeparticle.luther.session.event.ToolCallCompletedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolCallStartedChatHistoryItem
 import com.strangeparticle.luther.session.event.UserSubmittedChatHistoryItem
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallHandler
@@ -532,7 +532,7 @@ internal class AiSessionManagerTest {
         // Transcript part is still there — no rollback.
         val toolPartsAfter = manager.transcriptParts.filterIsInstance<ChatMessagePart.ToolCall>()
         assertEquals(1, toolPartsAfter.size)
-        assertEquals("call-1", toolPartsAfter.single().toolCall.toolCallId)
+        assertEquals("call-1", toolPartsAfter.single().toolCall.id)
     }
 
     @Test

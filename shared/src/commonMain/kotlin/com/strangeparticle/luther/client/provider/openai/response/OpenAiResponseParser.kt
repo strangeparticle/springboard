@@ -4,7 +4,7 @@ import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.AiProviderClientStopReason
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -130,9 +130,9 @@ internal object OpenAiResponseParser {
             )
         }
         return ToolCall(
-            toolCallId = toolCall.id,
-            toolName = toolCall.function.name,
-            argumentsAsJsonString = argumentsRaw,
+            id = toolCall.id,
+            name = toolCall.function.name,
+            argumentsJson = argumentsRaw,
         )
     }
 

@@ -14,7 +14,7 @@ import com.strangeparticle.luther.session.projection.buildTranscriptParts
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 
@@ -230,8 +230,8 @@ internal fun getScrollbackPaneTextForCopyToClipboard(pane: AiChatScrollbackPane)
             append(pane.text)
         }
         for (toolCall in pane.toolCalls) {
-            append("\n\nTool call: ${toolCall.toolName}\n")
-            append(toolCall.argumentsAsJsonString)
+            append("\n\nTool call: ${toolCall.name}\n")
+            append(toolCall.argumentsJson)
         }
     }
     is AiChatScrollbackPane.DebugToolResult -> "${debugPaneTitle(pane)}:\n${pane.content}"

@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.conversation
 
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 
 internal data class AiConversationMessageForAssistant(
     val text: String?,

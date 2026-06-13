@@ -33,7 +33,7 @@ internal fun buildTranscriptParts(events: List<ChatHistoryItem>): List<ChatMessa
             is AssistantRespondedChatHistoryItem -> event.text?.let { parts += ChatMessagePart.AssistantText(it) }
             is AssistantErroredChatHistoryItem -> parts += ChatMessagePart.ChatError(event.message)
             is ToolCallStartedChatHistoryItem -> {
-                toolPartIndices[event.toolCall.toolCallId] = parts.size
+                toolPartIndices[event.toolCall.id] = parts.size
                 parts += ChatMessagePart.ToolCall(event.toolCall, ToolCallState.Pending)
             }
             is ToolApprovalRequestedChatHistoryItem -> updateToolPart(event.toolCallId, ToolCallState.ApprovalRequested)

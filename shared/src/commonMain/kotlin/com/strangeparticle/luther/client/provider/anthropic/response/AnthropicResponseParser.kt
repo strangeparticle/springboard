@@ -5,7 +5,7 @@ import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.AiProviderClientStopReason
 import com.strangeparticle.luther.client.provider.anthropic.error.AnthropicErrorResponseDto
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -41,9 +41,9 @@ internal object AnthropicResponseParser {
             .filterIsInstance<AnthropicResponseContentBlockDto.ToolUse>()
             .map { block ->
                 ToolCall(
-                    toolCallId = block.id,
-                    toolName = block.name,
-                    argumentsAsJsonString = json.encodeToString(JsonObject.serializer(), block.input),
+                    id = block.id,
+                    name = block.name,
+                    argumentsJson = json.encodeToString(JsonObject.serializer(), block.input),
                 )
             }
 

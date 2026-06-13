@@ -6,7 +6,7 @@ import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.AiProviderClientStopReason
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.AiProviderClientModelInfo
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 

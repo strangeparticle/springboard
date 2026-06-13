@@ -97,12 +97,12 @@ private fun ToolCallRenderer(
                 Spacer(Modifier.height(4.dp))
                 Row {
                     Button(
-                        onClick = { onApprovalDecision(toolCall.toolCallId, true) },
+                        onClick = { onApprovalDecision(toolCall.id, true) },
                         modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
                     ) { Text("Apply") }
                     Spacer(Modifier.width(8.dp))
                     OutlinedButton(
-                        onClick = { onApprovalDecision(toolCall.toolCallId, false) },
+                        onClick = { onApprovalDecision(toolCall.id, false) },
                         modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
                     ) { Text("Cancel") }
                 }

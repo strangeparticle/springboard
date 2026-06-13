@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalWindowInfo
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.LutherBuiltInProviders
 import com.strangeparticle.luther.client.provider.LutherProviderCatalog
 import com.strangeparticle.luther.session.AiSessionManager
@@ -196,16 +198,16 @@ private fun rememberAiChatPaneState(
 ): AiChatPaneState {
     settingsViewModel.settingsVersion
     val selectedProviderId = settingsViewModel.getResolvedValue(AiProviderSetting)
-    val provider: AiProvider? = LutherBuiltInProviders.all().firstOrNull { it.id == selectedProviderId }
+    val httpClient = settingsViewModel.aiHttpClient
+    val provider: AiProvider? = LutherBuiltInProviders.all(httpClient).firstOrNull { it.id == selectedProviderId }
     val adaptor = AiProviderSettingsAdaptorRegistry.byId(selectedProviderId)
     val providerConfig = adaptor?.buildProviderConfig(settingsViewModel)
     val isConfigured = provider != null && providerConfig != null && provider.isConfigured(providerConfig)
     val modelId = adaptor?.let { settingsViewModel.getResolvedValue(it.preferredModelSetting) }.orEmpty()
-    val httpClient = settingsViewModel.aiHttpClient
     var modelOptionsResult by remember(selectedProviderId) { mutableStateOf<Result<List<DropDownOption>>?>(null) }
     var isModelOptionsLoading by remember(selectedProviderId) { mutableStateOf(false) }
 
-    val catalog = remember(httpClient) { LutherProviderCatalog(LutherBuiltInProviders.all(), httpClient) }
+    val catalog = remember(httpClient) { LutherProviderCatalog(LutherBuiltInProviders.all(httpClient)) }
 
     fun loadModelOptions() {
         val activeConfig = providerConfig ?: return
@@ -222,9 +224,9 @@ private fun rememberAiChatPaneState(
         if (providerConfig != null && isConfigured) loadModelOptions()
     }
 
-    val aiClient = remember(provider, isConfigured, providerConfig) {
+    val sendChat: (suspend (ChatRequest) -> ChatResponse)? = remember(provider, isConfigured, providerConfig) {
         if (provider != null && providerConfig != null && provider.isConfigured(providerConfig)) {
-            provider.createClient(providerConfig, httpClient)
+            { request -> provider.sendChat(providerConfig, request) }
         } else {
             null
         }
@@ -237,7 +239,7 @@ private fun rememberAiChatPaneState(
         mutableStateOf<List<ChatHistoryGroup>>(emptyList())
     }
 
-    if (provider == null || aiClient == null || modelId.isBlank()) {
+    if (provider == null || sendChat == null || modelId.isBlank()) {
         // The assistant isn't configured, so there's no undo engine wired up. Disable the desktop
         // Edit menu's Undo/Redo items so they don't appear actionable.
         SideEffect {
@@ -262,9 +264,9 @@ private fun rememberAiChatPaneState(
         }
     }
 
-    val manager = remember(aiClient, viewModel) {
+    val manager = remember(sendChat, viewModel) {
         AiSessionManager(
-            aiClient = aiClient,
+            sendChat = sendChat,
             toolCallRegistry = createSpringboardToolCallRegistry(),
             snapshotProvider = object : AiSessionSnapshotProvider {
                 override fun getSnapshotJson(): String = SpringboardAppSnapshot.capture(viewModel).toCompactJson()

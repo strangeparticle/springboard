@@ -1,8 +1,8 @@
 package com.strangeparticle.luther.session
 
-import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.session.event.ChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
@@ -29,7 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 internal class AiSessionManager(
-    private val aiClient: AiProviderClient,
+    private val sendChat: suspend (ChatRequest) -> ChatResponse,
     private val toolCallRegistry: ToolCallRegistry,
     private val snapshotProvider: AiSessionSnapshotProvider,
     private val toolCallExecutionContextFactory: AiSessionToolCallExecutionContextFactory,
@@ -153,7 +153,7 @@ internal class AiSessionManager(
         while (true) {
             appendSnapshotIfChanged()
             val requestHistory = evictHistoryIfNeeded(history)
-            val response = aiClient.sendAiRequest(
+            val response = sendChat(
                 ChatRequest(
                     modelId = modelIdProvider(),
                     systemPrompt = systemPromptProvider(),

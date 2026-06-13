@@ -1,6 +1,5 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
-import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
@@ -22,7 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 
 /**
- * REST-based [AiProviderClient] implementation for Anthropic's Messages API.
+ * REST-based client for Anthropic's Messages API.
  *
  * Uses [HttpClient] (provided by the caller so the same impl works under desktop CIO
  * and any other engine) plus Anthropic DTOs / [AnthropicResponseParser] to translate
@@ -34,11 +33,11 @@ internal class AiProviderClientAnthropic(
     private val httpClient: HttpClient,
     private val apiKeyProvider: () -> String?,
     private val baseUrl: String = "https://api.anthropic.com",
-) : AiProviderClient {
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun sendAiRequest(request: ChatRequest): ChatResponse {
+    suspend fun sendChat(request: ChatRequest): ChatResponse {
         val apiKey = getApiKeyOrThrow()
         // AnthropicChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(
@@ -49,7 +48,7 @@ internal class AiProviderClientAnthropic(
         return AnthropicResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<Model> {
+    suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {

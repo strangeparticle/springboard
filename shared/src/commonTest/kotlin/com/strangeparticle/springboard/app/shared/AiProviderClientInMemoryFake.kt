@@ -1,6 +1,5 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
@@ -10,25 +9,27 @@ import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Test double for [AiProviderClient]. Tests script the responses they want; the fake records
- * everything that flows through it so assertions can verify request shape without
- * touching Ktor or any HTTP transport.
+ * Test double for a provider's transport. Exposes [sendChat] / [listModels] matching the
+ * new provider shapes (the manager takes a `suspend (ChatRequest) -> ChatResponse`, so tests
+ * pass `fake::sendChat`). Tests script the responses they want; the fake records everything
+ * that flows through it so assertions can verify request shape without touching Ktor or any
+ * HTTP transport.
  *
  * Two ways to script behavior, in priority order:
  *
- * 1. **Per-request handler.** Set [sendAiRequestHandler] to a function that takes the
+ * 1. **Per-request handler.** Set [sendChatHandler] to a function that takes the
  *    [ChatRequest] and returns the [ChatResponse]. Useful for tests that need to
  *    inspect the request to decide what to send back (e.g. agent-loop iterations
  *    where the second request looks different from the first).
  * 2. **Response queue.** Push responses to [responseQueue] in order; each
- *    `sendAiRequest()` pops the head. Useful for simple linear scenarios.
+ *    `sendChat()` pops the head. Useful for simple linear scenarios.
  *
- * If both are unset and `sendAiRequest()` is called, the fake throws to make the missing
+ * If both are unset and `sendChat()` is called, the fake throws to make the missing
  * setup obvious in test output.
  *
  * Per spec §7.4.
  */
-internal class AiProviderClientInMemoryFake : AiProviderClient {
+internal class AiProviderClientInMemoryFake {
 
     /** Calls received in order. Inspect after the test to assert request shape. */
     val recordedRequests: MutableList<ChatRequest> = mutableListOf()
@@ -37,34 +38,34 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     var listModelsCallCount: Int = 0
 
     /** Optional override that decides what to return based on the actual request. */
-    var sendAiRequestHandler: ((ChatRequest) -> ChatResponse)? = null
+    var sendChatHandler: ((ChatRequest) -> ChatResponse)? = null
 
-    /** Linear queue of responses. `sendAiRequest()` pops the head. */
+    /** Linear queue of responses. `sendChat()` pops the head. */
     val responseQueue: ArrayDeque<ChatResponse> = ArrayDeque()
 
     /** What [listModels] returns. Override per-test. */
     var modelsResponse: List<Model> = emptyList()
 
-    /** When set, [sendAiRequest] throws this instead of returning a response. */
-    var sendAiRequestException: ProviderException? = null
+    /** When set, [sendChat] throws this instead of returning a response. */
+    var sendChatException: ProviderException? = null
 
     /** When set, [listModels] throws this instead of returning [modelsResponse]. */
     var listModelsException: ProviderException? = null
 
-    override suspend fun sendAiRequest(request: ChatRequest): ChatResponse {
+    suspend fun sendChat(request: ChatRequest): ChatResponse {
         recordedRequests += request
-        sendAiRequestException?.let { throw it }
-        sendAiRequestHandler?.let { return it(request) }
+        sendChatException?.let { throw it }
+        sendChatHandler?.let { return it(request) }
         if (responseQueue.isEmpty()) {
             throw IllegalStateException(
-                "AiProviderClientInMemoryFake.sendAiRequest() called but neither sendAiRequestHandler " +
+                "AiProviderClientInMemoryFake.sendChat() called but neither sendChatHandler " +
                     "nor responseQueue was configured. Test setup error."
             )
         }
         return responseQueue.removeFirst()
     }
 
-    override suspend fun listModels(): List<Model> {
+    suspend fun listModels(): List<Model> {
         listModelsCallCount++
         listModelsException?.let { throw it }
         return modelsResponse

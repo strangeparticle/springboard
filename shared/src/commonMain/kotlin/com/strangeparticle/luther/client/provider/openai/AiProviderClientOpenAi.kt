@@ -1,6 +1,5 @@
 package com.strangeparticle.luther.client.provider.openai
 
-import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.ChatRequest
 import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
@@ -22,7 +21,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * REST-based [AiProviderClient] implementation for OpenAI's chat-completions API.
+ * REST-based client for OpenAI's chat-completions API.
  *
   * Uses [HttpClient] (provided by the caller so the same impl works under desktop CIO
   * and any other engine) plus OpenAI DTOs / [com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser]
@@ -34,11 +33,11 @@ internal class AiProviderClientOpenAi(
     private val httpClient: HttpClient,
     private val apiKeyProvider: () -> String?,
     private val baseUrl: String = "https://api.openai.com",
-) : AiProviderClient {
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun sendAiRequest(request: ChatRequest): ChatResponse {
+    suspend fun sendChat(request: ChatRequest): ChatResponse {
         val apiKey = getApiKeyOrThrow()
         // OpenAiChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(
@@ -49,7 +48,7 @@ internal class AiProviderClientOpenAi(
         return com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<Model> {
+    suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {

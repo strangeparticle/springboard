@@ -238,7 +238,7 @@ internal class AiSessionManagerTest {
         val registry = ToolCallRegistry().apply { register(TerminalMessageToolCallHandler()) }
         var requestCount = 0
         val aiClient = AiProviderClientInMemoryFake().apply {
-            sendAiRequestHandler = {
+            sendChatHandler = {
                 requestCount += 1
                 if (requestCount == 1) {
                     multipleToolCalls(listOf(ToolCall("call-1", "terminal_message_tool", "{}")))
@@ -433,7 +433,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `provider error appends chat error and allows next submit`() = runTest {
         val aiClient = AiProviderClientInMemoryFake().apply {
-            sendAiRequestException = ProviderException(ProviderErrorType.Network, "network unavailable")
+            sendChatException = ProviderException(ProviderErrorType.Network, "network unavailable")
         }
         val manager = createManager(aiClient)
 
@@ -441,7 +441,7 @@ internal class AiSessionManagerTest {
 
         assertEquals(ChatMessagePart.ChatError("network unavailable"), manager.transcriptParts.last())
 
-        aiClient.sendAiRequestException = null
+        aiClient.sendChatException = null
         aiClient.responseQueue += aiClient.textOnly("recovered")
         manager.submit("Second").join()
 
@@ -652,7 +652,7 @@ internal class AiSessionManagerTest {
         maxHistoryTokens: Int = AiSessionManager.DEFAULT_MAX_HISTORY_TOKENS,
         onTranscriptChanged: () -> Unit = {},
     ): AiSessionManager = AiSessionManager(
-        aiClient = aiClient,
+        sendChat = aiClient::sendChat,
         toolCallRegistry = toolCallRegistry,
         snapshotProvider = snapshotProvider,
         toolCallExecutionContextFactory = object : AiSessionToolCallExecutionContextFactory {

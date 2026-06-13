@@ -1,31 +1,26 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
-import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
 import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import io.ktor.client.HttpClient
 
-internal object AnthropicProvider : AiProvider {
+internal class AnthropicProvider(private val httpClient: HttpClient) : AiProvider {
     override val id = "anthropic"
     override val displayName = "Anthropic"
-
-    private fun config(config: ProviderConfig) = config as AnthropicConfig
+    override val preferredModelIds = listOf("claude-sonnet-4-6", "claude-3-5-sonnet-latest")
 
     override fun isConfigured(config: ProviderConfig): Boolean =
-        config(config).apiKey.isNotBlank()
+        (config as AnthropicConfig).apiKey.isNotBlank()
 
-    override fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient {
-        val anthropic = config(config)
-        return AiProviderClientAnthropic(httpClient = httpClient, apiKeyProvider = { anthropic.apiKey })
-    }
+    override suspend fun listModels(config: ProviderConfig): List<Model> =
+        client(config).listModels()
 
-    override fun orderModelsForPicker(models: List<Model>): List<Model> {
-        val tooled = models.filter { it.supportsToolCalling }
-        val preferred = preferredModelIds().mapNotNull { id -> tooled.firstOrNull { it.id == id } }
-        val remainder = tooled.filterNot { it.id in preferredModelIds().toSet() }
-        return preferred + remainder
-    }
+    override suspend fun sendChat(config: ProviderConfig, request: ChatRequest): ChatResponse =
+        client(config).sendChat(request)
 
-    private fun preferredModelIds(): List<String> = listOf("claude-sonnet-4-6", "claude-3-5-sonnet-latest")
+    private fun client(config: ProviderConfig) =
+        AiProviderClientAnthropic(httpClient = httpClient, apiKeyProvider = { (config as AnthropicConfig).apiKey })
 }

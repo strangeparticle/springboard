@@ -484,12 +484,12 @@ internal class AiAssistantTests {
     @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
-        fixture.aiClient.sendAiRequestException = ProviderException(ProviderErrorType.Network, "network unavailable")
+        fixture.aiClient.sendChatException = ProviderException(ProviderErrorType.Network, "network unavailable")
 
         fixture.manager.submit("Try").join()
 
         assertEquals(ChatMessagePart.ChatError("network unavailable"), fixture.manager.transcriptParts.last())
-        fixture.aiClient.sendAiRequestException = null
+        fixture.aiClient.sendChatException = null
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Recovered.")
         fixture.manager.submit("Try again").join()
         assertEquals(ChatMessagePart.AssistantText("Recovered."), fixture.manager.transcriptParts.last())
@@ -524,7 +524,7 @@ internal class AiAssistantTests {
             register(RemoveActivatorToolCallHandler())
         }
         val manager = AiSessionManager(
-            aiClient = aiClient,
+            sendChat = aiClient::sendChat,
             toolCallRegistry = registry,
             snapshotProvider = object : AiSessionSnapshotProvider {
                 override fun getSnapshotJson(): String = SpringboardAppSnapshot.capture(viewModel).toCompactJson()

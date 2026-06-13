@@ -41,7 +41,7 @@ internal class AiProviderClientOpenAiTest {
     }
 
     @Test
-    fun `sendAiRequest posts to chat completions endpoint with bearer auth`() = runTest {
+    fun `sendChat posts to chat completions endpoint with bearer auth`() = runTest {
         var capturedUrl: String? = null
         var capturedAuth: String? = null
         val client = HttpClient(MockEngine { request ->
@@ -58,14 +58,14 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        sut.sendAiRequest(emptyRequest())
+        sut.sendChat(emptyRequest())
 
         assertEquals("https://api.openai.com/v1/chat/completions", capturedUrl)
         assertEquals("Bearer sk-test", capturedAuth)
     }
 
     @Test
-    fun `sendAiRequest returns parsed response on 200`() = runTest {
+    fun `sendChat returns parsed response on 200`() = runTest {
         val client = HttpClient(MockEngine {
             respond(
                 """{"choices":[{"message":{"content":"hello"},"finish_reason":"stop"}]}""",
@@ -78,7 +78,7 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val response = sut.sendAiRequest(emptyRequest())
+        val response = sut.sendChat(emptyRequest())
 
         assertEquals("hello", response.text)
         assertTrue(response.toolCalls.isEmpty())
@@ -86,7 +86,7 @@ internal class AiProviderClientOpenAiTest {
     }
 
     @Test
-    fun `sendAiRequest throws InvalidApiKey on 401`() = runTest {
+    fun `sendChat throws InvalidApiKey on 401`() = runTest {
         val client = HttpClient(MockEngine {
             respond(
                 """{"error":{"message":"Invalid API key"}}""",
@@ -99,13 +99,13 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        val ex = assertFailsWith<ProviderException> { sut.sendChat(emptyRequest()) }
         assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
         assertEquals("Invalid API key", ex.rawProviderMessage)
     }
 
     @Test
-    fun `sendAiRequest throws RateLimit on 429`() = runTest {
+    fun `sendChat throws RateLimit on 429`() = runTest {
         val client = HttpClient(MockEngine {
             respond("""{"error":{"message":"slow down"}}""", HttpStatusCode.TooManyRequests)
         })
@@ -114,12 +114,12 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        val ex = assertFailsWith<ProviderException> { sut.sendChat(emptyRequest()) }
         assertEquals(ProviderErrorType.RateLimit, ex.classified)
     }
 
     @Test
-    fun `sendAiRequest throws ProviderUnavailable on 5xx`() = runTest {
+    fun `sendChat throws ProviderUnavailable on 5xx`() = runTest {
         val client = HttpClient(MockEngine {
             respond("internal", HttpStatusCode.InternalServerError)
         })
@@ -128,12 +128,12 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        val ex = assertFailsWith<ProviderException> { sut.sendChat(emptyRequest()) }
         assertEquals(ProviderErrorType.ProviderUnavailable, ex.classified)
     }
 
     @Test
-    fun `sendAiRequest throws Network on transport exception`() = runTest {
+    fun `sendChat throws Network on transport exception`() = runTest {
         val client = HttpClient(MockEngine {
             throw RuntimeException("connection refused")
         })
@@ -142,21 +142,21 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        val ex = assertFailsWith<ProviderException> { sut.sendChat(emptyRequest()) }
         assertEquals(ProviderErrorType.Network, ex.classified)
     }
 
     @Test
-    fun `sendAiRequest throws InvalidApiKey when apiKey is null`() = runTest {
+    fun `sendChat throws InvalidApiKey when apiKey is null`() = runTest {
         val client = HttpClient(MockEngine {
-            error("sendAiRequest should never call the engine when api key is missing")
+            error("sendChat should never call the engine when api key is missing")
         })
         val sut =
             com.strangeparticle.luther.client.provider.openai.AiProviderClientOpenAi(
                 client,
                 apiKeyProvider = { null })
 
-        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        val ex = assertFailsWith<ProviderException> { sut.sendChat(emptyRequest()) }
         assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
     }
 
@@ -224,7 +224,7 @@ internal class AiProviderClientOpenAiTest {
     }
 
     @Test
-    fun `sendAiRequest propagates CancellationException without reclassifying as Network`() = runTest {
+    fun `sendChat propagates CancellationException without reclassifying as Network`() = runTest {
         val client = HttpClient(MockEngine {
             // Simulate the in-flight request being cancelled — the engine throws
             // a CancellationException, which should bubble up uncaught.
@@ -237,7 +237,7 @@ internal class AiProviderClientOpenAiTest {
 
         // The expectation is the CancellationException — NOT an AiException.
         assertFailsWith<kotlinx.coroutines.CancellationException> {
-            sut.sendAiRequest(emptyRequest())
+            sut.sendChat(emptyRequest())
         }
     }
 

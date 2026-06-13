@@ -1,14 +1,13 @@
 package com.strangeparticle.luther.session
 
-import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
+import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderConfig
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallHandler
-import io.ktor.client.HttpClient
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -16,19 +15,27 @@ import kotlin.test.assertTrue
 
 private data class TestProviderConfig(val key: String) : ProviderConfig
 
-private fun testProvider(clientFactoryCount: IntArray) = object : AiProvider {
+/**
+ * Test provider whose `sendChat` records the [TestProviderConfig.key] it was bound to.
+ *
+ * The old design exposed `createClient`, so "did the session rebuild?" was observable by
+ * counting client-factory invocations. The new design binds `sendChat` per manager:
+ * `buildManager` captures the current provider + config in a fresh `sendChat` lambda, and a
+ * rebuild produces a new lambda bound to the new config. We make rebuilds observable by
+ * recording, on every `sendChat` invocation, the config key the active binding closed over.
+ * A model-only update reuses the existing binding (same key); a config change rebuilds and the
+ * binding closes over the new key.
+ */
+private class RecordingTestProvider : AiProvider {
+    val sendChatBoundKeys: MutableList<String> = mutableListOf()
     override val id = "p"
     override val displayName = "P"
     override fun isConfigured(config: ProviderConfig) = (config as TestProviderConfig).key.isNotBlank()
-    override fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient {
-        clientFactoryCount[0]++
-        return object : AiProviderClient {
-            override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse =
-                throw UnsupportedOperationException()
-            override suspend fun listModels(): List<AiProviderClientModelInfo> = emptyList()
-        }
+    override suspend fun listModels(config: ProviderConfig): List<Model> = emptyList()
+    override suspend fun sendChat(config: ProviderConfig, request: ChatRequest): ChatResponse {
+        sendChatBoundKeys += (config as TestProviderConfig).key
+        return ChatResponse(text = "", toolCalls = emptyList(), stopReason = StopReason.Stop)
     }
-    override fun orderModelsForPicker(models: List<AiProviderClientModelInfo>) = models
 }
 
 private val NoopExecutionContextFactory = object : AiSessionToolCallExecutionContextFactory {
@@ -43,22 +50,11 @@ private val NoopSnapshotProvider = object : AiSessionSnapshotProvider {
 }
 
 class LutherSessionTest {
-    private fun session(clientFactoryCount: IntArray) = createLutherSession(
-        providers = listOf(testProvider(clientFactoryCount)),
-        settings = LutherSettings("p", "m1", TestProviderConfig("k")),
-        httpClient = HttpClient(),
-        toolHandlers = emptyList<ToolCallHandler>(),
-        executionContextFactory = NoopExecutionContextFactory,
-        snapshotProvider = NoopSnapshotProvider,
-        systemPromptProvider = { "" },
-    )
-
     @Test fun factory_rejectsIncompleteSettings() {
         assertFailsWith<IllegalArgumentException> {
             createLutherSession(
-                providers = listOf(testProvider(IntArray(1))),
+                providers = listOf(RecordingTestProvider()),
                 settings = LutherSettings("p", "", TestProviderConfig("")),
-                httpClient = HttpClient(),
                 toolHandlers = emptyList(),
                 executionContextFactory = NoopExecutionContextFactory,
                 snapshotProvider = NoopSnapshotProvider,
@@ -67,22 +63,40 @@ class LutherSessionTest {
         }
     }
 
-    @Test fun modelOnlyUpdate_doesNotRebuildClient() {
-        val clientFactoryCount = IntArray(1)
-        val session = session(clientFactoryCount)
-        val before = clientFactoryCount[0]
+    @Test fun modelOnlyUpdate_doesNotRebuildClient() = runTest {
+        val provider = RecordingTestProvider()
+        val session = createLutherSession(
+            providers = listOf(provider),
+            settings = LutherSettings("p", "m1", TestProviderConfig("k")),
+            toolHandlers = emptyList(),
+            executionContextFactory = NoopExecutionContextFactory,
+            snapshotProvider = NoopSnapshotProvider,
+            systemPromptProvider = { "" },
+        )
         session.updateConfiguration(LutherSettings("p", "m2", TestProviderConfig("k")))
-        assertEquals(before, clientFactoryCount[0])
+        // The model-only change must NOT rebuild the manager: the still-active binding closed
+        // over the original config key "k".
+        session.submit("hi").join()
+        assertEquals(listOf("k"), provider.sendChatBoundKeys)
         assertEquals("m2", session.status.value.modelId)
         session.close()
     }
 
-    @Test fun configChange_rebuildsClient_keepsHistoryReference() {
-        val clientFactoryCount = IntArray(1)
-        val session = session(clientFactoryCount)
+    @Test fun configChange_rebuildsClient_keepsHistoryReference() = runTest {
+        val provider = RecordingTestProvider()
+        val session = createLutherSession(
+            providers = listOf(provider),
+            settings = LutherSettings("p", "m1", TestProviderConfig("k")),
+            toolHandlers = emptyList(),
+            executionContextFactory = NoopExecutionContextFactory,
+            snapshotProvider = NoopSnapshotProvider,
+            systemPromptProvider = { "" },
+        )
         val historyRef = session.chatHistory
         session.updateConfiguration(LutherSettings("p", "m1", TestProviderConfig("k2")))
-        assertTrue(clientFactoryCount[0] >= 2)
+        // A config change rebuilds the manager, binding a fresh `sendChat` to the new config "k2".
+        session.submit("hi").join()
+        assertEquals(listOf("k2"), provider.sendChatBoundKeys)
         assertTrue(session.chatHistory === historyRef)
         session.close()
     }

@@ -1,13 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.toolcall.ToolCall
-import com.strangeparticle.luther.toolcall.AiToolCallDefinition
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ToolCall
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -22,7 +18,7 @@ import kotlin.test.assertTrue
 
 /**
  * Tests for [com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
-     * envelope: top-level shape, message role mapping for each [AiConversationMessage] variant,
+     * envelope: top-level shape, message role mapping for each [ChatMessage] variant,
  * and tool-definition adaptation.
  */
 internal class OpenAiChatCompletionRequestTest {
@@ -30,16 +26,16 @@ internal class OpenAiChatCompletionRequestTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun emptyRequest(
-        history: List<AiConversationMessage> = emptyList(),
-        tools: List<AiToolCallDefinition> = emptyList(),
-    ) = AiProviderClientRequest(
+        history: List<ChatMessage> = emptyList(),
+        tools: List<ToolDefinition> = emptyList(),
+    ) = ChatRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
-        history = history,
+        messages = history,
         tools = tools,
     )
 
-    private fun buildBody(request: AiProviderClientRequest): JsonObject {
+    private fun buildBody(request: ChatRequest): JsonObject {
         val rawJson = json.encodeToString(
             com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
             com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
@@ -60,7 +56,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `body matches rendered request example without tools`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiConversationMessageForUser("hello")),
+            history = listOf(ChatMessage.User("hello")),
         ))
 
         val expected = json.parseToJsonElement(
@@ -86,7 +82,7 @@ internal class OpenAiChatCompletionRequestTest {
 
     @Test
     fun `tools and tool_choice are included when at least one tool is passed`() {
-        val tool = AiToolCallDefinition(
+        val tool = ToolDefinition(
             name = "add_app",
             description = "Add an app to a tab.",
             schema = buildJsonObject {
@@ -117,14 +113,14 @@ internal class OpenAiChatCompletionRequestTest {
         val body = buildBody(
             emptyRequest(
                 history = listOf(
-                    AiConversationMessageForUser("Add an app."),
-                    AiConversationMessageForAssistant(
+                    ChatMessage.User("Add an app."),
+                    ChatMessage.Assistant(
                         text = null,
                         toolCalls = listOf(ToolCall("call-1", "add_app", """{"tab_id":"tab-1"}""")),
                     ),
-                    ToolCallProviderClientMessage("call-1", """{"ok":true}"""),
+                    ChatMessage.ToolResult("call-1", """{"ok":true}"""),
                 ),
-                tools = listOf(AiToolCallDefinition("add_app", "Add a new app to the springboard.", schema)),
+                tools = listOf(ToolDefinition("add_app", "Add a new app to the springboard.", schema)),
             ),
         )
 
@@ -202,7 +198,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `UserMessage maps to role=user with content`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiConversationMessageForUser("hello")),
+            history = listOf(ChatMessage.User("hello")),
         ))
         val messages = body["messages"] as JsonArray
         val userMsg = messages[1] as JsonObject
@@ -214,7 +210,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `AssistantMessage with text only maps to role=assistant with content`() {
         val body = buildBody(emptyRequest(
-            history = listOf(AiConversationMessageForAssistant(text = "ok", toolCalls = emptyList())),
+            history = listOf(ChatMessage.Assistant(text = "ok", toolCalls = emptyList())),
         ))
         val assistantMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -227,7 +223,7 @@ internal class OpenAiChatCompletionRequestTest {
     fun `AssistantMessage with tool_calls maps to assistant with tool_calls array`() {
         val toolCall = ToolCall("call-1", "do_thing", """{"foo":"bar"}""")
         val body = buildBody(emptyRequest(
-            history = listOf(AiConversationMessageForAssistant(text = null, toolCalls = listOf(toolCall))),
+            history = listOf(ChatMessage.Assistant(text = null, toolCalls = listOf(toolCall))),
         ))
         val assistantMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -249,7 +245,7 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `ToolCallMessage maps to role=tool with tool_call_id and content`() {
         val body = buildBody(emptyRequest(
-            history = listOf(ToolCallProviderClientMessage("call-1", """{"ok":true}""")),
+            history = listOf(ChatMessage.ToolResult("call-1", """{"ok":true}""")),
         ))
         val toolMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -262,7 +258,7 @@ internal class OpenAiChatCompletionRequestTest {
     fun `SystemStateMessage maps to a user-role message wrapped in current_state tags`() {
         val snapshot = """{"tabs":[],"activeTabId":null}"""
         val body = buildBody(emptyRequest(
-            history = listOf(AiConversationMessageForSystemState(snapshot)),
+            history = listOf(ChatMessage.SystemState(snapshot)),
         ))
         val stateMsg = (body["messages"] as JsonArray)[1] as JsonObject
 
@@ -279,7 +275,7 @@ internal class OpenAiChatCompletionRequestTest {
             put("type", "object")
             put("required", kotlinx.serialization.json.JsonArray(listOf(JsonPrimitive("tab_id"))))
         }
-        val tool = AiToolCallDefinition(name = "save_springboard", description = "Save.", schema = schema)
+        val tool = ToolDefinition(name = "save_springboard", description = "Save.", schema = schema)
         val body = buildBody(emptyRequest(tools = listOf(tool)))
         val function = ((body["tools"] as JsonArray)[0] as JsonObject)["function"] as JsonObject
 
@@ -290,12 +286,12 @@ internal class OpenAiChatCompletionRequestTest {
     @Test
     fun `interpolated string values are escaped in the request JSON`() {
         val body = buildBody(
-            AiProviderClientRequest(
+            ChatRequest(
                 modelId = "gpt-5\"quoted",
                 systemPrompt = "system prompt with \"quotes\" and newline\nnext line",
-                history = listOf(AiConversationMessageForUser("user text with \"quotes\" and newline\nnext line")),
+                messages = listOf(ChatMessage.User("user text with \"quotes\" and newline\nnext line")),
                 tools = listOf(
-                    AiToolCallDefinition(
+                    ToolDefinition(
                         name = "tool_\"quoted",
                         description = "description with \"quotes\"",
                         schema = buildJsonObject { put("type", "object") },

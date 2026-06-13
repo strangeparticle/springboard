@@ -1,13 +1,13 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.session.AiSessionManager
 import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
 import com.strangeparticle.luther.session.ChatMessagePart
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
@@ -80,7 +80,7 @@ internal class AiAssistantTests {
 
         fixture.manager.submit("Add resource and activator").join()
 
-        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>().size)
+        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>().size)
     }
 
     @Test
@@ -262,7 +262,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
     }
@@ -427,7 +427,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("missing_tab"))
     }
@@ -484,12 +484,12 @@ internal class AiAssistantTests {
     @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
-        fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
+        fixture.aiClient.sendChatException = ProviderException(ProviderErrorType.Network, "network unavailable")
 
         fixture.manager.submit("Try").join()
 
         assertEquals(ChatMessagePart.ChatError("network unavailable"), fixture.manager.transcriptParts.last())
-        fixture.aiClient.sendAiRequestException = null
+        fixture.aiClient.sendChatException = null
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Recovered.")
         fixture.manager.submit("Try again").join()
         assertEquals(ChatMessagePart.AssistantText("Recovered."), fixture.manager.transcriptParts.last())
@@ -524,7 +524,7 @@ internal class AiAssistantTests {
             register(RemoveActivatorToolCallHandler())
         }
         val manager = AiSessionManager(
-            aiClient = aiClient,
+            sendChat = aiClient::sendChat,
             toolCallRegistry = registry,
             snapshotProvider = object : AiSessionSnapshotProvider {
                 override fun getSnapshotJson(): String = SpringboardAppSnapshot.capture(viewModel).toCompactJson()

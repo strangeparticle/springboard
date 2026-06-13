@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
+import com.strangeparticle.luther.client.provider.Model
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,7 +14,7 @@ import kotlinx.serialization.json.contentOrNull
  */
 internal object AnthropicModelFilter {
 
-    fun filterAndMap(responseBody: JsonObject): List<AiProviderClientModelInfo> {
+    fun filterAndMap(responseBody: JsonObject): List<Model> {
         val data = responseBody["data"] as? JsonArray ?: return emptyList()
         return data
             .mapNotNull { entry ->
@@ -24,7 +24,7 @@ internal object AnthropicModelFilter {
                 val id = (obj["id"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
                 if (!id.startsWith("claude-")) return@mapNotNull null
                 val displayName = (obj["display_name"] as? JsonPrimitive)?.contentOrNull ?: id
-                AiProviderClientModelInfo(id = id, displayName = displayName, supportsToolCalling = true)
+                Model(id = id, displayName = displayName, supportsToolCalling = true)
             }
             .sortedByDescending { it.id }
     }

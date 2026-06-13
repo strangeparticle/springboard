@@ -1,10 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.session.AiSessionManager
 import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
@@ -15,12 +13,11 @@ import com.strangeparticle.luther.session.event.StateSnapshotAddedChatHistoryIte
 import com.strangeparticle.luther.session.event.ToolCallCompletedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolCallStartedChatHistoryItem
 import com.strangeparticle.luther.session.event.UserSubmittedChatHistoryItem
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallHandler
 import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.luther.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.shared.AiProviderClientInMemoryFake
 import kotlinx.coroutines.CompletableDeferred
@@ -111,7 +108,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("What is open?").join()
 
-        val systemState = assertIs<AiConversationMessageForSystemState>(aiClient.recordedRequests.single().history.first())
+        val systemState = assertIs<ChatMessage.SystemState>(aiClient.recordedRequests.single().messages.first())
         assertEquals("{\"tabs\":[]}", systemState.snapshotJson)
     }
 
@@ -125,7 +122,7 @@ internal class AiSessionManagerTest {
         manager.submit("Update it").join()
 
         assertEquals(ChatMessagePart.AssistantText("I updated it."), manager.transcriptParts.last())
-        val assistantMessage = assertIs<AiConversationMessageForAssistant>(manager.history.last())
+        val assistantMessage = assertIs<ChatMessage.Assistant>(manager.history.last())
         assertEquals("I updated it.", assistantMessage.text)
         assertEquals(emptyList(), assistantMessage.toolCalls)
     }
@@ -197,7 +194,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("Run tool").join()
 
-        val toolResult = manager.history.filterIsInstance<ToolCallProviderClientMessage>().single()
+        val toolResult = manager.history.filterIsInstance<ChatMessage.ToolResult>().single()
         assertEquals("call-1", toolResult.toolCallId)
         assertEquals("{\"success\":true,\"message\":\"handled call-1\"}", toolResult.content)
     }
@@ -217,7 +214,7 @@ internal class AiSessionManagerTest {
         val state = assertIs<ToolCallState.OutputAvailable>(toolPart.state)
         assertEquals("Applied.", state.output)
 
-        val toolResult = manager.history.filterIsInstance<ToolCallProviderClientMessage>().single()
+        val toolResult = manager.history.filterIsInstance<ChatMessage.ToolResult>().single()
         assertEquals("{\"success\":true}", toolResult.content)
     }
 
@@ -241,12 +238,12 @@ internal class AiSessionManagerTest {
         val registry = ToolCallRegistry().apply { register(TerminalMessageToolCallHandler()) }
         var requestCount = 0
         val aiClient = AiProviderClientInMemoryFake().apply {
-            sendAiRequestHandler = {
+            sendChatHandler = {
                 requestCount += 1
                 if (requestCount == 1) {
                     multipleToolCalls(listOf(ToolCall("call-1", "terminal_message_tool", "{}")))
                 } else {
-                    throw AiProviderClientException(AiProviderClientErrorType.RateLimit, "rate limited")
+                    throw ProviderException(ProviderErrorType.RateLimit, "rate limited")
                 }
             }
         }
@@ -275,7 +272,7 @@ internal class AiSessionManagerTest {
         manager.submit("First").join()
         manager.submit("Second").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().messages.filterIsInstance<ChatMessage.SystemState>()
         assertEquals(1, systemStates.size)
     }
 
@@ -297,7 +294,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("Mutate").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().messages.filterIsInstance<ChatMessage.SystemState>()
         assertEquals(listOf("{\"snapshot\":1}", "{\"snapshot\":2}"), systemStates.map { it.snapshotJson })
     }
 
@@ -436,7 +433,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `provider error appends chat error and allows next submit`() = runTest {
         val aiClient = AiProviderClientInMemoryFake().apply {
-            sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
+            sendChatException = ProviderException(ProviderErrorType.Network, "network unavailable")
         }
         val manager = createManager(aiClient)
 
@@ -444,7 +441,7 @@ internal class AiSessionManagerTest {
 
         assertEquals(ChatMessagePart.ChatError("network unavailable"), manager.transcriptParts.last())
 
-        aiClient.sendAiRequestException = null
+        aiClient.sendChatException = null
         aiClient.responseQueue += aiClient.textOnly("recovered")
         manager.submit("Second").join()
 
@@ -462,7 +459,7 @@ internal class AiSessionManagerTest {
 
         manager.submit("Explain").join()
 
-        val systemStates = aiClient.recordedRequests.last().history.filterIsInstance<AiConversationMessageForSystemState>()
+        val systemStates = aiClient.recordedRequests.last().messages.filterIsInstance<ChatMessage.SystemState>()
         assertEquals(1, systemStates.size)
     }
 
@@ -532,7 +529,7 @@ internal class AiSessionManagerTest {
         // Transcript part is still there — no rollback.
         val toolPartsAfter = manager.transcriptParts.filterIsInstance<ChatMessagePart.ToolCall>()
         assertEquals(1, toolPartsAfter.size)
-        assertEquals("call-1", toolPartsAfter.single().toolCall.toolCallId)
+        assertEquals("call-1", toolPartsAfter.single().toolCall.id)
     }
 
     @Test
@@ -577,9 +574,9 @@ internal class AiSessionManagerTest {
         manager.submit("c".repeat(200)).join()
 
         // The request sent for the third submit should NOT include the first user message.
-        val historySentOnThirdRequest = aiClient.recordedRequests.last().history
+        val historySentOnThirdRequest = aiClient.recordedRequests.last().messages
         val userTextsSent = historySentOnThirdRequest
-            .filterIsInstance<AiConversationMessageForUser>()
+            .filterIsInstance<ChatMessage.User>()
             .map { it.text }
         assertTrue(userTextsSent.none { it.startsWith("a") }, "first user message must be evicted")
         assertTrue(userTextsSent.any { it.startsWith("c") }, "current user message must remain")
@@ -603,9 +600,9 @@ internal class AiSessionManagerTest {
         manager.submit("b".repeat(200)).join()  // Turn 2: forces eviction of turn 1
         manager.submit("c".repeat(50)).join()
 
-        val historySent = aiClient.recordedRequests.last().history
+        val historySent = aiClient.recordedRequests.last().messages
         // Turn 1's tool result must be gone — it was bundled with turn 1's user message.
-        val toolResults = historySent.filterIsInstance<ToolCallProviderClientMessage>()
+        val toolResults = historySent.filterIsInstance<ChatMessage.ToolResult>()
         assertTrue(toolResults.none { it.toolCallId == "call-1" }, "tool result must be evicted with its turn")
     }
 
@@ -639,8 +636,8 @@ internal class AiSessionManagerTest {
         manager.submit("b".repeat(200)).join()
         manager.submit("c".repeat(50)).join()
 
-        val historySent = aiClient.recordedRequests.last().history
-        val snapshotsSent = historySent.filterIsInstance<AiConversationMessageForSystemState>().map { it.snapshotJson }
+        val historySent = aiClient.recordedRequests.last().messages
+        val snapshotsSent = historySent.filterIsInstance<ChatMessage.SystemState>().map { it.snapshotJson }
         // The first snapshot ({"snap":1}) belonged to turn 1; it must be gone.
         assertTrue(snapshotsSent.none { it == "{\"snap\":1}" }, "snapshot from evicted turn 1 must also be evicted")
     }
@@ -655,7 +652,7 @@ internal class AiSessionManagerTest {
         maxHistoryTokens: Int = AiSessionManager.DEFAULT_MAX_HISTORY_TOKENS,
         onTranscriptChanged: () -> Unit = {},
     ): AiSessionManager = AiSessionManager(
-        aiClient = aiClient,
+        sendChat = aiClient::sendChat,
         toolCallRegistry = toolCallRegistry,
         snapshotProvider = snapshotProvider,
         toolCallExecutionContextFactory = object : AiSessionToolCallExecutionContextFactory {

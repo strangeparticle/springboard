@@ -1,11 +1,10 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
-import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
+import com.strangeparticle.luther.client.provider.Model
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import io.ktor.client.HttpClient
@@ -22,7 +21,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 
 /**
- * REST-based [AiProviderClient] implementation for Anthropic's Messages API.
+ * REST-based client for Anthropic's Messages API.
  *
  * Uses [HttpClient] (provided by the caller so the same impl works under desktop CIO
  * and any other engine) plus Anthropic DTOs / [AnthropicResponseParser] to translate
@@ -34,11 +33,11 @@ internal class AiProviderClientAnthropic(
     private val httpClient: HttpClient,
     private val apiKeyProvider: () -> String?,
     private val baseUrl: String = "https://api.anthropic.com",
-) : AiProviderClient {
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse {
+    suspend fun sendChat(request: ChatRequest): ChatResponse {
         val apiKey = getApiKeyOrThrow()
         // AnthropicChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(
@@ -49,7 +48,7 @@ internal class AiProviderClientAnthropic(
         return AnthropicResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+    suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {
@@ -63,8 +62,8 @@ internal class AiProviderClientAnthropic(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error while listing Anthropic models: ${e.message}",
                 cause = e,
             )
@@ -78,8 +77,8 @@ internal class AiProviderClientAnthropic(
     private fun getApiKeyOrThrow(): String {
         val key = apiKeyProvider()
         if (key.isNullOrBlank()) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.InvalidApiKey,
+            throw ProviderException(
+                ProviderErrorType.InvalidApiKey,
                 "Cannot call Anthropic: API key is missing.",
             )
         }
@@ -101,8 +100,8 @@ internal class AiProviderClientAnthropic(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error calling Anthropic: ${e.message}",
                 cause = e,
             )

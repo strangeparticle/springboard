@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.dp
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
 import com.strangeparticle.springboard.app.ui.luther.AiChatPane
@@ -39,7 +39,7 @@ internal class AiChatDebugPaneTest {
         val pane = AiChatScrollbackPane.DebugAssistantMessage(
             text = "Renaming the environment.",
             toolCalls = listOf(
-                ToolCall(toolCallId = "call-1", toolName = "update_environment", argumentsAsJsonString = "{\"id\":\"e1\"}"),
+                ToolCall(id = "call-1", name = "update_environment", argumentsJson = "{\"id\":\"e1\"}"),
             ),
             historyIndex = 0,
         )
@@ -52,7 +52,7 @@ internal class AiChatDebugPaneTest {
         val pane = AiChatScrollbackPane.DebugAssistantMessage(
             text = null,
             toolCalls = listOf(
-                ToolCall(toolCallId = "call-1", toolName = "save_springboard", argumentsAsJsonString = "{}"),
+                ToolCall(id = "call-1", name = "save_springboard", argumentsJson = "{}"),
             ),
             historyIndex = 0,
         )

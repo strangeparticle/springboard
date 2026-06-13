@@ -1,16 +1,16 @@
 package com.strangeparticle.luther.client.provider.openai.response
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientResponse
-import com.strangeparticle.luther.client.AiProviderClientStopReason
-import com.strangeparticle.luther.toolcall.ToolCall
+import com.strangeparticle.luther.client.provider.ChatResponse
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
+import com.strangeparticle.luther.client.provider.StopReason
+import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Parses OpenAI chat-completions DTOs into the provider-neutral [AiProviderClientResponse]
+ * Parses OpenAI chat-completions DTOs into the provider-neutral [ChatResponse]
  * type. Pure function — no IO. OpenAiResponseParserTest contains full JSON
  * response and error examples for this deserialization boundary.
  *
@@ -21,48 +21,46 @@ internal object OpenAiResponseParser {
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
-     * Parse a successful (HTTP 200) OpenAI response body into an [AiProviderClientResponse].
+     * Parse a successful (HTTP 200) OpenAI response body into a [ChatResponse].
      *
      * The body is `{"choices": [{ "message": { "content": ..., "tool_calls": [...] }, "finish_reason": "..." }], ...}`.
      * Multiple choices are theoretically possible but we only ever request a single
      * choice and consume index 0.
      */
-    fun parseSuccess(body: String): AiProviderClientResponse {
-        val raw = parseRawJsonObjectOrThrow(body)
+    fun parseSuccess(body: String): ChatResponse {
         val response = try {
             // OpenAiResponseParserTest documents the provider JSON structures decoded into this DTO hierarchy.
             json.decodeFromString<com.strangeparticle.luther.client.provider.openai.response.OpenAiChatCompletionResponseDto>(body)
         } catch (e: SerializationException) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
+            throw ProviderException(
+                ProviderErrorType.MalformedResponse,
                 "OpenAI response did not match expected chat-completions shape: ${e.message}",
                 rawProviderMessage = body,
                 cause = e,
             )
         }
         val firstChoice = response.choices.firstOrNull()
-            ?: throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
+            ?: throw ProviderException(
+                ProviderErrorType.MalformedResponse,
                 "OpenAI response has empty `choices` array.",
                 rawProviderMessage = body,
             )
         val toolCalls = firstChoice.message.toolCalls?.map(::parseToolCall) ?: emptyList()
-        return AiProviderClientResponse(
+        return ChatResponse(
             text = firstChoice.message.content,
             toolCalls = toolCalls,
             stopReason = mapStopReason(firstChoice.finishReason),
-            raw = raw,
         )
     }
 
     /**
-     * Map a non-2xx HTTP response to an [AiProviderClientException] and throw. [httpStatus] is the
+     * Map a non-2xx HTTP response to a [ProviderException] and throw. [httpStatus] is the
      * HTTP status code; [body] is the raw response body (may be JSON or plain text).
      * Caller should pass null [body] for transport-level failures.
      *
      * Classification consults the body's `error.code` / `error.type` first so
      * provider-specific cases like `context_length_exceeded` and `insufficient_quota`
-     * map to the right [AiProviderClientErrorType] (the HTTP status alone can't distinguish a
+     * map to the right [ProviderErrorType] (the HTTP status alone can't distinguish a
      * quota exhaustion from a transient rate limit on 429, or a context-too-large
      * from any other 400). Falls back to HTTP-status-based classification.
      */
@@ -72,7 +70,7 @@ internal object OpenAiResponseParser {
             ?: classifyHttpStatus(httpStatus)
         val rawProviderMessage = openAiError?.message
             ?: body
-        throw AiProviderClientException(
+        throw ProviderException(
             classified = errorClass,
             message = "OpenAI request failed with HTTP $httpStatus" +
                 (rawProviderMessage?.let { ": $it" } ?: ""),
@@ -89,19 +87,19 @@ internal object OpenAiResponseParser {
         }
     }
 
-    private fun classifyByOpenAiError(error: com.strangeparticle.luther.client.provider.openai.error.OpenAiErrorDto): AiProviderClientErrorType? {
+    private fun classifyByOpenAiError(error: com.strangeparticle.luther.client.provider.openai.error.OpenAiErrorDto): ProviderErrorType? {
         // `code` is the more granular field (e.g. "context_length_exceeded",
         // "insufficient_quota", "rate_limit_exceeded", "invalid_api_key");
         // `type` is the broader category (e.g. "invalid_request_error").
         // Match `code` first.
         when (error.code) {
-            "context_length_exceeded" -> return AiProviderClientErrorType.ContextTooLarge
-            "insufficient_quota" -> return AiProviderClientErrorType.QuotaExceeded
-            "rate_limit_exceeded" -> return AiProviderClientErrorType.RateLimit
-            "invalid_api_key", "invalid_token" -> return AiProviderClientErrorType.InvalidApiKey
+            "context_length_exceeded" -> return ProviderErrorType.ContextTooLarge
+            "insufficient_quota" -> return ProviderErrorType.QuotaExceeded
+            "rate_limit_exceeded" -> return ProviderErrorType.RateLimit
+            "invalid_api_key", "invalid_token" -> return ProviderErrorType.InvalidApiKey
         }
         when (error.type) {
-            "insufficient_quota" -> return AiProviderClientErrorType.QuotaExceeded
+            "insufficient_quota" -> return ProviderErrorType.QuotaExceeded
             "invalid_request_error" -> {
                 // Fall through to HTTP-status-based classification — `invalid_request_error`
                 // covers many distinct cases (bad input, missing fields, unsupported model)
@@ -117,55 +115,37 @@ internal object OpenAiResponseParser {
         val argumentsRaw = toolCall.function.arguments
         try {
             json.parseToJsonElement(argumentsRaw) as? JsonObject
-                ?: throw AiProviderClientException(
-                    AiProviderClientErrorType.MalformedResponse,
+                ?: throw ProviderException(
+                    ProviderErrorType.MalformedResponse,
                     "OpenAI tool_call arguments are not a JSON object: $argumentsRaw",
                 )
         } catch (e: kotlinx.serialization.SerializationException) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
+            throw ProviderException(
+                ProviderErrorType.MalformedResponse,
                 "OpenAI tool_call arguments are not valid JSON: $argumentsRaw",
                 rawProviderMessage = argumentsRaw,
                 cause = e,
             )
         }
         return ToolCall(
-            toolCallId = toolCall.id,
-            toolName = toolCall.function.name,
-            argumentsAsJsonString = argumentsRaw,
+            id = toolCall.id,
+            name = toolCall.function.name,
+            argumentsJson = argumentsRaw,
         )
     }
 
-    private fun parseRawJsonObjectOrThrow(body: String): JsonObject {
-        return try {
-            json.parseToJsonElement(body) as? JsonObject
-                ?: throw AiProviderClientException(
-                    AiProviderClientErrorType.MalformedResponse,
-                    "OpenAI response was not a JSON object.",
-                    rawProviderMessage = body,
-                )
-        } catch (e: SerializationException) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
-                "OpenAI response was not valid JSON: ${e.message}",
-                rawProviderMessage = body,
-                cause = e,
-            )
-        }
+    private fun mapStopReason(finishReason: String?): StopReason = when (finishReason) {
+        "stop" -> StopReason.Stop
+        "tool_calls" -> StopReason.ToolUse
+        "length" -> StopReason.MaxTokens
+        else -> StopReason.Other
     }
 
-    private fun mapStopReason(finishReason: String?): AiProviderClientStopReason = when (finishReason) {
-        "stop" -> AiProviderClientStopReason.Stop
-        "tool_calls" -> AiProviderClientStopReason.ToolUse
-        "length" -> AiProviderClientStopReason.MaxTokens
-        else -> AiProviderClientStopReason.Other
-    }
-
-    private fun classifyHttpStatus(status: Int): AiProviderClientErrorType = when (status) {
-        401, 403 -> AiProviderClientErrorType.InvalidApiKey
-        429 -> AiProviderClientErrorType.RateLimit
-        in 500..599 -> AiProviderClientErrorType.ProviderUnavailable
-        else -> AiProviderClientErrorType.Unknown
+    private fun classifyHttpStatus(status: Int): ProviderErrorType = when (status) {
+        401, 403 -> ProviderErrorType.InvalidApiKey
+        429 -> ProviderErrorType.RateLimit
+        in 500..599 -> ProviderErrorType.ProviderUnavailable
+        else -> ProviderErrorType.Unknown
     }
 
 }

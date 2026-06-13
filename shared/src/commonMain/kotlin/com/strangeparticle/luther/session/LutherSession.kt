@@ -3,7 +3,6 @@ package com.strangeparticle.luther.session
 import com.strangeparticle.luther.client.provider.AiProvider
 import com.strangeparticle.luther.toolcall.ToolCallHandler
 import com.strangeparticle.luther.toolcall.ToolCallRegistry
-import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 internal fun createLutherSession(
     providers: List<AiProvider>,
     settings: LutherSettings,
-    httpClient: HttpClient,
     toolHandlers: List<ToolCallHandler>,
     executionContextFactory: AiSessionToolCallExecutionContextFactory,
     snapshotProvider: AiSessionSnapshotProvider,
@@ -27,7 +25,7 @@ internal fun createLutherSession(
         ?: throw IllegalArgumentException("Unknown providerId '${settings.providerId}'")
     require(settings.isComplete(provider)) { "Incomplete LutherSettings for provider '${settings.providerId}'" }
     return LutherSession(
-        providers, settings, httpClient, toolHandlers, executionContextFactory,
+        providers, settings, toolHandlers, executionContextFactory,
         snapshotProvider, systemPromptProvider, coroutineScope,
     )
 }
@@ -35,7 +33,6 @@ internal fun createLutherSession(
 internal class LutherSession internal constructor(
     private val providers: List<AiProvider>,
     initialSettings: LutherSettings,
-    private val httpClient: HttpClient,
     private val toolHandlers: List<ToolCallHandler>,
     private val executionContextFactory: AiSessionToolCallExecutionContextFactory,
     private val snapshotProvider: AiSessionSnapshotProvider,
@@ -54,10 +51,11 @@ internal class LutherSession internal constructor(
     private fun provider(): AiProvider = providers.first { it.id == settings.providerId }
 
     private fun buildManager(): AiSessionManager {
-        val client = provider().createClient(settings.providerConfig, httpClient)
+        val currentProvider = provider()
+        val currentConfig = settings.providerConfig
         val registry = ToolCallRegistry().apply { toolHandlers.forEach { register(it) } }
         return AiSessionManager(
-            aiClient = client,
+            sendChat = { request -> currentProvider.sendChat(currentConfig, request) },
             toolCallRegistry = registry,
             snapshotProvider = snapshotProvider,
             toolCallExecutionContextFactory = executionContextFactory,

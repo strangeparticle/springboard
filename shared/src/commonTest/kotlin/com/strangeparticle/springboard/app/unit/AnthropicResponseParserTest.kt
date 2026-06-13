@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientStopReason
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
+import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ internal class AnthropicResponseParserTest {
 
         assertEquals("An activator maps a coordinate to an action.", result.text)
         assertTrue(result.toolCalls.isEmpty())
-        assertEquals(AiProviderClientStopReason.Stop, result.stopReason)
+        assertEquals(StopReason.Stop, result.stopReason)
     }
 
     @Test
@@ -65,9 +65,9 @@ internal class AnthropicResponseParserTest {
 
         assertNull(result.text)
         assertEquals(1, result.toolCalls.size)
-        assertEquals("toolu_01", result.toolCalls[0].toolCallId)
-        assertEquals("add_app", result.toolCalls[0].toolName)
-        assertEquals(AiProviderClientStopReason.ToolUse, result.stopReason)
+        assertEquals("toolu_01", result.toolCalls[0].id)
+        assertEquals("add_app", result.toolCalls[0].name)
+        assertEquals(StopReason.ToolUse, result.stopReason)
     }
 
     @Test
@@ -93,7 +93,7 @@ internal class AnthropicResponseParserTest {
 
         val result = AnthropicResponseParser.parseSuccess(body)
 
-        val argsJson = result.toolCalls[0].argumentsAsJsonString
+        val argsJson = result.toolCalls[0].argumentsJson
         assertTrue(argsJson.contains("grafana"), "argumentsAsJsonString must contain the input values")
         assertTrue(argsJson.startsWith("{"), "argumentsAsJsonString must be a JSON object string")
     }
@@ -119,7 +119,7 @@ internal class AnthropicResponseParserTest {
 
         assertEquals("I'll add that app now.", result.text)
         assertEquals(1, result.toolCalls.size)
-        assertEquals("add_app", result.toolCalls[0].toolName)
+        assertEquals("add_app", result.toolCalls[0].name)
     }
 
     @Test
@@ -142,30 +142,30 @@ internal class AnthropicResponseParserTest {
         val result = AnthropicResponseParser.parseSuccess(body)
 
         assertEquals(2, result.toolCalls.size)
-        assertEquals("id1", result.toolCalls[0].toolCallId)
-        assertEquals("id2", result.toolCalls[1].toolCallId)
+        assertEquals("id1", result.toolCalls[0].id)
+        assertEquals("id2", result.toolCalls[1].id)
     }
 
     @Test
     fun `parseSuccess_stopReasonMapping covers all cases`() {
-        fun stopReasonFor(reason: String): AiProviderClientStopReason {
+        fun stopReasonFor(reason: String): StopReason {
             val body = """{"id":"m","type":"message","role":"assistant","model":"claude","content":[{"type":"text","text":"ok"}],"stop_reason":"$reason"}"""
             return AnthropicResponseParser.parseSuccess(body).stopReason
         }
 
-        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("end_turn"))
-        assertEquals(AiProviderClientStopReason.Stop, stopReasonFor("stop_sequence"))
-        assertEquals(AiProviderClientStopReason.ToolUse, stopReasonFor("tool_use"))
-        assertEquals(AiProviderClientStopReason.MaxTokens, stopReasonFor("max_tokens"))
-        assertEquals(AiProviderClientStopReason.Other, stopReasonFor("unknown_reason"))
+        assertEquals(StopReason.Stop, stopReasonFor("end_turn"))
+        assertEquals(StopReason.Stop, stopReasonFor("stop_sequence"))
+        assertEquals(StopReason.ToolUse, stopReasonFor("tool_use"))
+        assertEquals(StopReason.MaxTokens, stopReasonFor("max_tokens"))
+        assertEquals(StopReason.Other, stopReasonFor("unknown_reason"))
     }
 
     @Test
     fun `parseSuccess_malformedBodyThrowsMalformedResponse`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseSuccess("not json")
         }
-        assertEquals(AiProviderClientErrorType.MalformedResponse, error.classified)
+        assertEquals(ProviderErrorType.MalformedResponse, error.classified)
     }
 
     // ── parseErrorAndThrow ───────────────────────────────────────────────────
@@ -173,61 +173,61 @@ internal class AnthropicResponseParserTest {
     @Test
     fun `parseErrorAndThrow_authenticationError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"authentication_error","message":"Invalid API key"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(401, body)
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_permissionError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"permission_error","message":"Forbidden"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(403, body)
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_rateLimitError maps to RateLimit`() {
         val body = """{"type":"error","error":{"type":"rate_limit_error","message":"Too many requests"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(429, body)
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
+        assertEquals(ProviderErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_overloadedError maps to ProviderUnavailable on status 529`() {
         val body = """{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(529, body)
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_invalidRequestWithContextInMessage maps to ContextTooLarge`() {
         val body = """{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long: 200000 tokens exceeds context window"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(400, body)
         }
-        assertEquals(AiProviderClientErrorType.ContextTooLarge, error.classified)
+        assertEquals(ProviderErrorType.ContextTooLarge, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_fallsBackToHttpStatusWhenBodyIsUnparseable`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(429, "not json")
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
+        assertEquals(ProviderErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_500 maps to ProviderUnavailable`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(500, null)
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, error.classified)
     }
 }

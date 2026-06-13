@@ -1,13 +1,10 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.toolcall.AiToolCallDefinition
-import com.strangeparticle.luther.toolcall.ToolCall
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
+import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ToolCall
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -32,18 +29,18 @@ internal class AnthropicChatCompletionRequestTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private fun emptyRequest(
-        history: List<com.strangeparticle.luther.conversation.AiConversationMessage> = emptyList(),
-        tools: List<AiToolCallDefinition> = emptyList(),
+        history: List<ChatMessage> = emptyList(),
+        tools: List<ToolDefinition> = emptyList(),
         maxTokens: Int? = null,
-    ) = AiProviderClientRequest(
+    ) = ChatRequest(
         modelId = "claude-sonnet-4-6",
         systemPrompt = "you are an assistant",
-        history = history,
+        messages = history,
         tools = tools,
         maxTokens = maxTokens,
     )
 
-    private fun buildBody(request: AiProviderClientRequest): JsonObject {
+    private fun buildBody(request: ChatRequest): JsonObject {
         val rawJson = json.encodeToString(
             AnthropicChatCompletionRequestDto.serializer(),
             AnthropicChatCompletionRequestDto.from(request),
@@ -86,7 +83,7 @@ internal class AnthropicChatCompletionRequestTest {
 
     @Test
     fun `user message maps to user role with plain string content`() {
-        val body = buildBody(emptyRequest(history = listOf(AiConversationMessageForUser("hello"))))
+        val body = buildBody(emptyRequest(history = listOf(ChatMessage.User("hello"))))
 
         val messages = body["messages"]!!.jsonArray
         assertEquals(1, messages.size)
@@ -98,7 +95,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `assistant text message maps to assistant role with plain string content`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiConversationMessageForAssistant(text = "I can help with that.", toolCalls = emptyList()),
+            ChatMessage.Assistant(text = "I can help with that.", toolCalls = emptyList()),
         )))
 
         val messages = body["messages"]!!.jsonArray
@@ -111,7 +108,7 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `assistant message with tool calls maps to content block array`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiConversationMessageForAssistant(
+            ChatMessage.Assistant(
                 text = "I'll add that.",
                 toolCalls = listOf(ToolCall("toolu_01", "add_app", """{"tab_id":"t1","id":"a1","name":"App","display_message":"x"}""")),
             ),
@@ -135,8 +132,8 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `tool result maps to user role with tool_result content block`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiConversationMessageForAssistant(text = null, toolCalls = listOf(ToolCall("toolu_01", "add_app", "{}"))),
-            ToolCallProviderClientMessage("toolu_01", "done"),
+            ChatMessage.Assistant(text = null, toolCalls = listOf(ToolCall("toolu_01", "add_app", "{}"))),
+            ChatMessage.ToolResult("toolu_01", "done"),
         )))
 
         val messages = body["messages"]!!.jsonArray
@@ -155,12 +152,12 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `multiple consecutive tool results are merged into one user message`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiConversationMessageForAssistant(text = null, toolCalls = listOf(
+            ChatMessage.Assistant(text = null, toolCalls = listOf(
                 ToolCall("id1", "add_app", "{}"),
                 ToolCall("id2", "add_resource", "{}"),
             )),
-            ToolCallProviderClientMessage("id1", "result1"),
-            ToolCallProviderClientMessage("id2", "result2"),
+            ChatMessage.ToolResult("id1", "result1"),
+            ChatMessage.ToolResult("id2", "result2"),
         )))
 
         val messages = body["messages"]!!.jsonArray
@@ -177,8 +174,8 @@ internal class AnthropicChatCompletionRequestTest {
     @Test
     fun `state injection and user message are merged into one user message`() {
         val body = buildBody(emptyRequest(history = listOf(
-            AiConversationMessageForSystemState("""{"tabs":[]}"""),
-            AiConversationMessageForUser("add an app"),
+            ChatMessage.SystemState("""{"tabs":[]}"""),
+            ChatMessage.User("add an app"),
         )))
 
         val messages = body["messages"]!!.jsonArray
@@ -197,7 +194,7 @@ internal class AnthropicChatCompletionRequestTest {
     fun `tool definition uses input_schema not parameters`() {
         val schema = buildJsonObject { put("type", "object") }
         val body = buildBody(emptyRequest(tools = listOf(
-            AiToolCallDefinition(name = "add_app", description = "Add app", schema = schema),
+            ToolDefinition(name = "add_app", description = "Add app", schema = schema),
         )))
 
         val tools = body["tools"]!!.jsonArray
@@ -214,7 +211,7 @@ internal class AnthropicChatCompletionRequestTest {
     fun `tool choice is an object not a string`() {
         val schema = buildJsonObject { put("type", "object") }
         val body = buildBody(emptyRequest(tools = listOf(
-            AiToolCallDefinition(name = "add_app", description = "Add app", schema = schema),
+            ToolDefinition(name = "add_app", description = "Add app", schema = schema),
         )))
 
         val toolChoice = body["tool_choice"]!!.jsonObject

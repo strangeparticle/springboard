@@ -11,11 +11,8 @@ import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistory
 import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
 import com.strangeparticle.luther.session.projection.buildProviderHistory
 import com.strangeparticle.luther.session.projection.buildTranscriptParts
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.toolcall.ToolCall
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
+import com.strangeparticle.luther.client.provider.ChatMessage
+import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 
 internal sealed class AiChatScrollbackPane {
@@ -37,7 +34,7 @@ internal sealed class AiChatScrollbackPane {
     ) : AiChatScrollbackPane()
 
     // Debug-only panes used when SHOW_FULL_CHAT_TRANSCRIPT is on. Each represents
-    // exactly one AiConversationMessage from AiSessionManager.history so the developer
+    // exactly one ChatMessage from AiSessionManager.history so the developer
     // can see every payload exchanged with the model — including the state
     // snapshots and raw tool-result payloads the normal Interaction view hides.
 
@@ -165,11 +162,10 @@ internal fun buildDebugScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiC
         }
         for (message in buildProviderHistory(listOf(item))) {
             panes += when (message) {
-                is AiConversationMessageForUser -> AiChatScrollbackPane.DebugUserMessage(message.text, paneIndex)
-                is AiConversationMessageForSystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, paneIndex)
-                is AiConversationMessageForAssistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, paneIndex)
-                is ToolCallProviderClientMessage -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, paneIndex)
-                else -> continue
+                is ChatMessage.User -> AiChatScrollbackPane.DebugUserMessage(message.text, paneIndex)
+                is ChatMessage.SystemState -> AiChatScrollbackPane.DebugStateSnapshot(message.snapshotJson, paneIndex)
+                is ChatMessage.Assistant -> AiChatScrollbackPane.DebugAssistantMessage(message.text, message.toolCalls, paneIndex)
+                is ChatMessage.ToolResult -> AiChatScrollbackPane.DebugToolResult(message.toolCallId, message.content, paneIndex)
             }
             paneIndex += 1
         }
@@ -230,8 +226,8 @@ internal fun getScrollbackPaneTextForCopyToClipboard(pane: AiChatScrollbackPane)
             append(pane.text)
         }
         for (toolCall in pane.toolCalls) {
-            append("\n\nTool call: ${toolCall.toolName}\n")
-            append(toolCall.argumentsAsJsonString)
+            append("\n\nTool call: ${toolCall.name}\n")
+            append(toolCall.argumentsJson)
         }
     }
     is AiChatScrollbackPane.DebugToolResult -> "${debugPaneTitle(pane)}:\n${pane.content}"

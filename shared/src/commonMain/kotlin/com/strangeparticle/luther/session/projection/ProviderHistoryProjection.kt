@@ -1,9 +1,6 @@
 package com.strangeparticle.luther.session.projection
 
-import com.strangeparticle.luther.conversation.AiConversationMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.session.event.ChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
@@ -18,15 +15,14 @@ import com.strangeparticle.luther.session.event.ToolCallDeniedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolCallFailedChatHistoryItem
 import com.strangeparticle.luther.session.event.ToolCallStartedChatHistoryItem
 import com.strangeparticle.luther.session.event.UserSubmittedChatHistoryItem
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 
-internal fun buildProviderHistory(events: List<ChatHistoryItem>): List<AiConversationMessage> = events.mapNotNull { event ->
+internal fun buildProviderHistory(events: List<ChatHistoryItem>): List<ChatMessage> = events.mapNotNull { event ->
     when (event) {
-        is StateSnapshotAddedChatHistoryItem -> AiConversationMessageForSystemState(event.snapshotJson)
-        is UserSubmittedChatHistoryItem -> AiConversationMessageForUser(event.text)
-        is AssistantRespondedChatHistoryItem -> AiConversationMessageForAssistant(event.text, event.toolCalls)
-        is ToolCallCompletedChatHistoryItem -> ToolCallProviderClientMessage(event.toolCallId, event.providerContent)
-        is ToolCallFailedChatHistoryItem -> ToolCallProviderClientMessage(event.toolCallId, event.providerContent)
+        is StateSnapshotAddedChatHistoryItem -> ChatMessage.SystemState(event.snapshotJson)
+        is UserSubmittedChatHistoryItem -> ChatMessage.User(event.text)
+        is AssistantRespondedChatHistoryItem -> ChatMessage.Assistant(event.text, event.toolCalls)
+        is ToolCallCompletedChatHistoryItem -> ChatMessage.ToolResult(event.toolCallId, event.providerContent)
+        is ToolCallFailedChatHistoryItem -> ChatMessage.ToolResult(event.toolCallId, event.providerContent)
         is AssistantErroredChatHistoryItem,
         is LocalCommandRespondedChatHistoryItem,
         is LocalCommandSubmittedChatHistoryItem,

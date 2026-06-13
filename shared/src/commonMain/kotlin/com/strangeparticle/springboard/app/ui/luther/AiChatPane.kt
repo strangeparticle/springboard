@@ -726,12 +726,12 @@ private fun DebugAssistantMessagePaneContent(
     pane.toolCalls.forEach { toolCall ->
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "Tool call: ${toolCall.toolName}",
+            text = "Tool call: ${toolCall.name}",
             fontWeight = FontWeight.SemiBold,
             style = textStyle,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        DebugMonospaceBody(text = toolCall.argumentsAsJsonString, textStyle = textStyle)
+        DebugMonospaceBody(text = toolCall.argumentsJson, textStyle = textStyle)
     }
 }
 

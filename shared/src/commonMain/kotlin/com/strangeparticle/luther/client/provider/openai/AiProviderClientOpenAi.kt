@@ -1,11 +1,10 @@
 package com.strangeparticle.luther.client.provider.openai
 
-import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.ChatRequest
+import com.strangeparticle.luther.client.provider.ChatResponse
+import com.strangeparticle.luther.client.provider.Model
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -22,7 +21,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
- * REST-based [AiProviderClient] implementation for OpenAI's chat-completions API.
+ * REST-based client for OpenAI's chat-completions API.
  *
   * Uses [HttpClient] (provided by the caller so the same impl works under desktop CIO
   * and any other engine) plus OpenAI DTOs / [com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser]
@@ -34,11 +33,11 @@ internal class AiProviderClientOpenAi(
     private val httpClient: HttpClient,
     private val apiKeyProvider: () -> String?,
     private val baseUrl: String = "https://api.openai.com",
-) : AiProviderClient {
+) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse {
+    suspend fun sendChat(request: ChatRequest): ChatResponse {
         val apiKey = getApiKeyOrThrow()
         // OpenAiChatCompletionRequestTest contains full serialized JSON examples for this DTO boundary.
         val body = json.encodeToString(
@@ -49,7 +48,7 @@ internal class AiProviderClientOpenAi(
         return com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+    suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {
@@ -62,8 +61,8 @@ internal class AiProviderClientOpenAi(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error while listing OpenAI models: ${e.message}",
                 cause = e,
             )
@@ -78,8 +77,8 @@ internal class AiProviderClientOpenAi(
     private fun getApiKeyOrThrow(): String {
         val key = apiKeyProvider()
         if (key.isNullOrBlank()) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.InvalidApiKey,
+            throw ProviderException(
+                ProviderErrorType.InvalidApiKey,
                 "Cannot call OpenAI: API key is missing.",
             )
         }
@@ -100,8 +99,8 @@ internal class AiProviderClientOpenAi(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error calling OpenAI: ${e.message}",
                 cause = e,
             )
@@ -117,8 +116,8 @@ internal class AiProviderClientOpenAi(
         return try {
             json.parseToJsonElement(raw) as JsonObject
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
+            throw ProviderException(
+                ProviderErrorType.MalformedResponse,
                 "OpenAI response was not valid JSON: ${e.message}",
                 rawProviderMessage = raw,
                 cause = e,

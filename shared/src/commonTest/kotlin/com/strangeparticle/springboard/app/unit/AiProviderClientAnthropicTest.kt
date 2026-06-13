@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.AiProviderClientAnthropic
 import io.ktor.client.HttpClient
@@ -110,49 +110,49 @@ internal class AiProviderClientAnthropicTest {
     @Test
     fun `sendAiRequest throws InvalidApiKey when key is missing`() = runTest {
         val client = HttpClient(MockEngine { respond("", HttpStatusCode.OK) })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { null }).sendAiRequest(emptyRequest())
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `sendAiRequest classifies 401 as InvalidApiKey`() = runTest {
         val body = """{"type":"error","error":{"type":"authentication_error","message":"Invalid key"}}"""
         val client = HttpClient(MockEngine { respond(body, HttpStatusCode.Unauthorized, headersOf(HttpHeaders.ContentType, "application/json")) })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { "bad-key" }).sendAiRequest(emptyRequest())
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `sendAiRequest classifies 429 as RateLimit`() = runTest {
         val body = """{"type":"error","error":{"type":"rate_limit_error","message":"Too many requests"}}"""
         val client = HttpClient(MockEngine { respond(body, HttpStatusCode.TooManyRequests, headersOf(HttpHeaders.ContentType, "application/json")) })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).sendAiRequest(emptyRequest())
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
+        assertEquals(ProviderErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `sendAiRequest classifies 529 as ProviderUnavailable`() = runTest {
         val body = """{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""
         val client = HttpClient(MockEngine { respond(body, HttpStatusCode(529, "Overloaded"), headersOf(HttpHeaders.ContentType, "application/json")) })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).sendAiRequest(emptyRequest())
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, error.classified)
     }
 
     @Test
     fun `sendAiRequest classifies network exception as Network error`() = runTest {
         val client = HttpClient(MockEngine { throw Exception("connection refused") })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { "sk-ant-test" }).sendAiRequest(emptyRequest())
         }
-        assertEquals(AiProviderClientErrorType.Network, error.classified)
+        assertEquals(ProviderErrorType.Network, error.classified)
     }
 
     @Test
@@ -192,9 +192,9 @@ internal class AiProviderClientAnthropicTest {
     @Test
     fun `listModels throws InvalidApiKey when key is blank`() = runTest {
         val client = HttpClient(MockEngine { respond("", HttpStatusCode.OK) })
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AiProviderClientAnthropic(client, apiKeyProvider = { "" }).listModels()
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 }

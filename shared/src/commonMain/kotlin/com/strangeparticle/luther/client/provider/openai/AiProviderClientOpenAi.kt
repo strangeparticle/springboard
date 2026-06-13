@@ -1,11 +1,11 @@
 package com.strangeparticle.luther.client.provider.openai
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.Model
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -62,8 +62,8 @@ internal class AiProviderClientOpenAi(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error while listing OpenAI models: ${e.message}",
                 cause = e,
             )
@@ -78,8 +78,8 @@ internal class AiProviderClientOpenAi(
     private fun getApiKeyOrThrow(): String {
         val key = apiKeyProvider()
         if (key.isNullOrBlank()) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.InvalidApiKey,
+            throw ProviderException(
+                ProviderErrorType.InvalidApiKey,
                 "Cannot call OpenAI: API key is missing.",
             )
         }
@@ -100,8 +100,8 @@ internal class AiProviderClientOpenAi(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error calling OpenAI: ${e.message}",
                 cause = e,
             )
@@ -117,8 +117,8 @@ internal class AiProviderClientOpenAi(
         return try {
             json.parseToJsonElement(raw) as JsonObject
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.MalformedResponse,
+            throw ProviderException(
+                ProviderErrorType.MalformedResponse,
                 "OpenAI response was not valid JSON: ${e.message}",
                 rawProviderMessage = raw,
                 cause = e,

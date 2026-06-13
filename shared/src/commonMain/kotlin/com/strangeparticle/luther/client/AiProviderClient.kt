@@ -16,14 +16,14 @@ internal interface AiProviderClient {
 
     /**
      * Send [request] and suspend until the provider returns a single full response.
-     * Throws [AiProviderClientException] on transport / authentication / parse / provider errors.
+     * Throws [com.strangeparticle.luther.client.provider.ProviderException] on transport / authentication / parse / provider errors.
      */
     suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse
 
     /**
      * List the chat-completion-capable models the provider exposes.
      * Used by the AI settings screen to populate the model dropdown after the user
-     * enters a key. Throws [AiProviderClientException] if the key is invalid or the network is
+     * enters a key. Throws [com.strangeparticle.luther.client.provider.ProviderException] if the key is invalid or the network is
      * unreachable.
      */
     suspend fun listModels(): List<Model>

@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import kotlin.test.Test
@@ -162,10 +162,10 @@ internal class AnthropicResponseParserTest {
 
     @Test
     fun `parseSuccess_malformedBodyThrowsMalformedResponse`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseSuccess("not json")
         }
-        assertEquals(AiProviderClientErrorType.MalformedResponse, error.classified)
+        assertEquals(ProviderErrorType.MalformedResponse, error.classified)
     }
 
     // ── parseErrorAndThrow ───────────────────────────────────────────────────
@@ -173,61 +173,61 @@ internal class AnthropicResponseParserTest {
     @Test
     fun `parseErrorAndThrow_authenticationError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"authentication_error","message":"Invalid API key"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(401, body)
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_permissionError maps to InvalidApiKey`() {
         val body = """{"type":"error","error":{"type":"permission_error","message":"Forbidden"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(403, body)
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, error.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_rateLimitError maps to RateLimit`() {
         val body = """{"type":"error","error":{"type":"rate_limit_error","message":"Too many requests"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(429, body)
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
+        assertEquals(ProviderErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_overloadedError maps to ProviderUnavailable on status 529`() {
         val body = """{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(529, body)
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_invalidRequestWithContextInMessage maps to ContextTooLarge`() {
         val body = """{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long: 200000 tokens exceeds context window"}}"""
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(400, body)
         }
-        assertEquals(AiProviderClientErrorType.ContextTooLarge, error.classified)
+        assertEquals(ProviderErrorType.ContextTooLarge, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_fallsBackToHttpStatusWhenBodyIsUnparseable`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(429, "not json")
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, error.classified)
+        assertEquals(ProviderErrorType.RateLimit, error.classified)
     }
 
     @Test
     fun `parseErrorAndThrow_500 maps to ProviderUnavailable`() {
-        val error = assertFailsWith<AiProviderClientException> {
+        val error = assertFailsWith<ProviderException> {
             AnthropicResponseParser.parseErrorAndThrow(500, null)
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, error.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, error.classified)
     }
 }

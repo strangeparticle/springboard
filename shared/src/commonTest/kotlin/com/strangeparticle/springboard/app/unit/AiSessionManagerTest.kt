@@ -3,8 +3,8 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.session.AiSessionManager
 import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
@@ -246,7 +246,7 @@ internal class AiSessionManagerTest {
                 if (requestCount == 1) {
                     multipleToolCalls(listOf(ToolCall("call-1", "terminal_message_tool", "{}")))
                 } else {
-                    throw AiProviderClientException(AiProviderClientErrorType.RateLimit, "rate limited")
+                    throw ProviderException(ProviderErrorType.RateLimit, "rate limited")
                 }
             }
         }
@@ -436,7 +436,7 @@ internal class AiSessionManagerTest {
     @Test
     fun `provider error appends chat error and allows next submit`() = runTest {
         val aiClient = AiProviderClientInMemoryFake().apply {
-            sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
+            sendAiRequestException = ProviderException(ProviderErrorType.Network, "network unavailable")
         }
         val manager = createManager(aiClient)
 

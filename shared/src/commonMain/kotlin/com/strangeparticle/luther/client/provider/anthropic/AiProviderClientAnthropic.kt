@@ -1,11 +1,11 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.Model
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import io.ktor.client.HttpClient
@@ -63,8 +63,8 @@ internal class AiProviderClientAnthropic(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error while listing Anthropic models: ${e.message}",
                 cause = e,
             )
@@ -78,8 +78,8 @@ internal class AiProviderClientAnthropic(
     private fun getApiKeyOrThrow(): String {
         val key = apiKeyProvider()
         if (key.isNullOrBlank()) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.InvalidApiKey,
+            throw ProviderException(
+                ProviderErrorType.InvalidApiKey,
                 "Cannot call Anthropic: API key is missing.",
             )
         }
@@ -101,8 +101,8 @@ internal class AiProviderClientAnthropic(
             // unwinds normally — never reclassify as a Network error.
             throw e
         } catch (e: Exception) {
-            throw AiProviderClientException(
-                AiProviderClientErrorType.Network,
+            throw ProviderException(
+                ProviderErrorType.Network,
                 "Network error calling Anthropic: ${e.message}",
                 cause = e,
             )

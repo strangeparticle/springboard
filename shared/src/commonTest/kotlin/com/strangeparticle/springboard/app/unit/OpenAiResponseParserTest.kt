@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 /**
  * Tests for [com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser]. Covers success-body parsing across the three
  * shapes (text-only, tool-call-only, mixed), finish_reason mapping, malformed
- * payloads, and the HTTP-status → [AiProviderClientErrorType] classifier. The multiline
+ * payloads, and the HTTP-status → [ProviderErrorType] classifier. The multiline
  * JSON bodies here are executable examples for the OpenAI response/error DTOs.
  */
 internal class OpenAiResponseParserTest {
@@ -119,8 +119,8 @@ internal class OpenAiResponseParserTest {
     @Test
     fun `parse throws MalformedResponse when choices is missing`() {
         val body = """{ "id": "x" }"""
-        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
-        assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
+        val ex = assertFailsWith<ProviderException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        assertEquals(ProviderErrorType.MalformedResponse, ex.classified)
     }
 
     @Test
@@ -139,8 +139,8 @@ internal class OpenAiResponseParserTest {
               }]
             }
             """.trimIndent()
-        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
-        assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
+        val ex = assertFailsWith<ProviderException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        assertEquals(ProviderErrorType.MalformedResponse, ex.classified)
     }
 
     @Test
@@ -156,57 +156,57 @@ internal class OpenAiResponseParserTest {
             }
             """.trimIndent()
 
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 401,
                 body,
             )
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
         assertEquals("Invalid API key", ex.rawProviderMessage)
     }
 
     @Test
     fun `parseErrorAndThrow classifies 429 as RateLimit`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(429, """{ "error": { "message": "rate limited" } }""")
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, ex.classified)
+        assertEquals(ProviderErrorType.RateLimit, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow classifies rate_limit_exceeded code as RateLimit`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"rate limited","type":"rate_limit_error","code":"rate_limit_exceeded"}}""",
             )
         }
-        assertEquals(AiProviderClientErrorType.RateLimit, ex.classified)
+        assertEquals(ProviderErrorType.RateLimit, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow classifies invalid_api_key code as InvalidApiKey`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 400,
                 """{"error":{"message":"bad key","type":"invalid_request_error","code":"invalid_api_key"}}""",
             )
         }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow classifies 500 as ProviderUnavailable`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(500, "internal server error")
         }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, ex.classified)
+        assertEquals(ProviderErrorType.ProviderUnavailable, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow with a non-JSON body still surfaces it as raw provider message`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(503, "Service Temporarily Unavailable")
         }
         // Falls back to surfacing the raw body since it can't pull a structured "message" field.
@@ -218,38 +218,38 @@ internal class OpenAiResponseParserTest {
     fun `parseErrorAndThrow classifies context_length_exceeded code as ContextTooLarge`() {
         // OpenAI returns HTTP 400 for this case — without the body-level classification,
         // it would fall back to AiErrorClass.Unknown.
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 400,
                 """{"error":{"message":"context length exceeded","type":"invalid_request_error","code":"context_length_exceeded"}}""",
             )
         }
-        assertEquals(AiProviderClientErrorType.ContextTooLarge, ex.classified)
+        assertEquals(ProviderErrorType.ContextTooLarge, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow classifies insufficient_quota code as QuotaExceeded over RateLimit`() {
         // OpenAI returns HTTP 429 for this case too — the granular classification means
         // we tell QuotaExceeded apart from a transient rate limit.
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"You exceeded your current quota","type":"insufficient_quota","code":"insufficient_quota"}}""",
             )
         }
-        assertEquals(AiProviderClientErrorType.QuotaExceeded, ex.classified)
+        assertEquals(ProviderErrorType.QuotaExceeded, ex.classified)
     }
 
     @Test
     fun `parseErrorAndThrow falls back to HTTP status when error code is unrecognized`() {
-        val ex = assertFailsWith<AiProviderClientException> {
+        val ex = assertFailsWith<ProviderException> {
             com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseErrorAndThrow(
                 429,
                 """{"error":{"message":"slow down","type":"rate_limit_error","code":"some_new_unknown_code"}}""",
             )
         }
         // No code match and no type match → classify by status (429 → RateLimit).
-        assertEquals(AiProviderClientErrorType.RateLimit, ex.classified)
+        assertEquals(ProviderErrorType.RateLimit, ex.classified)
     }
 
     @Test
@@ -266,7 +266,7 @@ internal class OpenAiResponseParserTest {
               }]
             }
             """.trimIndent()
-        val ex = assertFailsWith<AiProviderClientException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
-        assertEquals(AiProviderClientErrorType.MalformedResponse, ex.classified)
+        val ex = assertFailsWith<ProviderException> { com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(body) }
+        assertEquals(ProviderErrorType.MalformedResponse, ex.classified)
     }
 }

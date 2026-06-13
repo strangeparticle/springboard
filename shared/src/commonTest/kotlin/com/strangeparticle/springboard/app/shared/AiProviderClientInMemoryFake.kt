@@ -1,11 +1,11 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.StopReason
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.provider.Model
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -47,10 +47,10 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     var modelsResponse: List<Model> = emptyList()
 
     /** When set, [sendAiRequest] throws this instead of returning a response. */
-    var sendAiRequestException: AiProviderClientException? = null
+    var sendAiRequestException: ProviderException? = null
 
     /** When set, [listModels] throws this instead of returning [modelsResponse]. */
-    var listModelsException: AiProviderClientException? = null
+    var listModelsException: ProviderException? = null
 
     override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse {
         recordedRequests += request

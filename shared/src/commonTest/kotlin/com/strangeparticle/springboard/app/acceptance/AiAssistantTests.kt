@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.session.AiSessionManager
 import com.strangeparticle.luther.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
@@ -484,7 +484,7 @@ internal class AiAssistantTests {
     @Test
     fun `provider error renders chat error and next submit can recover`() = runTest {
         val fixture = createFixture()
-        fixture.aiClient.sendAiRequestException = AiProviderClientException(AiProviderClientErrorType.Network, "network unavailable")
+        fixture.aiClient.sendAiRequestException = ProviderException(ProviderErrorType.Network, "network unavailable")
 
         fixture.manager.submit("Try").join()
 

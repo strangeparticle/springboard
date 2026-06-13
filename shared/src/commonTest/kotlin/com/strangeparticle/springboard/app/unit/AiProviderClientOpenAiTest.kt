@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.AiProviderClientErrorType
-import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
+import com.strangeparticle.luther.client.provider.ProviderErrorType
+import com.strangeparticle.luther.client.provider.ProviderException
 import com.strangeparticle.luther.client.provider.StopReason
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -99,8 +99,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
         assertEquals("Invalid API key", ex.rawProviderMessage)
     }
 
@@ -114,8 +114,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiProviderClientErrorType.RateLimit, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(ProviderErrorType.RateLimit, ex.classified)
     }
 
     @Test
@@ -128,8 +128,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiProviderClientErrorType.ProviderUnavailable, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(ProviderErrorType.ProviderUnavailable, ex.classified)
     }
 
     @Test
@@ -142,8 +142,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiProviderClientErrorType.Network, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(ProviderErrorType.Network, ex.classified)
     }
 
     @Test
@@ -156,8 +156,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { null })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.sendAiRequest(emptyRequest()) }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.sendAiRequest(emptyRequest()) }
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
@@ -201,8 +201,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { null })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.listModels() }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.listModels() }
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test
@@ -219,8 +219,8 @@ internal class AiProviderClientOpenAiTest {
                 client,
                 apiKeyProvider = { "sk-test" })
 
-        val ex = assertFailsWith<AiProviderClientException> { sut.listModels() }
-        assertEquals(AiProviderClientErrorType.InvalidApiKey, ex.classified)
+        val ex = assertFailsWith<ProviderException> { sut.listModels() }
+        assertEquals(ProviderErrorType.InvalidApiKey, ex.classified)
     }
 
     @Test

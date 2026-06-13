@@ -1,8 +1,6 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.session.ChatHistoryGroup
 import com.strangeparticle.luther.session.ChatHistoryGroupType
 import com.strangeparticle.luther.session.ChatMessagePart
@@ -27,7 +25,6 @@ import com.strangeparticle.luther.session.projection.buildProviderHistory
 import com.strangeparticle.luther.session.projection.buildToolCallStates
 import com.strangeparticle.luther.session.projection.buildTranscriptParts
 import com.strangeparticle.luther.client.provider.ToolCall
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.springboard.app.ui.luther.AiChatScrollbackPane
 import com.strangeparticle.springboard.app.ui.luther.CommandAttribution
 import com.strangeparticle.springboard.app.ui.luther.LocalCommandResponseStyle
@@ -112,8 +109,8 @@ internal class ChatHistoryProjectionTest {
         assertEquals(listOf(ChatMessagePart.AssistantText("First response")), interaction.responseParts)
 
         val history = buildProviderHistory(items)
-        assertEquals("First message", assertIs<AiConversationMessageForUser>(history[0]).text)
-        assertEquals("First response", assertIs<AiConversationMessageForAssistant>(history[1]).text)
+        assertEquals("First message", assertIs<ChatMessage.User>(history[0]).text)
+        assertEquals("First response", assertIs<ChatMessage.Assistant>(history[1]).text)
     }
 
     @Test
@@ -125,7 +122,7 @@ internal class ChatHistoryProjectionTest {
         val groups = listOf(ChatHistoryGroup(ChatHistoryGroupType.AI_INTERACTION, items))
 
         assertEquals(1, buildSlimScrollbackPanes(groups).size)
-        assertEquals("{\"tabs\":[]}", assertIs<AiConversationMessageForSystemState>(buildProviderHistory(items)[0]).snapshotJson)
+        assertEquals("{\"tabs\":[]}", assertIs<ChatMessage.SystemState>(buildProviderHistory(items)[0]).snapshotJson)
 
         val debug = buildDebugScrollbackPanes(groups)
         assertIs<AiChatScrollbackPane.DebugStateSnapshot>(debug[0])
@@ -147,7 +144,7 @@ internal class ChatHistoryProjectionTest {
         assertEquals(ToolCallState.OutputAvailable("Done"), buildToolCallStates(items)["call-1"])
         val toolPart = assertIs<ChatMessagePart.ToolCall>(buildTranscriptParts(items).last())
         assertEquals(ToolCallState.OutputAvailable("Done"), toolPart.state)
-        val toolResult = assertIs<ToolCallProviderClientMessage>(buildProviderHistory(items).last())
+        val toolResult = assertIs<ChatMessage.ToolResult>(buildProviderHistory(items).last())
         assertEquals("call-1", toolResult.toolCallId)
         assertEquals("ok", toolResult.content)
     }

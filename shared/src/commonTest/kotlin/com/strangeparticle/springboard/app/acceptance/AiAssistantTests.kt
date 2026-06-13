@@ -80,7 +80,7 @@ internal class AiAssistantTests {
 
         fixture.manager.submit("Add resource and activator").join()
 
-        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>().size)
+        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>().size)
     }
 
     @Test
@@ -262,7 +262,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
     }
@@ -427,7 +427,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage>()
+            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("missing_tab"))
     }

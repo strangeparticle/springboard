@@ -28,7 +28,7 @@ internal class AiProviderClientAnthropicTest {
     private fun emptyRequest() = AiProviderClientRequest(
         modelId = "claude-sonnet-4-6",
         systemPrompt = "you are an assistant",
-        history = emptyList(),
+        messages = emptyList(),
         tools = emptyList(),
     )
 

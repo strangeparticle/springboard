@@ -1,13 +1,9 @@
 package com.strangeparticle.luther.client.provider.anthropic.request
 
 import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.conversation.AiConversationMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -41,7 +37,7 @@ internal data class AnthropicChatCompletionRequestDto(
         fun from(request: AiProviderClientRequest): AnthropicChatCompletionRequestDto =
             AnthropicChatCompletionRequestDto(
                 model = request.modelId,
-                messages = buildMessages(request.history),
+                messages = buildMessages(request.messages),
                 system = request.systemPrompt,
                 maxTokens = request.maxTokens ?: DEFAULT_MAX_TOKENS,
                 tools = request.tools.takeIf { it.isNotEmpty() }?.map(::toAnthropicTool),
@@ -53,14 +49,14 @@ internal data class AnthropicChatCompletionRequestDto(
          *
          * Anthropic requires strictly alternating user/assistant roles. Two cases produce
          * back-to-back user turns that must be merged:
-         *  1. AiConversationMessageForSystemState followed by AiConversationMessageForUser
-         *  2. Multiple consecutive ToolCallProviderClientMessage instances (all → user role)
+         *  1. ChatMessage.SystemState followed by ChatMessage.User
+         *  2. Multiple consecutive ChatMessage.ToolResult instances (all → user role)
          *
          * Consecutive user-role inputs accumulate into a pending list and are flushed as
          * a single AnthropicMessageDto with a JsonArray content when an assistant turn arrives
          * or the history ends.
          */
-        private fun buildMessages(history: List<AiConversationMessage>): List<AnthropicMessageDto> {
+        private fun buildMessages(history: List<ChatMessage>): List<AnthropicMessageDto> {
             val result = mutableListOf<AnthropicMessageDto>()
             val pendingUserBlocks = mutableListOf<JsonElement>()
 
@@ -80,27 +76,26 @@ internal data class AnthropicChatCompletionRequestDto(
 
             for (message in history) {
                 when (message) {
-                    is AiConversationMessageForUser -> {
+                    is ChatMessage.User -> {
                         pendingUserBlocks.add(textBlock(message.text))
                     }
-                    is AiConversationMessageForSystemState -> {
+                    is ChatMessage.SystemState -> {
                         pendingUserBlocks.add(textBlock("<current_state>${message.snapshotJson}</current_state>"))
                     }
-                    is ToolCallProviderClientMessage -> {
+                    is ChatMessage.ToolResult -> {
                         pendingUserBlocks.add(toolResultBlock(message.toolCallId, message.content))
                     }
-                    is AiConversationMessageForAssistant -> {
+                    is ChatMessage.Assistant -> {
                         flushPendingUser()
                         result.add(toAssistantMessage(message))
                     }
-                    else -> error("Unsupported Anthropic provider message type: ${message::class.simpleName}")
                 }
             }
             flushPendingUser()
             return result
         }
 
-        private fun toAssistantMessage(message: AiConversationMessageForAssistant): AnthropicMessageDto {
+        private fun toAssistantMessage(message: ChatMessage.Assistant): AnthropicMessageDto {
             val blocks = buildList {
                 message.text?.let { add(textBlock(it)) }
                 message.toolCalls.forEach { add(toolUseBlock(it)) }

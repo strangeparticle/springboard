@@ -27,7 +27,7 @@ internal class AiProviderClientOpenAiTest {
     private fun emptyRequest() = AiProviderClientRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
-        history = emptyList(),
+        messages = emptyList(),
         tools = emptyList(),
     )
 

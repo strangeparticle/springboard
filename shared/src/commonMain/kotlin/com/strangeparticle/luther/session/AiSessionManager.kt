@@ -2,10 +2,7 @@ package com.strangeparticle.luther.session
 
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.conversation.AiConversationMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.session.event.ChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantErroredChatHistoryItem
 import com.strangeparticle.luther.session.event.AssistantRespondedChatHistoryItem
@@ -22,7 +19,6 @@ import com.strangeparticle.luther.session.projection.buildTranscriptParts
 import com.strangeparticle.luther.toolcall.ToolCallDispatcher
 import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
 import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.luther.toolcall.ToolCallRegistry
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -65,7 +61,7 @@ internal class AiSessionManager(
     val groups: List<ChatHistoryGroup> get() = resolvedGroupsProvider()
     val items: List<ChatHistoryItem> get() = groups.flatMap { it.items }
     val transcriptParts: List<ChatMessagePart> get() = buildTranscriptParts(items)
-    val history: List<AiConversationMessage> get() = buildProviderHistory(items)
+    val history: List<ChatMessage> get() = buildProviderHistory(items)
 
     private var currentRequestJob: Job? = null
     var stateChangedSinceLastSnapshotSent = true
@@ -161,7 +157,7 @@ internal class AiSessionManager(
                 AiProviderClientRequest(
                     modelId = modelIdProvider(),
                     systemPrompt = systemPromptProvider(),
-                    history = requestHistory,
+                    messages = requestHistory,
                     tools = toolCallRegistry.getDefinitions(),
                 )
             )
@@ -242,7 +238,7 @@ internal class AiSessionManager(
         stateChangedSinceLastSnapshotSent = false
     }
 
-    private fun evictHistoryIfNeeded(history: List<AiConversationMessage>): List<AiConversationMessage> {
+    private fun evictHistoryIfNeeded(history: List<ChatMessage>): List<ChatMessage> {
         val requestHistory = history.toMutableList()
         while (estimateHistoryTokens(requestHistory) > maxHistoryTokens) {
             val boundaries = turnStartIndices(requestHistory)
@@ -252,26 +248,25 @@ internal class AiSessionManager(
         return requestHistory
     }
 
-    private fun estimateHistoryTokens(history: List<AiConversationMessage>): Int = history.sumOf(::estimateMessageTokens)
+    private fun estimateHistoryTokens(history: List<ChatMessage>): Int = history.sumOf(::estimateMessageTokens)
 
-    private fun estimateMessageTokens(message: AiConversationMessage): Int = when (message) {
-        is AiConversationMessageForUser -> estimateTokens(message.text)
-        is AiConversationMessageForAssistant -> {
+    private fun estimateMessageTokens(message: ChatMessage): Int = when (message) {
+        is ChatMessage.User -> estimateTokens(message.text)
+        is ChatMessage.Assistant -> {
             estimateTokens(message.text ?: "") +
                 message.toolCalls.sumOf { estimateTokens(it.name) + estimateTokens(it.argumentsJson) }
         }
-        is AiConversationMessageForSystemState -> estimateTokens(message.snapshotJson)
-        is ToolCallProviderClientMessage -> estimateTokens(message.content)
-        else -> 0
+        is ChatMessage.SystemState -> estimateTokens(message.snapshotJson)
+        is ChatMessage.ToolResult -> estimateTokens(message.content)
     }
 
     private fun estimateTokens(text: String): Int = (text.length + 3) / 4
 
-    private fun turnStartIndices(history: List<AiConversationMessage>): List<Int> {
+    private fun turnStartIndices(history: List<ChatMessage>): List<Int> {
         val starts = mutableListOf<Int>()
         for (i in history.indices) {
-            if (history[i] is AiConversationMessageForUser) {
-                val candidate = if (i > 0 && history[i - 1] is AiConversationMessageForSystemState) i - 1 else i
+            if (history[i] is ChatMessage.User) {
+                val candidate = if (i > 0 && history[i - 1] is ChatMessage.SystemState) i - 1 else i
                 starts += candidate
             }
         }

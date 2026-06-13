@@ -1,13 +1,9 @@
 package com.strangeparticle.luther.client.provider.openai.request
 
 import com.strangeparticle.luther.client.AiProviderClientRequest
-import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
-import com.strangeparticle.luther.conversation.AiConversationMessage
-import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
-import com.strangeparticle.luther.conversation.AiConversationMessageForUser
+import com.strangeparticle.luther.client.provider.ChatMessage
 import com.strangeparticle.luther.client.provider.ToolCall
 import com.strangeparticle.luther.client.provider.ToolDefinition
-import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -40,29 +36,28 @@ internal data class OpenAiChatCompletionRequestDto(
                     content = request.systemPrompt.toJsonElement()
                 )
             )
-            addAll(request.history.map(::toOpenAiMessage))
+            addAll(request.messages.map(::toOpenAiMessage))
         }
 
-        private fun toOpenAiMessage(message: AiConversationMessage): com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto = when (message) {
-            is AiConversationMessageForUser -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
+        private fun toOpenAiMessage(message: ChatMessage): com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto = when (message) {
+            is ChatMessage.User -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
                 role = "user",
                 content = message.text.toJsonElement(),
             )
-            is AiConversationMessageForAssistant -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
+            is ChatMessage.Assistant -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
                 role = "assistant",
                 content = message.text?.toJsonElement() ?: JsonNull,
                 toolCalls = message.toolCalls.takeIf { it.isNotEmpty() }?.map(::toOpenAiToolCall),
             )
-            is ToolCallProviderClientMessage -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
+            is ChatMessage.ToolResult -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
                 role = "tool",
                 toolCallId = message.toolCallId,
                 content = message.content.toJsonElement(),
             )
-            is AiConversationMessageForSystemState -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
+            is ChatMessage.SystemState -> com.strangeparticle.luther.client.provider.openai.request.OpenAiMessageDto(
                 role = "user",
                 content = "<current_state>${message.snapshotJson}</current_state>".toJsonElement(),
             )
-            else -> error("Unsupported OpenAI provider message type: ${message::class.simpleName}")
         }
 
         private fun toOpenAiToolCall(toolCall: ToolCall): com.strangeparticle.luther.client.provider.openai.request.OpenAiToolCallDto =

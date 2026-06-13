@@ -6,4 +6,4 @@ package com.strangeparticle.luther.client.provider
  * inspects fields; each provider casts it to its own concrete type. This is the
  * typed seam between the host's settings and luther — not JSON, not a string bag.
  */
-internal interface ProviderConfig
+interface ProviderConfig

@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client.provider
 
-internal class ProviderException(
+class ProviderException(
     val classified: ProviderErrorType,
     message: String,
     val rawProviderMessage: String? = null,

@@ -5,7 +5,7 @@ package com.strangeparticle.luther.client.provider
  * running session. Populates the provider and model dropdowns for the host's settings
  * UI and the in-pane model picker. Each provider owns its own transport.
  */
-internal class LutherProviderCatalog(
+class LutherProviderCatalog(
     private val providers: List<AiProvider>,
 ) {
     fun availableProviders(): List<Choice> =

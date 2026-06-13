@@ -8,7 +8,7 @@ package com.strangeparticle.luther.client.provider
  * Each provider casts the marker [ProviderConfig] to its own concrete config type
  * (e.g. AnthropicConfig) at the top of each method.
  */
-internal interface AiProvider {
+interface AiProvider {
     val id: String
     val displayName: String
 

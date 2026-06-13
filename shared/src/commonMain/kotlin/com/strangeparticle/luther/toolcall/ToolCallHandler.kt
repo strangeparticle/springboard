@@ -1,5 +1,6 @@
 package com.strangeparticle.luther.toolcall
 
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -32,7 +33,7 @@ internal interface ToolCallHandler {
     ): ToolCallHandlerResponse
 
     /** Provider-neutral definition for this tool call, used by the AI client. */
-    fun toDefinition(): AiToolCallDefinition = AiToolCallDefinition(
+    fun toDefinition(): ToolDefinition = ToolDefinition(
         name = providerToolId,
         description = description,
         schema = schema,

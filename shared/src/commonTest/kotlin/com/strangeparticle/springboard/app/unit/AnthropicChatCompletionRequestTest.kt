@@ -5,7 +5,7 @@ import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicCha
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.toolcall.AiToolCallDefinition
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.json.Json
@@ -33,7 +33,7 @@ internal class AnthropicChatCompletionRequestTest {
 
     private fun emptyRequest(
         history: List<com.strangeparticle.luther.conversation.AiConversationMessage> = emptyList(),
-        tools: List<AiToolCallDefinition> = emptyList(),
+        tools: List<ToolDefinition> = emptyList(),
         maxTokens: Int? = null,
     ) = AiProviderClientRequest(
         modelId = "claude-sonnet-4-6",
@@ -197,7 +197,7 @@ internal class AnthropicChatCompletionRequestTest {
     fun `tool definition uses input_schema not parameters`() {
         val schema = buildJsonObject { put("type", "object") }
         val body = buildBody(emptyRequest(tools = listOf(
-            AiToolCallDefinition(name = "add_app", description = "Add app", schema = schema),
+            ToolDefinition(name = "add_app", description = "Add app", schema = schema),
         )))
 
         val tools = body["tools"]!!.jsonArray
@@ -214,7 +214,7 @@ internal class AnthropicChatCompletionRequestTest {
     fun `tool choice is an object not a string`() {
         val schema = buildJsonObject { put("type", "object") }
         val body = buildBody(emptyRequest(tools = listOf(
-            AiToolCallDefinition(name = "add_app", description = "Add app", schema = schema),
+            ToolDefinition(name = "add_app", description = "Add app", schema = schema),
         )))
 
         val toolChoice = body["tool_choice"]!!.jsonObject

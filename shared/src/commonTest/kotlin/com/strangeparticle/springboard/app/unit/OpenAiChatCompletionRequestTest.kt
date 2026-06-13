@@ -4,8 +4,8 @@ import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import com.strangeparticle.luther.toolcall.ToolCall
-import com.strangeparticle.luther.toolcall.AiToolCallDefinition
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
 import kotlinx.serialization.json.Json
@@ -31,7 +31,7 @@ internal class OpenAiChatCompletionRequestTest {
 
     private fun emptyRequest(
         history: List<AiConversationMessage> = emptyList(),
-        tools: List<AiToolCallDefinition> = emptyList(),
+        tools: List<ToolDefinition> = emptyList(),
     ) = AiProviderClientRequest(
         modelId = "gpt-5",
         systemPrompt = "you are an assistant",
@@ -86,7 +86,7 @@ internal class OpenAiChatCompletionRequestTest {
 
     @Test
     fun `tools and tool_choice are included when at least one tool is passed`() {
-        val tool = AiToolCallDefinition(
+        val tool = ToolDefinition(
             name = "add_app",
             description = "Add an app to a tab.",
             schema = buildJsonObject {
@@ -124,7 +124,7 @@ internal class OpenAiChatCompletionRequestTest {
                     ),
                     ToolCallProviderClientMessage("call-1", """{"ok":true}"""),
                 ),
-                tools = listOf(AiToolCallDefinition("add_app", "Add a new app to the springboard.", schema)),
+                tools = listOf(ToolDefinition("add_app", "Add a new app to the springboard.", schema)),
             ),
         )
 
@@ -279,7 +279,7 @@ internal class OpenAiChatCompletionRequestTest {
             put("type", "object")
             put("required", kotlinx.serialization.json.JsonArray(listOf(JsonPrimitive("tab_id"))))
         }
-        val tool = AiToolCallDefinition(name = "save_springboard", description = "Save.", schema = schema)
+        val tool = ToolDefinition(name = "save_springboard", description = "Save.", schema = schema)
         val body = buildBody(emptyRequest(tools = listOf(tool)))
         val function = ((body["tools"] as JsonArray)[0] as JsonObject)["function"] as JsonObject
 
@@ -295,7 +295,7 @@ internal class OpenAiChatCompletionRequestTest {
                 systemPrompt = "system prompt with \"quotes\" and newline\nnext line",
                 history = listOf(AiConversationMessageForUser("user text with \"quotes\" and newline\nnext line")),
                 tools = listOf(
-                    AiToolCallDefinition(
+                    ToolDefinition(
                         name = "tool_\"quoted",
                         description = "description with \"quotes\"",
                         schema = buildJsonObject { put("type", "object") },

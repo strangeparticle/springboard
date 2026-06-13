@@ -1,5 +1,6 @@
 package com.strangeparticle.luther.toolcall
 
+import com.strangeparticle.luther.client.provider.ToolDefinition
 
 /**
  * Registry of provider-visible tool calls. Dispatch belongs to [ToolCallDispatcher]
@@ -17,7 +18,7 @@ internal class ToolCallRegistry {
         tools[tool.providerToolId] = tool
     }
 
-    fun getDefinitions(): List<AiToolCallDefinition> = tools.values.map { it.toDefinition() }
+    fun getDefinitions(): List<ToolDefinition> = tools.values.map { it.toDefinition() }
 
     fun getHandlers(): List<ToolCallHandler> = tools.values.toList()
 

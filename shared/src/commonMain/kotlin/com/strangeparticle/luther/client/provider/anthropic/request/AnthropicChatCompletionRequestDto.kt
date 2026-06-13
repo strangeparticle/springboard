@@ -5,7 +5,7 @@ import com.strangeparticle.luther.conversation.AiConversationMessage
 import com.strangeparticle.luther.conversation.AiConversationMessageForAssistant
 import com.strangeparticle.luther.conversation.AiConversationMessageForSystemState
 import com.strangeparticle.luther.conversation.AiConversationMessageForUser
-import com.strangeparticle.luther.toolcall.AiToolCallDefinition
+import com.strangeparticle.luther.client.provider.ToolDefinition
 import com.strangeparticle.luther.toolcall.ToolCall
 import com.strangeparticle.luther.toolcall.ToolCallProviderClientMessage
 import kotlinx.serialization.SerialName
@@ -132,7 +132,7 @@ internal data class AnthropicChatCompletionRequestDto(
             put("content", content)
         }
 
-        private fun toAnthropicTool(tool: AiToolCallDefinition): AnthropicToolDto =
+        private fun toAnthropicTool(tool: ToolDefinition): AnthropicToolDto =
             AnthropicToolDto(
                 name = tool.name,
                 description = tool.description,

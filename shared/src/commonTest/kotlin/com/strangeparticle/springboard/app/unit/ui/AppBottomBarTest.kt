@@ -55,6 +55,24 @@ class AppBottomBarTest {
     }
 
     @Test
+    fun assistantToggleHiddenWhenAssistantDisabled() = runComposeUiTest {
+        setContent {
+            AppTheme(brandId = BrandRegistry.defaultBrand.id) {
+                AppBottomBar(
+                    isAssistantConfigured = true,
+                    isAssistantOpen = false,
+                    onToggleAssistant = {},
+                    onOpenSettings = {},
+                    aiAssistantEnabled = false,
+                )
+            }
+        }
+        // The assistant toggle is gated away entirely, but the settings gear must remain.
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).assertDoesNotExist()
+        onNodeWithTag(TestTags.SETTINGS_GEAR_ICON).assertExists()
+    }
+
+    @Test
     fun brandLogoRendersWhenBrandProvidesOne() = runComposeUiTest {
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {

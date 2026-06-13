@@ -454,6 +454,10 @@ fun runSpringboardDesktop(args: Array<String>) {
                 onCloseActiveSettings = closeActiveSettings,
                 networkContentService = networkContentService,
                 undoRedoBridge = undoRedoBridge,
+                // Single downstream switch for the AI assistant feature. A deployment that
+                // cannot support the assistant flips this to false (or supplies its own
+                // criteria here); core contains no environment-specific disable logic.
+                aiAssistantEnabled = true,
             )
 
             LaunchedEffect(viewModel.tabs.mapNotNull { it.springboardFilteredForRuntime }) {

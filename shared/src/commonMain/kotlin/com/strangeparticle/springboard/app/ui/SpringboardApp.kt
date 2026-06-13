@@ -60,6 +60,10 @@ internal fun SpringboardApp(
     showActiveSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
     showAssistant: MutableState<Boolean> = remember { mutableStateOf(false) },
     activeSettingsOpenedFromSettings: MutableState<Boolean> = remember { mutableStateOf(false) },
+    // Single switch for the entire AI assistant feature (toggle, chat pane, settings). A
+    // deployment that cannot support the assistant sets this to false; everything else is gated
+    // off it. Defaults to true so stock behavior is unchanged.
+    aiAssistantEnabled: Boolean = true,
     aiChatPaneState: AiChatPaneState = AiChatPaneState.notConfigured(),
     onOpenSettings: () -> Unit = { showSettings.value = true },
     onOpenActiveSettingsFromSettings: () -> Unit = {
@@ -100,7 +104,15 @@ internal fun SpringboardApp(
         coroutineScope = coroutineScope,
         undoRedoBridge = undoRedoBridge,
     )
-    val effectiveAiChatPaneState = if (aiChatPaneState.isConfigured) aiChatPaneState else derivedAiChatPaneState
+    // When the assistant is disabled, present an unconfigured pane state so no provider
+    // resolution or model-option loading is observed by the UI, regardless of user settings.
+    val effectiveAiChatPaneState = if (!aiAssistantEnabled) {
+        AiChatPaneState.notConfigured()
+    } else if (aiChatPaneState.isConfigured) {
+        aiChatPaneState
+    } else {
+        derivedAiChatPaneState
+    }
     val openAiSettings = {
         aiSettingsFirst = true
         onOpenSettings()
@@ -124,7 +136,7 @@ internal fun SpringboardApp(
                             }
                         }
                         true
-                    } else if (event.type == KeyEventType.KeyDown && event.isMetaPressed && event.isShiftPressed && event.key == Key.A) {
+                    } else if (aiAssistantEnabled && event.type == KeyEventType.KeyDown && event.isMetaPressed && event.isShiftPressed && event.key == Key.A) {
                         showAssistant.value = !showAssistant.value
                         true
                     } else if (event.type == KeyEventType.KeyDown && event.isCtrlPressed && event.isShiftPressed) {
@@ -153,6 +165,7 @@ internal fun SpringboardApp(
                         onShowActiveSettings = onOpenActiveSettingsFromSettings,
                         currentTabSources = viewModel.currentTabSources,
                         showAiSettingsFirst = aiSettingsFirst,
+                        aiAssistantEnabled = aiAssistantEnabled,
                     )
                 }
             } else {
@@ -167,6 +180,7 @@ internal fun SpringboardApp(
                     isAssistantConfigured = effectiveAiChatPaneState.isConfigured,
                     onToggleAssistant = { showAssistant.value = !showAssistant.value },
                     showAssistant = showAssistant.value,
+                    aiAssistantEnabled = aiAssistantEnabled,
                     aiChatPaneState = effectiveAiChatPaneState.copy(focusInputOnShow = showAssistant.value),
                     onCloseAssistant = {
                         showAssistant.value = false

@@ -73,6 +73,10 @@ fun runSpringboardWeb() {
             settingsViewModel = settingsViewModel,
             networkContentService = networkContentService,
             showFileOpen = false,
+            // Single downstream switch for the AI assistant feature. A web/WASM deployment that
+            // cannot supply API or S3 credentials flips this to false (or supplies its own
+            // criteria here); core contains no environment-specific disable logic.
+            aiAssistantEnabled = true,
         )
 
         // Auto-select a conservative zoom preset when a springboard is first loaded.

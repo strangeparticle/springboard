@@ -38,6 +38,7 @@ internal fun SettingsScreen(
     onShowActiveSettings: () -> Unit,
     currentTabSources: List<String> = emptyList(),
     showAiSettingsFirst: Boolean = false,
+    aiAssistantEnabled: Boolean = true,
 ) {
     Column(modifier = Modifier.fillMaxSize().testTag(TestTags.SETTINGS_SCREEN)) {
         SettingsHeaderBar(
@@ -53,14 +54,17 @@ internal fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-            if (showAiSettingsFirst) {
+            if (showAiSettingsFirst && aiAssistantEnabled) {
                 renderAiAssistantGroup(viewModel)
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
             for (groupedItems in viewModel.groupedSettings) {
                 if (groupedItems.group == SettingsGroup.AiAssistant) {
-                    if (!showAiSettingsFirst) {
+                    // The AI settings group is rendered only when the assistant feature is
+                    // enabled. When disabled we still `continue` so the generic section below
+                    // never renders AI items either; the group definitions stay in the model.
+                    if (aiAssistantEnabled && !showAiSettingsFirst) {
                         renderAiAssistantGroup(viewModel)
                         Spacer(modifier = Modifier.height(20.dp))
                     }

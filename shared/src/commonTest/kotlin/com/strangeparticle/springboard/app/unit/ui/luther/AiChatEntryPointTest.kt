@@ -70,6 +70,73 @@ internal class AiChatEntryPointTest {
     }
 
     @Test
+    fun `assistant disabled hides toggle button`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+                aiAssistantEnabled = false,
+            )
+        }
+
+        onNodeWithTag(TestTags.ASSISTANT_TOGGLE_BUTTON).assertDoesNotExist()
+    }
+
+    @Test
+    fun `assistant disabled keeps chat pane closed even when requested open`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showFileOpen = false,
+                // Request the assistant open up front; the disable gate must still win.
+                showAssistant = mutableStateOf(true),
+                aiAssistantEnabled = false,
+            )
+        }
+
+        onNodeWithTag(TestTags.AI_CHAT_PANE).assertDoesNotExist()
+    }
+
+    @Test
+    fun `assistant disabled hides AI section in settings`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showSettings = mutableStateOf(true),
+                showFileOpen = false,
+                aiAssistantEnabled = false,
+            )
+        }
+
+        onNodeWithTag(TestTags.SETTINGS_SCREEN).assertExists()
+        // The "AI Assistant" settings group header (rendered by renderAiAssistantGroup) is the
+        // signal that the AI section is present; it must be absent when the feature is disabled.
+        onNodeWithText("AI Assistant").assertDoesNotExist()
+    }
+
+    @Test
+    fun `assistant enabled by default shows toggle and AI settings`() = runComposeUiTest {
+        val components = createComponents(configureAi = true)
+        setContent {
+            SpringboardApp(
+                viewModel = components.viewModel,
+                settingsViewModel = components.settingsViewModel,
+                showSettings = mutableStateOf(true),
+                showFileOpen = false,
+            )
+        }
+
+        // Default (aiAssistantEnabled omitted) keeps the full assistant surface present.
+        onNodeWithText("AI Assistant").assertExists()
+    }
+
+    @Test
     fun `assistant icon changes color while chat pane is open`() = runComposeUiTest {
         setContent {
             AppTheme(brandId = BrandRegistry.defaultBrand.id) {

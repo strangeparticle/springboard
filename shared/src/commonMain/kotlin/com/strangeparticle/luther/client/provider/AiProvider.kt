@@ -1,7 +1,6 @@
 package com.strangeparticle.luther.client.provider
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import io.ktor.client.HttpClient
 
 /**
@@ -23,5 +22,5 @@ internal interface AiProvider {
     fun createClient(config: ProviderConfig, httpClient: HttpClient): AiProviderClient
 
     /** Tool-calling filter + preferred-first ordering for the model picker. */
-    fun orderModelsForPicker(models: List<AiProviderClientModelInfo>): List<AiProviderClientModelInfo>
+    fun orderModelsForPicker(models: List<Model>): List<Model>
 }

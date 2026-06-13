@@ -1,7 +1,6 @@
 package com.strangeparticle.luther.client.provider
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import io.ktor.client.HttpClient
@@ -12,7 +11,7 @@ import kotlin.test.assertEquals
 private data class FakeConfig(val key: String) : ProviderConfig
 
 private class FakeProvider(
-    private val models: List<AiProviderClientModelInfo>,
+    private val models: List<Model>,
 ) : AiProvider {
     override val id = "fake"
     override val displayName = "Fake"
@@ -21,9 +20,9 @@ private class FakeProvider(
         object : AiProviderClient {
             override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse =
                 throw UnsupportedOperationException()
-            override suspend fun listModels(): List<AiProviderClientModelInfo> = models
+            override suspend fun listModels(): List<Model> = models
         }
-    override fun orderModelsForPicker(models: List<AiProviderClientModelInfo>) =
+    override fun orderModelsForPicker(models: List<Model>) =
         models.filter { it.supportsToolCalling }
 }
 
@@ -37,8 +36,8 @@ class LutherProviderCatalogTest {
     @Test
     fun availableModels_filtersAndMapsThroughProviderOrdering() = runTest {
         val models = listOf(
-            AiProviderClientModelInfo("m1", "Model One", supportsToolCalling = true),
-            AiProviderClientModelInfo("m2", null, supportsToolCalling = false),
+            Model("m1", "Model One", supportsToolCalling = true),
+            Model("m2", null, supportsToolCalling = false),
         )
         val catalog = LutherProviderCatalog(listOf(FakeProvider(models)), httpClient = null)
         val result = catalog.availableModels("fake", FakeConfig("k"))

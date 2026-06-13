@@ -1,5 +1,7 @@
 package com.strangeparticle.luther.client
 
+import com.strangeparticle.luther.client.provider.Model
+
 /**
  * Single-shot AI client. Implementations wrap a specific provider's REST API and
  * translate between [AiProviderClientRequest] / [AiProviderClientResponse] (provider-neutral) and the provider's
@@ -24,5 +26,5 @@ internal interface AiProviderClient {
      * enters a key. Throws [AiProviderClientException] if the key is invalid or the network is
      * unreachable.
      */
-    suspend fun listModels(): List<AiProviderClientModelInfo>
+    suspend fun listModels(): List<Model>
 }

@@ -1,10 +1,10 @@
 package com.strangeparticle.luther.session
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
 import com.strangeparticle.luther.toolcall.ToolCallHandler
@@ -25,10 +25,10 @@ private fun testProvider(clientFactoryCount: IntArray) = object : AiProvider {
         return object : AiProviderClient {
             override suspend fun sendAiRequest(request: AiProviderClientRequest): AiProviderClientResponse =
                 throw UnsupportedOperationException()
-            override suspend fun listModels(): List<AiProviderClientModelInfo> = emptyList()
+            override suspend fun listModels(): List<Model> = emptyList()
         }
     }
-    override fun orderModelsForPicker(models: List<AiProviderClientModelInfo>) = models
+    override fun orderModelsForPicker(models: List<Model>) = models
 }
 
 private val NoopExecutionContextFactory = object : AiSessionToolCallExecutionContextFactory {

@@ -1,11 +1,11 @@
 package com.strangeparticle.luther.client.provider.openai
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.Model
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.headers
@@ -49,7 +49,7 @@ internal class AiProviderClientOpenAi(
         return com.strangeparticle.luther.client.provider.openai.response.OpenAiResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+    override suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {

@@ -1,6 +1,6 @@
 package com.strangeparticle.luther.client.provider.openai
 
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
+import com.strangeparticle.luther.client.provider.Model
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -37,17 +37,17 @@ internal object OpenAiModelFilter {
 
     /**
      * Walk the parsed `/v1/models` response body, filter to chat-capable model ids,
-     * and produce a sorted list of [AiProviderClientModelInfo]. Sort is descending by id so newer
+     * and produce a sorted list of [Model]. Sort is descending by id so newer
      * models (e.g. `gpt-5`) surface above older ones (e.g. `gpt-4o`).
      */
-    fun filterAndMap(responseBody: JsonObject): List<AiProviderClientModelInfo> {
+    fun filterAndMap(responseBody: JsonObject): List<Model> {
         val data = responseBody["data"] as? JsonArray ?: return emptyList()
         return data
             .mapNotNull { entry ->
                 val obj = entry as? JsonObject ?: return@mapNotNull null
                 val id = (obj["id"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
                 if (!isChatCompletionCapable(id)) return@mapNotNull null
-                AiProviderClientModelInfo(id = id, displayName = id, supportsToolCalling = true)
+                Model(id = id, displayName = id, supportsToolCalling = true)
             }
             .sortedByDescending { it.id }
     }

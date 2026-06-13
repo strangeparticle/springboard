@@ -3,9 +3,9 @@ package com.strangeparticle.luther.client.provider.anthropic
 import com.strangeparticle.luther.client.AiProviderClient
 import com.strangeparticle.luther.client.AiProviderClientErrorType
 import com.strangeparticle.luther.client.AiProviderClientException
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
+import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
 import com.strangeparticle.luther.client.provider.anthropic.response.AnthropicResponseParser
 import io.ktor.client.HttpClient
@@ -49,7 +49,7 @@ internal class AiProviderClientAnthropic(
         return AnthropicResponseParser.parseSuccess(response.bodyAsText())
     }
 
-    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+    override suspend fun listModels(): List<Model> {
         val apiKey = getApiKeyOrThrow()
         val response = try {
             httpClient.get("$baseUrl/v1/models") {

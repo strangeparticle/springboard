@@ -5,7 +5,7 @@ import com.strangeparticle.luther.client.AiProviderClientRequest
 import com.strangeparticle.luther.client.AiProviderClientResponse
 import com.strangeparticle.luther.client.AiProviderClientStopReason
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
+import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -44,7 +44,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
     val responseQueue: ArrayDeque<AiProviderClientResponse> = ArrayDeque()
 
     /** What [listModels] returns. Override per-test. */
-    var modelsResponse: List<AiProviderClientModelInfo> = emptyList()
+    var modelsResponse: List<Model> = emptyList()
 
     /** When set, [sendAiRequest] throws this instead of returning a response. */
     var sendAiRequestException: AiProviderClientException? = null
@@ -65,7 +65,7 @@ internal class AiProviderClientInMemoryFake : AiProviderClient {
         return responseQueue.removeFirst()
     }
 
-    override suspend fun listModels(): List<AiProviderClientModelInfo> {
+    override suspend fun listModels(): List<Model> {
         listModelsCallCount++
         listModelsException?.let { throw it }
         return modelsResponse

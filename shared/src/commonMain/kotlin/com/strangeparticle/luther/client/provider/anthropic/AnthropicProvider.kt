@@ -1,8 +1,8 @@
 package com.strangeparticle.luther.client.provider.anthropic
 
 import com.strangeparticle.luther.client.AiProviderClient
-import com.strangeparticle.luther.client.AiProviderClientModelInfo
 import com.strangeparticle.luther.client.provider.AiProvider
+import com.strangeparticle.luther.client.provider.Model
 import com.strangeparticle.luther.client.provider.ProviderConfig
 import io.ktor.client.HttpClient
 
@@ -20,7 +20,7 @@ internal object AnthropicProvider : AiProvider {
         return AiProviderClientAnthropic(httpClient = httpClient, apiKeyProvider = { anthropic.apiKey })
     }
 
-    override fun orderModelsForPicker(models: List<AiProviderClientModelInfo>): List<AiProviderClientModelInfo> {
+    override fun orderModelsForPicker(models: List<Model>): List<Model> {
         val tooled = models.filter { it.supportsToolCalling }
         val preferred = preferredModelIds().mapNotNull { id -> tooled.firstOrNull { it.id == id } }
         val remainder = tooled.filterNot { it.id in preferredModelIds().toSet() }

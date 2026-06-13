@@ -42,6 +42,7 @@ internal fun MainScreen(
     isAssistantConfigured: Boolean = false,
     onToggleAssistant: () -> Unit = {},
     showAssistant: Boolean = false,
+    aiAssistantEnabled: Boolean = true,
     aiChatPaneState: AiChatPaneState = AiChatPaneState.notConfigured(),
     onCloseAssistant: () -> Unit = {},
     onOpenAiSettings: () -> Unit = onOpenSettings,
@@ -183,7 +184,7 @@ internal fun MainScreen(
             onCreate = { viewModel.createTab() },
         )
 
-        if (showAssistant) {
+        if (showAssistant && aiAssistantEnabled) {
             var chatPaneHeightDp by rememberSaveable {
                 mutableStateOf(AiChatPaneDefaults.DefaultHeight.value)
             }
@@ -216,6 +217,7 @@ internal fun MainScreen(
             isAssistantOpen = showAssistant,
             onToggleAssistant = onToggleAssistant,
             onOpenSettings = onOpenSettings,
+            aiAssistantEnabled = aiAssistantEnabled,
         )
     }
 

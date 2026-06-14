@@ -1,5 +1,5 @@
 package com.strangeparticle.springboard.app
 
 object AppVersion {
-    const val VERSION = "4.11.1"
+    const val VERSION = "4.12.0"
 }

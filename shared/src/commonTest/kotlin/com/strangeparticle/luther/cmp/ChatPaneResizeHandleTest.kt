@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.unit.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
-import com.strangeparticle.springboard.app.ui.luther.ChatPaneResizeHandle
+import com.strangeparticle.luther.cmp.AiChatPaneDefaults
+import com.strangeparticle.luther.cmp.ChatPaneResizeHandle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

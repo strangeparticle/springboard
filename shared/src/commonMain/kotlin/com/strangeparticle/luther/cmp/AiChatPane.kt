@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border

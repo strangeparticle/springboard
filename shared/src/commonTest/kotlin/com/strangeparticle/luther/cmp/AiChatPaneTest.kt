@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.unit.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
@@ -17,14 +17,14 @@ import com.strangeparticle.springboard.app.settings.DropDownOption
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneModelPickerState
-import com.strangeparticle.springboard.app.ui.luther.AiChatPane
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
-import com.strangeparticle.springboard.app.ui.luther.AiChatScrollbackPane
-import com.strangeparticle.springboard.app.ui.luther.CommandAttribution
-import com.strangeparticle.springboard.app.ui.luther.ChatMessagePartRenderer
-import com.strangeparticle.springboard.app.ui.luther.LocalCommandResponseStyle
+import com.strangeparticle.luther.cmp.AiChatPaneModelPickerState
+import com.strangeparticle.luther.cmp.AiChatPane
+import com.strangeparticle.luther.cmp.AiChatPaneDefaults
+import com.strangeparticle.luther.cmp.AiChatPaneState
+import com.strangeparticle.luther.cmp.AiChatScrollbackPane
+import com.strangeparticle.luther.cmp.CommandAttribution
+import com.strangeparticle.luther.cmp.ChatMessagePartRenderer
+import com.strangeparticle.luther.cmp.LocalCommandResponseStyle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals

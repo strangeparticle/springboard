@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.ui.luther
+package com.strangeparticle.luther.cmp
 
 internal sealed class AiChatLocalCommand {
     abstract val originalText: String

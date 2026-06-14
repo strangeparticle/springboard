@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box

@@ -1,7 +1,7 @@
-package com.strangeparticle.springboard.app.unit.ui.luther
+package com.strangeparticle.luther.cmp
 
-import com.strangeparticle.springboard.app.ui.luther.AiChatLocalCommand
-import com.strangeparticle.springboard.app.ui.luther.parseAiChatLocalCommand
+import com.strangeparticle.luther.cmp.AiChatLocalCommand
+import com.strangeparticle.luther.cmp.parseAiChatLocalCommand
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

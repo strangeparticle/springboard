@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.unit.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.dp
 import com.strangeparticle.luther.core.client.provider.ToolCall
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
-import com.strangeparticle.springboard.app.ui.luther.AiChatPane
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
-import com.strangeparticle.springboard.app.ui.luther.AiChatScrollbackPane
-import com.strangeparticle.springboard.app.ui.luther.getScrollbackPaneTextForCopyToClipboard
+import com.strangeparticle.luther.cmp.AiChatPane
+import com.strangeparticle.luther.cmp.AiChatPaneState
+import com.strangeparticle.luther.cmp.AiChatScrollbackPane
+import com.strangeparticle.luther.cmp.getScrollbackPaneTextForCopyToClipboard
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

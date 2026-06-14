@@ -14,10 +14,10 @@ import com.strangeparticle.springboard.app.platform.PlatformFileContentService
 import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDefaultImpl
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
 import com.strangeparticle.springboard.app.ui.gridnav.GroupActivationConfirmDialog
-import com.strangeparticle.springboard.app.ui.luther.AiChatPane
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneDefaults
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
-import com.strangeparticle.springboard.app.ui.luther.ChatPaneResizeHandle
+import com.strangeparticle.luther.cmp.AiChatPane
+import com.strangeparticle.luther.cmp.AiChatPaneDefaults
+import com.strangeparticle.luther.cmp.AiChatPaneState
+import com.strangeparticle.luther.cmp.ChatPaneResizeHandle
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen

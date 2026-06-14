@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.unit.ui.luther
+package com.strangeparticle.luther.cmp
 
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
@@ -34,7 +34,7 @@ import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.CommonUiConstants
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
-import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
+import com.strangeparticle.luther.cmp.AiChatPaneState
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
 import io.ktor.client.HttpClient

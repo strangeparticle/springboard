@@ -1,4 +1,4 @@
-package com.strangeparticle.springboard.app.ui.luther
+package com.strangeparticle.luther.cmp
 
 import com.strangeparticle.luther.core.session.ChatHistoryGroup
 import com.strangeparticle.luther.core.session.ChatHistoryGroupType

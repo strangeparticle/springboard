@@ -83,39 +83,6 @@ internal fun initialTerseHelpScrollbackPane(): AiChatScrollbackPane.LocalCommand
     style = LocalCommandResponseStyle.Help,
 )
 
-internal fun initialTerseHelpHistory(): List<ChatHistoryGroup> = listOf(
-    ChatHistoryGroup(
-        type = ChatHistoryGroupType.LOCAL_COMMAND,
-        items = listOf(
-            LocalCommandSubmittedChatHistoryItem("/help_terse", LocalCommandSource.System),
-            LocalCommandRespondedChatHistoryItem("/help_terse", AiAssistantTerseHelpText.text, LocalCommandResponseKind.Help),
-        ),
-    ),
-)
-
-// The starting chat history for a session records the active provider/model first, then the
-// terse help. Callers record the active provider/model exactly once when the session starts and
-// append a change entry only when the effective provider/model actually changes; see
-// SpringboardApp's provider/model recording effect.
-internal fun initialChatHistory(
-    providerLabel: String,
-    modelLabel: String,
-): List<ChatHistoryGroup> = listOf(providerModelStateGroup(providerLabel, modelLabel)) + initialTerseHelpHistory()
-
-internal fun appendProviderModelState(
-    groups: List<ChatHistoryGroup>,
-    providerLabel: String,
-    modelLabel: String,
-): List<ChatHistoryGroup> = groups + providerModelStateGroup(providerLabel, modelLabel)
-
-private fun providerModelStateGroup(
-    providerLabel: String,
-    modelLabel: String,
-): ChatHistoryGroup = ChatHistoryGroup(
-    type = ChatHistoryGroupType.PROVIDER_MODEL_CHANGE,
-    items = listOf(ProviderModelChangedChatHistoryItem(providerLabel, modelLabel)),
-)
-
 internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
     val panes = mutableListOf<AiChatScrollbackPane>()
     for (group in groups) {

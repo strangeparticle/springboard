@@ -3,11 +3,13 @@ package com.strangeparticle.springboard.app.unit
 import com.strangeparticle.luther.core.session.ChatHistoryGroup
 import com.strangeparticle.luther.core.session.ChatHistoryGroupType
 import com.strangeparticle.luther.core.session.event.ProviderModelChangedChatHistoryItem
-import com.strangeparticle.springboard.app.ui.luther.appendProviderModelState
-import com.strangeparticle.springboard.app.ui.luther.initialChatHistory
-import com.strangeparticle.springboard.app.ui.luther.initialTerseHelpHistory
+import com.strangeparticle.luther.core.session.appendProviderModelState
+import com.strangeparticle.luther.core.session.initialChatHistory
+import com.strangeparticle.luther.core.session.terseHelpHistory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
+private const val SAMPLE_HELP = "terse help text"
 
 internal class ProviderModelHistoryTest {
 
@@ -16,6 +18,7 @@ internal class ProviderModelHistoryTest {
         val history = initialChatHistory(
             providerLabel = "OpenAI",
             modelLabel = "gpt-4o-mini",
+            terseHelpText = SAMPLE_HELP,
         )
 
         assertEquals(
@@ -25,7 +28,7 @@ internal class ProviderModelHistoryTest {
             ),
             history.first(),
         )
-        assertEquals(initialTerseHelpHistory(), history.drop(1))
+        assertEquals(terseHelpHistory(SAMPLE_HELP), history.drop(1))
     }
 
     @Test
@@ -33,6 +36,7 @@ internal class ProviderModelHistoryTest {
         val initial = initialChatHistory(
             providerLabel = "OpenAI",
             modelLabel = "gpt-4o-mini",
+            terseHelpText = SAMPLE_HELP,
         )
         val changed = appendProviderModelState(
             groups = initial,

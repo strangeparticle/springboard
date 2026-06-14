@@ -100,4 +100,40 @@ class LutherSessionTest {
         assertTrue(session.chatHistory === historyRef)
         session.close()
     }
+
+    private fun newSession() = createLutherSession(
+        providers = listOf(RecordingTestProvider()),
+        settings = LutherSettings("p", "m1", TestProviderConfig("k")),
+        toolHandlers = emptyList(),
+        executionContextFactory = NoopExecutionContextFactory,
+        snapshotProvider = NoopSnapshotProvider,
+        systemPromptProvider = { "" },
+    )
+
+    @Test fun construction_seedsProviderModelThenTerseHelp() {
+        val session = newSession()
+        val groups = session.chatHistory.value
+        assertEquals(ChatHistoryGroupType.PROVIDER_MODEL_CHANGE, groups.first().type)
+        assertEquals(ChatHistoryGroupType.LOCAL_COMMAND, groups[1].type)
+        session.close()
+    }
+
+    @Test fun notifyUndoPerformed_appendsLocalCommandEntry() {
+        val session = newSession()
+        val before = session.chatHistory.value.size
+        session.notifyUndoPerformed("Undid last change.")
+        val groups = session.chatHistory.value
+        assertEquals(before + 1, groups.size)
+        assertEquals(ChatHistoryGroupType.LOCAL_COMMAND, groups.last().type)
+        session.close()
+    }
+
+    @Test fun modelChange_appendsProviderModelEntry() {
+        val session = newSession()
+        val before = session.chatHistory.value.count { it.type == ChatHistoryGroupType.PROVIDER_MODEL_CHANGE }
+        session.updateConfiguration(LutherSettings("p", "m2", TestProviderConfig("k")))
+        val after = session.chatHistory.value.count { it.type == ChatHistoryGroupType.PROVIDER_MODEL_CHANGE }
+        assertEquals(before + 1, after)
+        session.close()
+    }
 }

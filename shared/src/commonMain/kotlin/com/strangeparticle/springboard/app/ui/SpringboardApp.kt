@@ -43,8 +43,9 @@ import com.strangeparticle.springboard.app.ui.luther.AiChatPaneModelPickerState
 import com.strangeparticle.springboard.app.ui.luther.AiChatPaneState
 import com.strangeparticle.springboard.app.ui.luther.buildDebugScrollbackPanes
 import com.strangeparticle.springboard.app.ui.luther.buildSlimScrollbackPanes
-import com.strangeparticle.springboard.app.ui.luther.appendProviderModelState
-import com.strangeparticle.springboard.app.ui.luther.initialChatHistory
+import com.strangeparticle.luther.core.session.appendProviderModelState
+import com.strangeparticle.luther.core.session.initialChatHistory
+import com.strangeparticle.luther.core.session.localCommandGroup
 import com.strangeparticle.springboard.app.ui.luther.parseAiChatLocalCommand
 import com.strangeparticle.springboard.app.ui.settings.ActiveSettingsScreen
 import com.strangeparticle.springboard.app.ui.settings.SettingsScreen
@@ -273,7 +274,7 @@ private fun rememberAiChatPaneState(
     val activeProviderModelDisplayString = "$providerLabel:$modelId"
     LaunchedEffect(activeProviderModelDisplayString) {
         chatHistory = if (chatHistory.isEmpty()) {
-            initialChatHistory(providerLabel, modelId)
+            initialChatHistory(providerLabel, modelId, AiAssistantTerseHelpText.text)
         } else {
             appendProviderModelState(chatHistory, providerLabel, modelId)
         }
@@ -452,16 +453,3 @@ private fun ToolCallHandlerResponse.toolCallMessageOrNull(): String? = when (thi
     is ToolCallExecutionResult -> message
     else -> null
 }
-
-private fun localCommandGroup(
-    commandText: String,
-    source: LocalCommandSource,
-    responseText: String,
-    responseKind: LocalCommandResponseKind,
-): ChatHistoryGroup = ChatHistoryGroup(
-    type = ChatHistoryGroupType.LOCAL_COMMAND,
-    items = listOf(
-        LocalCommandSubmittedChatHistoryItem(commandText, source),
-        LocalCommandRespondedChatHistoryItem(commandText, responseText, responseKind),
-    ),
-)

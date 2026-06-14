@@ -1,14 +1,14 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallDispatcher
-import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
-import com.strangeparticle.luther.toolcall.ToolCallHandler
-import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.luther.toolcall.ToolCallRegistry
-import com.strangeparticle.luther.toolcall.decodeToolCallHandlerRequest
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.core.toolcall.ToolCallDispatcher
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.core.toolcall.ToolCallHandler
+import com.strangeparticle.luther.core.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.core.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.core.toolcall.decodeToolCallHandlerRequest
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallHandlerResponse
-import com.strangeparticle.luther.toolcall.requestSchema
+import com.strangeparticle.luther.core.toolcall.requestSchema
 import com.strangeparticle.springboard.app.luther.getSpringboardToolCallExecutionContextOrThrow
 import com.strangeparticle.springboard.app.luther.successResult
 import com.strangeparticle.springboard.app.luther.toolcall.createSpringboardToolCallRegistry

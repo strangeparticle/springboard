@@ -1,11 +1,11 @@
 package com.strangeparticle.springboard.app.shared
 
-import com.strangeparticle.luther.client.provider.ChatRequest
-import com.strangeparticle.luther.client.provider.ChatResponse
-import com.strangeparticle.luther.client.provider.Model
-import com.strangeparticle.luther.client.provider.ProviderException
-import com.strangeparticle.luther.client.provider.StopReason
-import com.strangeparticle.luther.client.provider.ToolCall
+import com.strangeparticle.luther.core.client.provider.ChatRequest
+import com.strangeparticle.luther.core.client.provider.ChatResponse
+import com.strangeparticle.luther.core.client.provider.Model
+import com.strangeparticle.luther.core.client.provider.ProviderException
+import com.strangeparticle.luther.core.client.provider.StopReason
+import com.strangeparticle.luther.core.client.provider.ToolCall
 import kotlinx.serialization.json.JsonObject
 
 /**

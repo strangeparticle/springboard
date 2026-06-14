@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.settings.items.core
 
-import com.strangeparticle.luther.client.provider.LutherBuiltInProviders
+import com.strangeparticle.luther.core.client.provider.LutherBuiltInProviders
 import com.strangeparticle.springboard.app.settings.DropDownOption
 import com.strangeparticle.springboard.app.settings.SettingsGroup
 import com.strangeparticle.springboard.app.settings.items.base.DropDownSettingsItem

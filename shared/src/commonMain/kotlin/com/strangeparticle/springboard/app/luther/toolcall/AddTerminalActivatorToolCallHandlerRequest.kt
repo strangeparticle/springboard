@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.luther.toolcall
 
 import kotlinx.serialization.Serializable
-import com.strangeparticle.luther.toolcall.ToolFieldDescription
+import com.strangeparticle.luther.core.toolcall.ToolFieldDescription
 
 @Serializable
 internal data class AddTerminalActivatorToolCallHandlerRequest(

@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.luther.provider
 
 import androidx.compose.runtime.Composable
-import com.strangeparticle.luther.client.provider.ProviderConfig
+import com.strangeparticle.luther.core.client.provider.ProviderConfig
 import com.strangeparticle.springboard.app.settings.SettingsItem
 import com.strangeparticle.springboard.app.viewmodel.SettingsViewModel
 

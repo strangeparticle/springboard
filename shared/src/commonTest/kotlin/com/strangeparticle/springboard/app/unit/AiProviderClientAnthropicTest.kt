@@ -1,10 +1,10 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.provider.ChatRequest
-import com.strangeparticle.luther.client.provider.ProviderErrorType
-import com.strangeparticle.luther.client.provider.ProviderException
-import com.strangeparticle.luther.client.provider.StopReason
-import com.strangeparticle.luther.client.provider.anthropic.AiProviderClientAnthropic
+import com.strangeparticle.luther.core.client.provider.ChatRequest
+import com.strangeparticle.luther.core.client.provider.ProviderErrorType
+import com.strangeparticle.luther.core.client.provider.ProviderException
+import com.strangeparticle.luther.core.client.provider.StopReason
+import com.strangeparticle.luther.core.client.provider.anthropic.AiProviderClientAnthropic
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond

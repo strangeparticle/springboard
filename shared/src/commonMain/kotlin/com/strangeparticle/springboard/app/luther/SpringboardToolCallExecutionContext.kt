@@ -1,7 +1,7 @@
 package com.strangeparticle.springboard.app.luther
 
-import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallHandler
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.core.toolcall.ToolCallHandler
 import com.strangeparticle.springboard.app.command.SpringboardCommandExecutor
 import com.strangeparticle.springboard.app.command.SpringboardCommandExecutorDefaultImpl
 import com.strangeparticle.springboard.app.domain.model.Springboard

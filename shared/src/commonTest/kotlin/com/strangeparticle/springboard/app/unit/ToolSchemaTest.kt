@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.toolcall.ToolFieldDescription
-import com.strangeparticle.luther.toolcall.enumValues
-import com.strangeparticle.luther.toolcall.requestSchema
+import com.strangeparticle.luther.core.toolcall.ToolFieldDescription
+import com.strangeparticle.luther.core.toolcall.enumValues
+import com.strangeparticle.luther.core.toolcall.requestSchema
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject

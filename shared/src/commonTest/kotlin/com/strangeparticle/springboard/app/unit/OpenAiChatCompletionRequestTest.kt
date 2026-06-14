@@ -1,9 +1,9 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.provider.ChatMessage
-import com.strangeparticle.luther.client.provider.ChatRequest
-import com.strangeparticle.luther.client.provider.ToolCall
-import com.strangeparticle.luther.client.provider.ToolDefinition
+import com.strangeparticle.luther.core.client.provider.ChatMessage
+import com.strangeparticle.luther.core.client.provider.ChatRequest
+import com.strangeparticle.luther.core.client.provider.ToolCall
+import com.strangeparticle.luther.core.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -17,7 +17,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * Tests for [com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
+ * Tests for [com.strangeparticle.luther.core.client.provider.openai.request.OpenAiChatCompletionRequestDto]. Covers the OpenAI chat-completions request
      * envelope: top-level shape, message role mapping for each [ChatMessage] variant,
  * and tool-definition adaptation.
  */
@@ -37,8 +37,8 @@ internal class OpenAiChatCompletionRequestTest {
 
     private fun buildBody(request: ChatRequest): JsonObject {
         val rawJson = json.encodeToString(
-            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
-            com.strangeparticle.luther.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
+            com.strangeparticle.luther.core.client.provider.openai.request.OpenAiChatCompletionRequestDto.serializer(),
+            com.strangeparticle.luther.core.client.provider.openai.request.OpenAiChatCompletionRequestDto.from(request),
         )
         return json.parseToJsonElement(rawJson).jsonObject
     }

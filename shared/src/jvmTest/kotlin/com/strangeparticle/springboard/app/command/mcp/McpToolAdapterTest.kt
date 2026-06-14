@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.command.mcp
 
-import com.strangeparticle.luther.toolcall.ToolCallExecutionResult
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionResult
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject

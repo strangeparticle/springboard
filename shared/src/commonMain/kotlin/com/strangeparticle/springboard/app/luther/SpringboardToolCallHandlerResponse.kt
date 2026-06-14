@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.luther
 
-import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.core.toolcall.ToolCallHandlerResponse
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.encodeToString

@@ -2,14 +2,14 @@
 
 Luther is a provider-neutral AI tool-call framework written in Kotlin Multiplatform. It handles the plumbing between an AI model and a host application: translating provider-specific wire formats into a clean set of domain types, routing model-requested tool calls to typed handler implementations, and isolating everything provider-specific behind a single interface.
 
-**Intended future state:** Luther is designed to be extracted into a standalone KMP library. All Luther code lives under `com.strangeparticle.luther.*`; it has no dependency on Springboard domain types. Host-application integration is done entirely through marker interfaces (`ToolCallExecutionContext`, `ToolCallHandlerResponse`) that the host implements.
+**Intended future state:** Luther is designed to be extracted into a standalone KMP library. All Luther code lives under `com.strangeparticle.luther.core.*`; it has no dependency on Springboard domain types. Host-application integration is done entirely through marker interfaces (`ToolCallExecutionContext`, `ToolCallHandlerResponse`) that the host implements.
 
 ---
 
 ## Package Layout
 
 ```
-com.strangeparticle.luther
+com.strangeparticle.luther.core
 ├── AiClientMessage           ← base conversation message type (open class)
 ├── AiUserMessage             ← user turn
 ├── AiAssistantMessage        ← model turn (text + optional tool calls)
@@ -110,7 +110,7 @@ internal interface AiProviderClient {
 
 ### Implementing a New Provider
 
-1. Create a new package under `com.strangeparticle.luther.providers.<name>/`.
+1. Create a new package under `com.strangeparticle.luther.core.providers.<name>/`.
 2. Implement `AiProviderClient`.
 3. Map `AiClientRequest` → the provider's native request format using `@Serializable` DTOs. Use `Json.encodeToString(Dto.serializer(), dto)` for the body.
 4. POST via Ktor `HttpClient`. On non-200, call `parseErrorAndThrow(httpStatus, bodyText)` — a pure function that maps status codes to `AiClientException`.

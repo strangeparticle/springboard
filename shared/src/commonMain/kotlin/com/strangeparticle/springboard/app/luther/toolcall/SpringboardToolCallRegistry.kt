@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.luther.toolcall
 
-import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.core.toolcall.ToolCallRegistry
 
 internal fun createSpringboardToolCallRegistry(): ToolCallRegistry = ToolCallRegistry().apply {
     register(ActivateColumnToolCallHandler())

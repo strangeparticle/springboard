@@ -1,18 +1,18 @@
 package com.strangeparticle.springboard.app.ui.luther
 
-import com.strangeparticle.luther.session.ChatHistoryGroup
-import com.strangeparticle.luther.session.ChatHistoryGroupType
-import com.strangeparticle.luther.session.ChatMessagePart
-import com.strangeparticle.luther.session.ToolCallState
-import com.strangeparticle.luther.session.event.LocalCommandRespondedChatHistoryItem
-import com.strangeparticle.luther.session.event.LocalCommandResponseKind
-import com.strangeparticle.luther.session.event.LocalCommandSource
-import com.strangeparticle.luther.session.event.LocalCommandSubmittedChatHistoryItem
-import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
-import com.strangeparticle.luther.session.projection.buildProviderHistory
-import com.strangeparticle.luther.session.projection.buildTranscriptParts
-import com.strangeparticle.luther.client.provider.ChatMessage
-import com.strangeparticle.luther.client.provider.ToolCall
+import com.strangeparticle.luther.core.session.ChatHistoryGroup
+import com.strangeparticle.luther.core.session.ChatHistoryGroupType
+import com.strangeparticle.luther.core.session.ChatMessagePart
+import com.strangeparticle.luther.core.session.ToolCallState
+import com.strangeparticle.luther.core.session.event.LocalCommandRespondedChatHistoryItem
+import com.strangeparticle.luther.core.session.event.LocalCommandResponseKind
+import com.strangeparticle.luther.core.session.event.LocalCommandSource
+import com.strangeparticle.luther.core.session.event.LocalCommandSubmittedChatHistoryItem
+import com.strangeparticle.luther.core.session.event.ProviderModelChangedChatHistoryItem
+import com.strangeparticle.luther.core.session.projection.buildProviderHistory
+import com.strangeparticle.luther.core.session.projection.buildTranscriptParts
+import com.strangeparticle.luther.core.client.provider.ChatMessage
+import com.strangeparticle.luther.core.client.provider.ToolCall
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 
 internal sealed class AiChatScrollbackPane {

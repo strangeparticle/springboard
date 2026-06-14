@@ -1,15 +1,15 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import com.strangeparticle.luther.client.provider.ProviderErrorType
-import com.strangeparticle.luther.client.provider.ProviderException
-import com.strangeparticle.luther.session.AiSessionManager
-import com.strangeparticle.luther.session.AiSessionSnapshotProvider
-import com.strangeparticle.luther.session.AiSessionToolCallExecutionContextFactory
-import com.strangeparticle.luther.session.ChatMessagePart
-import com.strangeparticle.luther.client.provider.ToolCall
-import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.core.client.provider.ProviderErrorType
+import com.strangeparticle.luther.core.client.provider.ProviderException
+import com.strangeparticle.luther.core.session.AiSessionManager
+import com.strangeparticle.luther.core.session.AiSessionSnapshotProvider
+import com.strangeparticle.luther.core.session.AiSessionToolCallExecutionContextFactory
+import com.strangeparticle.luther.core.session.ChatMessagePart
+import com.strangeparticle.luther.core.client.provider.ToolCall
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.core.toolcall.ToolCallRegistry
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
@@ -80,7 +80,7 @@ internal class AiAssistantTests {
 
         fixture.manager.submit("Add resource and activator").join()
 
-        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>().size)
+        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>().size)
     }
 
     @Test
@@ -262,7 +262,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
+            .filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
     }
@@ -427,7 +427,7 @@ internal class AiAssistantTests {
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
         val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.client.provider.ChatMessage.ToolResult>()
+            .filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("missing_tab"))
     }

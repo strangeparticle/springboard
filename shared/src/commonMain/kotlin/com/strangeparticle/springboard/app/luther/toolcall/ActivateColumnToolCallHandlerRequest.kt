@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.luther.toolcall
 
-import com.strangeparticle.luther.toolcall.ToolFieldDescription
+import com.strangeparticle.luther.core.toolcall.ToolFieldDescription
 import kotlinx.serialization.Serializable
 
 @Serializable

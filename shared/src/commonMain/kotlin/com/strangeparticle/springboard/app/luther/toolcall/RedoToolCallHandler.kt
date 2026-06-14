@@ -1,9 +1,9 @@
 package com.strangeparticle.springboard.app.luther.toolcall
 
-import com.strangeparticle.luther.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.toolcall.ToolCallHandler
-import com.strangeparticle.luther.toolcall.ToolCallHandlerResponse
-import com.strangeparticle.luther.toolcall.requestSchema
+import com.strangeparticle.luther.core.toolcall.ToolCallExecutionContext
+import com.strangeparticle.luther.core.toolcall.ToolCallHandler
+import com.strangeparticle.luther.core.toolcall.ToolCallHandlerResponse
+import com.strangeparticle.luther.core.toolcall.requestSchema
 import com.strangeparticle.springboard.app.domain.undo.UndoRedoOutcome
 import com.strangeparticle.springboard.app.luther.getSpringboardToolCallExecutionContextOrThrow
 import com.strangeparticle.springboard.app.luther.successStatusResult

@@ -21,8 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.luther.session.ChatMessagePart
-import com.strangeparticle.luther.session.ToolCallState
+import com.strangeparticle.luther.core.session.ChatMessagePart
+import com.strangeparticle.luther.core.session.ToolCallState
 import com.strangeparticle.springboard.app.ui.TestTags
 
 @Composable

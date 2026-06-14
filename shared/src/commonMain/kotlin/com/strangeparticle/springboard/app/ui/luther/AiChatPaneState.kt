@@ -1,6 +1,6 @@
 package com.strangeparticle.springboard.app.ui.luther
 
-import com.strangeparticle.luther.session.ChatMessagePart
+import com.strangeparticle.luther.core.session.ChatMessagePart
 
 internal data class AiChatPaneState(
     val isConfigured: Boolean,

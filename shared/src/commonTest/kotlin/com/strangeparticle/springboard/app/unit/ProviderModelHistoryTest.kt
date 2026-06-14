@@ -1,8 +1,8 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.session.ChatHistoryGroup
-import com.strangeparticle.luther.session.ChatHistoryGroupType
-import com.strangeparticle.luther.session.event.ProviderModelChangedChatHistoryItem
+import com.strangeparticle.luther.core.session.ChatHistoryGroup
+import com.strangeparticle.luther.core.session.ChatHistoryGroupType
+import com.strangeparticle.luther.core.session.event.ProviderModelChangedChatHistoryItem
 import com.strangeparticle.springboard.app.ui.luther.appendProviderModelState
 import com.strangeparticle.springboard.app.ui.luther.initialChatHistory
 import com.strangeparticle.springboard.app.ui.luther.initialTerseHelpHistory

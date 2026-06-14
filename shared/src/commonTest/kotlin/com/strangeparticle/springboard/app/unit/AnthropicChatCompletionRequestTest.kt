@@ -1,10 +1,10 @@
 package com.strangeparticle.springboard.app.unit
 
-import com.strangeparticle.luther.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
-import com.strangeparticle.luther.client.provider.ChatMessage
-import com.strangeparticle.luther.client.provider.ChatRequest
-import com.strangeparticle.luther.client.provider.ToolCall
-import com.strangeparticle.luther.client.provider.ToolDefinition
+import com.strangeparticle.luther.core.client.provider.anthropic.request.AnthropicChatCompletionRequestDto
+import com.strangeparticle.luther.core.client.provider.ChatMessage
+import com.strangeparticle.luther.core.client.provider.ChatRequest
+import com.strangeparticle.luther.core.client.provider.ToolCall
+import com.strangeparticle.luther.core.client.provider.ToolDefinition
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject

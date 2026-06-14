@@ -8,9 +8,9 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.luther.session.ChatMessagePart
-import com.strangeparticle.luther.session.ToolCallState
-import com.strangeparticle.luther.client.provider.ToolCall
+import com.strangeparticle.luther.core.session.ChatMessagePart
+import com.strangeparticle.luther.core.session.ToolCallState
+import com.strangeparticle.luther.core.client.provider.ToolCall
 import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 import com.strangeparticle.springboard.app.settings.DropDownOption

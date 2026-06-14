@@ -13,7 +13,7 @@ import com.strangeparticle.luther.core.session.ToolCallState
 import com.strangeparticle.luther.core.client.provider.ToolCall
 import com.strangeparticle.springboard.app.luther.help.AiAssistantFullHelpText
 import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
-import com.strangeparticle.springboard.app.settings.DropDownOption
+import com.strangeparticle.luther.core.client.provider.Choice
 import com.strangeparticle.springboard.app.ui.TestTags
 import com.strangeparticle.springboard.app.ui.brand.AppTheme
 import com.strangeparticle.springboard.app.ui.brand.BrandRegistry
@@ -231,8 +231,8 @@ internal class AiChatPaneTest {
                 selectedModelId = "gpt-5",
                 selectedModelLabel = "GPT-5",
                 options = listOf(
-                    DropDownOption("gpt-5", "GPT-5"),
-                    DropDownOption("gpt-4.1", "GPT-4.1"),
+                    Choice("gpt-5", "GPT-5"),
+                    Choice("gpt-4.1", "GPT-4.1"),
                 ),
                 isLoading = false,
                 errorMessage = null,
@@ -914,6 +914,7 @@ internal class AiChatPaneTest {
             modelLabel = modelLabel,
             modelPicker = modelPicker,
             transcriptParts = transcriptParts,
+            terseHelpText = AiAssistantTerseHelpText.text,
             debugChatHistoryText = debugChatHistoryText,
             isRunning = isRunning,
             onSubmit = onSubmit,

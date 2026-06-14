@@ -13,7 +13,6 @@ import com.strangeparticle.luther.core.session.projection.buildProviderHistory
 import com.strangeparticle.luther.core.session.projection.buildTranscriptParts
 import com.strangeparticle.luther.core.client.provider.ChatMessage
 import com.strangeparticle.luther.core.client.provider.ToolCall
-import com.strangeparticle.springboard.app.luther.help.AiAssistantTerseHelpText
 
 internal sealed class AiChatScrollbackPane {
     data class ProviderModelChange(
@@ -34,7 +33,7 @@ internal sealed class AiChatScrollbackPane {
     ) : AiChatScrollbackPane()
 
     // Debug-only panes used when SHOW_FULL_CHAT_TRANSCRIPT is on. Each represents
-    // exactly one ChatMessage from AiSessionManager.history so the developer
+    // exactly one AiConversationMessage from AiSessionManager.history so the developer
     // can see every payload exchanged with the model — including the state
     // snapshots and raw tool-result payloads the normal Interaction view hides.
 
@@ -76,14 +75,14 @@ internal enum class LocalCommandResponseStyle {
     Error,
 }
 
-internal fun initialTerseHelpScrollbackPane(): AiChatScrollbackPane.LocalCommand = AiChatScrollbackPane.LocalCommand(
+internal fun initialTerseHelpScrollbackPane(terseHelpText: String): AiChatScrollbackPane.LocalCommand = AiChatScrollbackPane.LocalCommand(
     commandText = "/help_terse",
     commandAttribution = CommandAttribution.System,
-    responseText = AiAssistantTerseHelpText.text,
+    responseText = terseHelpText,
     style = LocalCommandResponseStyle.Help,
 )
 
-internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {
+internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>, terseHelpText: String = ""): List<AiChatScrollbackPane> {
     val panes = mutableListOf<AiChatScrollbackPane>()
     for (group in groups) {
         when (group.type) {
@@ -115,7 +114,7 @@ internal fun buildSlimScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiCh
             }
         }
     }
-    return panes.ifEmpty { listOf(initialTerseHelpScrollbackPane()) }
+    return panes.ifEmpty { listOf(initialTerseHelpScrollbackPane(terseHelpText)) }
 }
 
 internal fun buildDebugScrollbackPanes(groups: List<ChatHistoryGroup>): List<AiChatScrollbackPane> {

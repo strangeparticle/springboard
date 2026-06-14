@@ -1,11 +1,11 @@
 package com.strangeparticle.luther.cmp
 
-import com.strangeparticle.springboard.app.settings.DropDownOption
+import com.strangeparticle.luther.core.client.provider.Choice
 
 internal data class AiChatPaneModelPickerState(
     val selectedModelId: String,
     val selectedModelLabel: String,
-    val options: List<DropDownOption>,
+    val options: List<Choice>,
     val isLoading: Boolean,
     val errorMessage: String?,
     val onRefresh: () -> Unit,

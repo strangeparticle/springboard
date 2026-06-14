@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.strangeparticle.luther.core.session.ChatMessagePart
 import com.strangeparticle.luther.core.session.ToolCallState
-import com.strangeparticle.springboard.app.ui.TestTags
 
 @Composable
 internal fun ChatMessagePartRenderer(
@@ -46,7 +45,7 @@ private fun UserTextRenderer(text: String) {
         Surface(
             color = MaterialTheme.colorScheme.primary,
             shape = MaterialTheme.shapes.small,
-            modifier = Modifier.widthIn(max = 560.dp).testTag(TestTags.AI_CHAT_USER_MESSAGE),
+            modifier = Modifier.widthIn(max = 560.dp).testTag(AiChatTestTags.AI_CHAT_USER_MESSAGE),
         ) {
             Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
                 Text(text, color = MaterialTheme.colorScheme.onPrimary, fontSize = 13.sp)
@@ -60,7 +59,7 @@ private fun AssistantTextRenderer(text: String) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.widthIn(max = 620.dp).testTag(TestTags.AI_CHAT_ASSISTANT_MESSAGE),
+        modifier = Modifier.widthIn(max = 620.dp).testTag(AiChatTestTags.AI_CHAT_ASSISTANT_MESSAGE),
     ) {
         Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
             Text(text, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
@@ -73,7 +72,7 @@ private fun ErrorMessageRenderer(message: String) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_ERROR_MESSAGE),
+        modifier = Modifier.fillMaxWidth().testTag(AiChatTestTags.AI_CHAT_ERROR_MESSAGE),
     ) {
         Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)) {
             Text("Error: $message", color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
@@ -98,12 +97,12 @@ private fun ToolCallRenderer(
                 Row {
                     Button(
                         onClick = { onApprovalDecision(toolCall.id, true) },
-                        modifier = Modifier.testTag(TestTags.AI_APPROVAL_APPLY_BUTTON),
+                        modifier = Modifier.testTag(AiChatTestTags.AI_APPROVAL_APPLY_BUTTON),
                     ) { Text("Apply") }
                     Spacer(Modifier.width(8.dp))
                     OutlinedButton(
                         onClick = { onApprovalDecision(toolCall.id, false) },
-                        modifier = Modifier.testTag(TestTags.AI_APPROVAL_CANCEL_BUTTON),
+                        modifier = Modifier.testTag(AiChatTestTags.AI_APPROVAL_CANCEL_BUTTON),
                     ) { Text("Cancel") }
                 }
             }
@@ -126,7 +125,7 @@ private fun ToolActivitySurface(content: @Composable ColumnScope.() -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.small,
-        modifier = Modifier.widthIn(max = 620.dp).testTag(TestTags.AI_CHAT_TOOL_ACTIVITY),
+        modifier = Modifier.widthIn(max = 620.dp).testTag(AiChatTestTags.AI_CHAT_TOOL_ACTIVITY),
     ) {
         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), content = content)
     }

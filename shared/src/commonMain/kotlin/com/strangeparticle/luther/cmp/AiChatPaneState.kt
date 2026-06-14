@@ -39,7 +39,8 @@ internal data class AiChatPaneState(
             modelLabel: String,
             modelPicker: AiChatPaneModelPickerState? = null,
             transcriptParts: List<ChatMessagePart>,
-            scrollbackPanes: List<AiChatScrollbackPane> = buildScrollbackPanesFromTranscript(transcriptParts),
+            terseHelpText: String = "",
+            scrollbackPanes: List<AiChatScrollbackPane> = buildScrollbackPanesFromTranscript(transcriptParts, terseHelpText),
             debugChatHistoryText: String = "",
             isRunning: Boolean = false,
             focusInputOnShow: Boolean = false,
@@ -63,7 +64,7 @@ internal data class AiChatPaneState(
             onProcessingFocusFallback = onProcessingFocusFallback,
         )
 
-        private fun buildScrollbackPanesFromTranscript(transcriptParts: List<ChatMessagePart>): List<AiChatScrollbackPane> {
+        private fun buildScrollbackPanesFromTranscript(transcriptParts: List<ChatMessagePart>, terseHelpText: String = ""): List<AiChatScrollbackPane> {
             val panes = mutableListOf<AiChatScrollbackPane>()
             var currentStartIndex: Int? = null
             var currentRequestText: String? = null
@@ -92,7 +93,7 @@ internal data class AiChatPaneState(
             }
             flush()
             return panes.ifEmpty {
-                if (transcriptParts.isEmpty()) listOf(initialTerseHelpScrollbackPane()) else emptyList()
+                if (transcriptParts.isEmpty()) listOf(initialTerseHelpScrollbackPane(terseHelpText)) else emptyList()
             }
         }
     }

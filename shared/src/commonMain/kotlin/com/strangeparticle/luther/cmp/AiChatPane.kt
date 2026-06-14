@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
-import com.strangeparticle.springboard.app.ui.icons.SpringboardIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -68,8 +67,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.strangeparticle.springboard.app.platform.copyToClipboard
-import com.strangeparticle.springboard.app.ui.TestTags
 
 internal data class AiChatPaneColors(
     val pane: Color,
@@ -113,7 +110,7 @@ private fun AiChatPaneModelDropdown(
     var expanded by remember { mutableStateOf(false) }
     val hasOptions = state.options.isNotEmpty()
     val selectedDisplayName = (
-        state.options.firstOrNull { it.id == state.selectedModelId }?.displayName
+        state.options.firstOrNull { it.valueId == state.selectedModelId }?.displayLabel
             ?: state.selectedModelLabel
         ).ifBlank { fallbackModelLabel }
     val displayedText = when {
@@ -134,7 +131,7 @@ private fun AiChatPaneModelDropdown(
                     .clickable(enabled = hasOptions && !state.isLoading) { expanded = true }
                     .padding(start = 8.dp, end = 4.dp)
                     .semantics(mergeDescendants = true) {}
-                    .testTag(TestTags.AI_CHAT_MODEL_DROPDOWN),
+                    .testTag(AiChatTestTags.AI_CHAT_MODEL_DROPDOWN),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -149,7 +146,7 @@ private fun AiChatPaneModelDropdown(
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
-                    imageVector = SpringboardIcons.ArrowDropDown,
+                    imageVector = AiChatIcons.ArrowDropDown,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(16.dp),
@@ -161,25 +158,25 @@ private fun AiChatPaneModelDropdown(
             ) {
                 state.options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.displayName, fontSize = 13.sp) },
+                        text = { Text(option.displayLabel, fontSize = 13.sp) },
                         onClick = {
-                            state.onSelectModel(option.id)
+                            state.onSelectModel(option.valueId)
                             expanded = false
                         },
-                        modifier = Modifier.testTag(TestTags.aiChatModelDropdownOption(option.id)),
+                        modifier = Modifier.testTag(AiChatTestTags.aiChatModelDropdownOption(option.valueId)),
                     )
                 }
             }
         }
         IconButton(
             onClick = state.onRefresh,
-            modifier = Modifier.size(24.dp).testTag(TestTags.AI_CHAT_MODEL_REFRESH_BUTTON),
+            modifier = Modifier.size(24.dp).testTag(AiChatTestTags.AI_CHAT_MODEL_REFRESH_BUTTON),
         ) {
             if (state.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
             } else {
                 Icon(
-                    imageVector = SpringboardIcons.Refresh,
+                    imageVector = AiChatIcons.Refresh,
                     contentDescription = "Reload assistant model options",
                     modifier = Modifier.size(15.dp),
                 )
@@ -193,7 +190,7 @@ internal fun AiChatPane(
     state: AiChatPaneState,
     onClose: () -> Unit,
     onOpenSettings: () -> Unit,
-    onCopyTranscript: (String) -> Unit = { copyToClipboard(it) },
+    onCopyTranscript: (String) -> Unit = rememberCopyToClipboard(),
     onTabOut: () -> Unit = {},
     onShiftTabOut: () -> Unit = {},
     inputFocusRequester: FocusRequester? = null,
@@ -248,7 +245,7 @@ internal fun AiChatPane(
         modifier = Modifier
             .fillMaxWidth()
             .requiredHeight(height)
-            .testTag(TestTags.AI_CHAT_PANE),
+            .testTag(AiChatTestTags.AI_CHAT_PANE),
     ) {
         Surface(
             modifier = Modifier
@@ -295,7 +292,7 @@ internal fun AiChatPane(
                 // A visually distinct strip at the top of the pane — slightly higher
                 // surface tone than the pane body, with a divider underneath.
                 Surface(
-                    modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_TITLE_BAR),
+                    modifier = Modifier.fillMaxWidth().testTag(AiChatTestTags.AI_CHAT_TITLE_BAR),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
                     Row(
@@ -361,10 +358,10 @@ internal fun AiChatPane(
                             tooltipText = "Copy debug history",
                             onClick = { onCopyTranscript(state.debugChatHistoryText) },
                             enabled = state.debugChatHistoryText.isNotBlank(),
-                            modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON),
+                            modifier = Modifier.size(28.dp).testTag(AiChatTestTags.AI_CHAT_COPY_DEBUG_HISTORY_BUTTON),
                         ) {
                             Icon(
-                                SpringboardIcons.BugReport,
+                                AiChatIcons.BugReport,
                                 contentDescription = "Copy debug chat history",
                                 modifier = Modifier.size(15.dp),
                             )
@@ -373,19 +370,19 @@ internal fun AiChatPane(
                             tooltipText = "Copy conversation",
                             onClick = { onCopyTranscript(getAllScrollbackTextForCopyToClipboard(state.scrollbackPanes)) },
                             enabled = state.scrollbackPanes.isNotEmpty(),
-                            modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON),
+                            modifier = Modifier.size(28.dp).testTag(AiChatTestTags.AI_CHAT_COPY_TRANSCRIPT_BUTTON),
                         ) {
                             Icon(
-                                SpringboardIcons.ContentCopy,
+                                AiChatIcons.ContentCopy,
                                 contentDescription = "Copy assistant transcript",
                                 modifier = Modifier.size(15.dp),
                             )
                         }
                         IconButton(
                             onClick = onClose,
-                            modifier = Modifier.size(28.dp).testTag(TestTags.AI_CHAT_CLOSE_BUTTON),
+                            modifier = Modifier.size(28.dp).testTag(AiChatTestTags.AI_CHAT_CLOSE_BUTTON),
                         ) {
-                            Icon(SpringboardIcons.Close, contentDescription = "Close assistant", modifier = Modifier.size(16.dp))
+                            Icon(AiChatIcons.Close, contentDescription = "Close assistant", modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -401,7 +398,7 @@ internal fun AiChatPane(
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
-                                    .testTag(TestTags.AI_CHAT_SETTINGS_BUTTON)
+                                    .testTag(AiChatTestTags.AI_CHAT_SETTINGS_BUTTON)
                                     .clickable(onClick = onOpenSettings)
                                     .padding(4.dp),
                             )
@@ -414,7 +411,7 @@ internal fun AiChatPane(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .testTag(TestTags.AI_CHAT_HISTORY),
+                            .testTag(AiChatTestTags.AI_CHAT_HISTORY),
                     ) {
                         itemsIndexed(state.scrollbackPanes) { index, pane ->
                             AiChatScrollbackPaneRenderer(
@@ -429,7 +426,7 @@ internal fun AiChatPane(
                         }
                     }
                     Surface(
-                        modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_INPUT_SECTION),
+                        modifier = Modifier.fillMaxWidth().testTag(AiChatTestTags.AI_CHAT_INPUT_SECTION),
                         color = colors.inputSection,
                         shape = MaterialTheme.shapes.small,
                     ) {
@@ -457,7 +454,7 @@ internal fun AiChatPane(
                                         .focusRequester(activeInputFocusRequester)
                                         .border(inputBorderWidth, inputBorderColor, MaterialTheme.shapes.small)
                                         .padding(horizontal = 8.dp, vertical = 6.dp)
-                                        .testTag(TestTags.AI_CHAT_INPUT),
+                                        .testTag(AiChatTestTags.AI_CHAT_INPUT),
                                     textStyle = TextStyle(
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 13.sp,
@@ -469,20 +466,20 @@ internal fun AiChatPane(
                                     ProcessingOverlay(
                                         modifier = Modifier
                                             .align(Alignment.Center)
-                                            .testTag(TestTags.AI_CHAT_WORKING_INDICATOR),
+                                            .testTag(AiChatTestTags.AI_CHAT_WORKING_INDICATOR),
                                     )
                                 }
                             }
                             Button(
                                 onClick = { sendInput() },
                                 enabled = !state.isRunning,
-                                modifier = Modifier.height(32.dp).testTag(TestTags.AI_CHAT_SEND_BUTTON),
+                                modifier = Modifier.height(32.dp).testTag(AiChatTestTags.AI_CHAT_SEND_BUTTON),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             ) { Text("Send", fontSize = 13.sp) }
                             OutlinedButton(
                                 onClick = state.onStop,
                                 enabled = state.isRunning,
-                                modifier = Modifier.height(32.dp).testTag(TestTags.AI_CHAT_STOP_BUTTON),
+                                modifier = Modifier.height(32.dp).testTag(AiChatTestTags.AI_CHAT_STOP_BUTTON),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             ) { Text("Stop", fontSize = 13.sp) }
                         }
@@ -558,7 +555,7 @@ private fun AiChatScrollbackPaneRenderer(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .border(1.dp, colors.scrollbackPaneOutline, MaterialTheme.shapes.small)
-            .testTag(TestTags.aiChatScrollbackPane(index)),
+            .testTag(AiChatTestTags.aiChatScrollbackPane(index)),
         color = if (isHelp) colors.helpScrollbackPane else colors.interactionScrollbackPane,
         shape = MaterialTheme.shapes.small,
     ) {
@@ -581,10 +578,10 @@ private fun AiChatScrollbackPaneRenderer(
                 TooltipIconButton(
                     tooltipText = "Copy message",
                     onClick = { onCopyToClipboard(getScrollbackPaneTextForCopyToClipboard(pane)) },
-                    modifier = Modifier.size(28.dp).testTag(TestTags.aiChatScrollbackPaneCopyButton(index)),
+                    modifier = Modifier.size(28.dp).testTag(AiChatTestTags.aiChatScrollbackPaneCopyButton(index)),
                 ) {
                     Icon(
-                        SpringboardIcons.ContentCopy,
+                        AiChatIcons.ContentCopy,
                         contentDescription = "Copy scrollback pane",
                         modifier = Modifier.size(15.dp),
                     )
@@ -622,7 +619,7 @@ private fun LocalCommandPaneContent(
         modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
     )
     Surface(
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.AI_CHAT_COMMAND_MESSAGE),
+        modifier = Modifier.fillMaxWidth().testTag(AiChatTestTags.AI_CHAT_COMMAND_MESSAGE),
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = MaterialTheme.shapes.small,
     ) {
@@ -634,7 +631,7 @@ private fun LocalCommandPaneContent(
                     LocalCommandResponseStyle.Help -> MaterialTheme.colorScheme.onSurfaceVariant
                     LocalCommandResponseStyle.Error -> MaterialTheme.colorScheme.error
                 },
-                modifier = if (pane.style == LocalCommandResponseStyle.Help) Modifier.testTag(TestTags.AI_CHAT_USER_HELP) else Modifier,
+                modifier = if (pane.style == LocalCommandResponseStyle.Help) Modifier.testTag(AiChatTestTags.AI_CHAT_USER_HELP) else Modifier,
             )
         }
     }
@@ -648,7 +645,7 @@ private fun InteractionPaneContent(
 ) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         Surface(
-            modifier = Modifier.widthIn(max = 560.dp).testTag(TestTags.AI_CHAT_USER_MESSAGE),
+            modifier = Modifier.widthIn(max = 560.dp).testTag(AiChatTestTags.AI_CHAT_USER_MESSAGE),
             color = MaterialTheme.colorScheme.primary,
             shape = MaterialTheme.shapes.small,
         ) {

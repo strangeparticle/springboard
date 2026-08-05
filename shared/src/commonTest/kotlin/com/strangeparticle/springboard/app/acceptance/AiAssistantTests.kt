@@ -1,15 +1,24 @@
 package com.strangeparticle.springboard.app.acceptance
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import com.strangeparticle.luther.core.client.provider.AiProvider
+import com.strangeparticle.luther.core.client.provider.ChatMessage
+import com.strangeparticle.luther.core.client.provider.ChatRequest
+import com.strangeparticle.luther.core.client.provider.ChatResponse
+import com.strangeparticle.luther.core.client.provider.Model
+import com.strangeparticle.luther.core.client.provider.ProviderConfig
 import com.strangeparticle.luther.core.client.provider.ProviderErrorType
 import com.strangeparticle.luther.core.client.provider.ProviderException
-import com.strangeparticle.luther.core.session.AiSessionManager
 import com.strangeparticle.luther.core.session.AiSessionSnapshotProvider
 import com.strangeparticle.luther.core.session.AiSessionToolCallExecutionContextFactory
 import com.strangeparticle.luther.core.session.ChatMessagePart
+import com.strangeparticle.luther.core.session.LutherSession
+import com.strangeparticle.luther.core.session.LutherSettings
+import com.strangeparticle.luther.core.session.createLutherSession
+import com.strangeparticle.luther.core.session.projection.buildProviderHistory
 import com.strangeparticle.luther.core.client.provider.ToolCall
 import com.strangeparticle.luther.core.toolcall.ToolCallExecutionContext
-import com.strangeparticle.luther.core.toolcall.ToolCallRegistry
+import com.strangeparticle.luther.core.toolcall.ToolCallHandler
 import com.strangeparticle.springboard.app.luther.SpringboardAppSnapshot
 import com.strangeparticle.springboard.app.luther.SpringboardToolCallExecutionContext
 import com.strangeparticle.springboard.app.luther.SystemPromptBuilder
@@ -32,7 +41,6 @@ import com.strangeparticle.springboard.app.shared.PlatformActivationServiceInMem
 import com.strangeparticle.springboard.app.shared.PlatformFileContentServiceInMemoryFake
 import com.strangeparticle.springboard.app.shared.TestFixtureJson
 import com.strangeparticle.springboard.app.viewmodel.SpringboardViewModel
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.TestScope
@@ -59,7 +67,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Added logs.")
 
-        fixture.manager.submit("Add logs activator").join()
+        fixture.session.submit("Add logs activator").join()
 
         val springboardUnfiltered = fixture.viewModel.springboardUnfiltered
         assertNotNull(springboardUnfiltered)
@@ -78,9 +86,9 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Done.")
 
-        fixture.manager.submit("Add resource and activator").join()
+        fixture.session.submit("Add resource and activator").join()
 
-        assertEquals(2, fixture.manager.history.filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>().size)
+        assertEquals(2, fixture.providerHistory().filterIsInstance<ChatMessage.ToolResult>().size)
     }
 
     @Test
@@ -92,7 +100,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Removed it.")
 
-        fixture.manager.submit("Undo the existing activator").join()
+        fixture.session.submit("Undo the existing activator").join()
 
         assertTrue(fixture.viewModel.springboardUnfiltered?.activators.orEmpty().isEmpty())
     }
@@ -106,7 +114,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
 
-        fixture.manager.submit("add a resource").join()
+        fixture.session.submit("add a resource").join()
 
         assertEquals(true, fixture.viewModel.activeTab?.isDirty)
 
@@ -125,7 +133,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
 
-        fixture.manager.submit("add a resource").join()
+        fixture.session.submit("add a resource").join()
         fixture.viewModel.undoActiveTab()
 
         fixture.viewModel.redoActiveTab()
@@ -139,17 +147,16 @@ internal class AiAssistantTests {
         val fixture = createFixture(source = "/tmp/test-springboard.json")
         val tabId = fixture.viewModel.activeTabId
         fixture.viewModel.markTabDirty(tabId)
-        fixture.registry.register(SaveSpringboardToolCallHandler())
         fixture.aiClient.responseQueue += fixture.aiClient.multipleToolCalls(
             listOf(ToolCall("call-save", "save_springboard", args("tab_id" to tabId)))
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Saved.")
 
-        val job = fixture.manager.submit("Save it")
+        val job = fixture.session.submit("Save it")
         runCurrent()
         assertNull(fixture.fileService.writtenFiles["/tmp/test-springboard.json"])
 
-        fixture.manager.onApprovalDecision("call-save", true)
+        fixture.session.respondToToolApproval("call-save", true)
         job.join()
 
         assertNotNull(fixture.fileService.writtenFiles["/tmp/test-springboard.json"])
@@ -171,7 +178,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Created a new springboard.")
 
-        fixture.manager.submit("Create a new springboard for metrics").join()
+        fixture.session.submit("Create a new springboard for metrics").join()
 
         val activeTab = fixture.viewModel.activeTab
         assertNotNull(activeTab)
@@ -207,7 +214,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened.")
 
-        fixture.manager.submit("Open the dashboard").join()
+        fixture.session.submit("Open the dashboard").join()
 
         assertEquals(listOf("https://example.com"), fixture.activationService.openedUrls)
     }
@@ -232,7 +239,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Done.")
 
-        fixture.manager.submit("Run the command").join()
+        fixture.session.submit("Run the command").join()
 
         assertEquals(listOf("echo test"), fixture.activationService.executedCommands)
         assertTrue(fixture.activationService.openedUrls.isEmpty())
@@ -258,11 +265,11 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Nothing to open.")
 
-        fixture.manager.submit("Open the missing thing").join()
+        fixture.session.submit("Open the missing thing").join()
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
-        val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>()
+        val lastToolMessage = fixture.providerHistory()
+            .filterIsInstance<ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("no_activators_resolved"))
     }
@@ -301,7 +308,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened row.")
 
-        fixture.manager.submit("Open the row").join()
+        fixture.session.submit("Open the row").join()
 
         // app1 has a prod-specific URL, app2 falls back to its ALL-env activator.
         assertEquals(
@@ -332,7 +339,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened column.")
 
-        fixture.manager.submit("Open the column").join()
+        fixture.session.submit("Open the column").join()
 
         // The prod (app1, res1) cell has a command, not a URL; that command should run.
         assertEquals(listOf("echo prod"), fixture.activationService.executedCommands)
@@ -362,7 +369,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened a batch.")
 
-        fixture.manager.submit("Open these two").join()
+        fixture.session.submit("Open these two").join()
 
         assertEquals(
             listOf(
@@ -398,7 +405,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Opened.")
 
-        fixture.manager.submit("Open the other tab's dashboard").join()
+        fixture.session.submit("Open the other tab's dashboard").join()
 
         assertEquals(listOf("https://alt.example.com"), fixture.activationService.openedUrls)
         assertEquals(firstTabId, fixture.viewModel.activeTabId)
@@ -423,11 +430,11 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Could not find tab.")
 
-        fixture.manager.submit("Open on missing tab").join()
+        fixture.session.submit("Open on missing tab").join()
 
         assertTrue(fixture.activationService.openedUrls.isEmpty())
-        val lastToolMessage = fixture.manager.history
-            .filterIsInstance<com.strangeparticle.luther.core.client.provider.ChatMessage.ToolResult>()
+        val lastToolMessage = fixture.providerHistory()
+            .filterIsInstance<ChatMessage.ToolResult>()
             .last()
         assertTrue(lastToolMessage.content.contains("missing_tab"))
     }
@@ -441,7 +448,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
 
-        fixture.manager.submit("add a resource").join()
+        fixture.session.submit("add a resource").join()
 
         assertTrue(fixture.viewModel.canUndoActiveTab)
         assertTrue(fixture.viewModel.springboardUnfiltered?.resources.orEmpty().any { it.id == "res2" })
@@ -464,7 +471,7 @@ internal class AiAssistantTests {
         )
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("done")
 
-        fixture.manager.submit("add logs").join()
+        fixture.session.submit("add logs").join()
 
         val afterTurn = fixture.viewModel.springboardUnfiltered
         assertNotNull(afterTurn)
@@ -486,13 +493,13 @@ internal class AiAssistantTests {
         val fixture = createFixture()
         fixture.aiClient.sendChatException = ProviderException(ProviderErrorType.Network, "network unavailable")
 
-        fixture.manager.submit("Try").join()
+        fixture.session.submit("Try").join()
 
-        assertEquals(ChatMessagePart.ChatError("network unavailable"), fixture.manager.transcriptParts.last())
+        assertEquals(ChatMessagePart.ChatError("network unavailable"), fixture.session.transcriptParts.last())
         fixture.aiClient.sendChatException = null
         fixture.aiClient.responseQueue += fixture.aiClient.textOnly("Recovered.")
-        fixture.manager.submit("Try again").join()
-        assertEquals(ChatMessagePart.AssistantText("Recovered."), fixture.manager.transcriptParts.last())
+        fixture.session.submit("Try again").join()
+        assertEquals(ChatMessagePart.AssistantText("Recovered."), fixture.session.transcriptParts.last())
     }
 
     private fun TestScope.createFixture(
@@ -511,25 +518,34 @@ internal class AiAssistantTests {
         )
         viewModel.loadConfig(initialConfig, source)
         val aiClient = AiProviderClientInMemoryFake()
-        val registry = ToolCallRegistry().apply {
-            register(ActivateColumnToolCallHandler())
-            register(ActivateCoordinateToolCallHandler())
-            register(ActivateCoordinatesToolCallHandler())
-            register(ActivateRowToolCallHandler())
-            register(AddAppToolCallHandler())
-            register(AddEnvironmentToolCallHandler())
-            register(AddResourceToolCallHandler())
-            register(AddUrlActivatorToolCallHandler())
-            register(CreateSpringboardToolCallHandler())
-            register(RemoveActivatorToolCallHandler())
-        }
-        val manager = AiSessionManager(
-            sendChat = aiClient::sendChat,
-            toolCallRegistry = registry,
-            snapshotProvider = object : AiSessionSnapshotProvider {
-                override fun getSnapshotJson(): String = SpringboardAppSnapshot.capture(viewModel).toCompactJson()
-            },
-            toolCallExecutionContextFactory = object : AiSessionToolCallExecutionContextFactory {
+        // Drive luther through its PUBLIC session API. The in-memory fake transport is wrapped as an
+        // AiProvider so createLutherSession can own the sendChat seam (LutherSettings.modelId replaces
+        // the old modelIdProvider). All springboard tool handlers are supplied up front; luther builds
+        // its own ToolCallRegistry from this list internally.
+        val provider = FakeAiProvider(aiClient)
+        val settings = LutherSettings(
+            providerId = provider.id,
+            modelId = "fake-model",
+            providerConfig = FakeProviderConfig,
+        )
+        val toolHandlers: List<ToolCallHandler> = listOf(
+            ActivateColumnToolCallHandler(),
+            ActivateCoordinateToolCallHandler(),
+            ActivateCoordinatesToolCallHandler(),
+            ActivateRowToolCallHandler(),
+            AddAppToolCallHandler(),
+            AddEnvironmentToolCallHandler(),
+            AddResourceToolCallHandler(),
+            AddUrlActivatorToolCallHandler(),
+            CreateSpringboardToolCallHandler(),
+            RemoveActivatorToolCallHandler(),
+            SaveSpringboardToolCallHandler(),
+        )
+        val session = createLutherSession(
+            providers = listOf(provider),
+            settings = settings,
+            toolHandlers = toolHandlers,
+            executionContextFactory = object : AiSessionToolCallExecutionContextFactory {
                 override fun createToolCallExecutionContext(
                     onStateChanged: () -> Unit,
                     awaitUserApproval: suspend (toolCallId: String) -> Boolean,
@@ -539,13 +555,15 @@ internal class AiAssistantTests {
                     override suspend fun awaitUserApproval(toolCallId: String): Boolean = awaitUserApproval(toolCallId)
                 }
             },
+            snapshotProvider = object : AiSessionSnapshotProvider {
+                override fun getSnapshotJson(): String = SpringboardAppSnapshot.capture(viewModel).toCompactJson()
+            },
             systemPromptProvider = { SystemPromptBuilder.build() },
-            modelIdProvider = { "fake-model" },
             coroutineScope = this,
             onTurnStart = { viewModel.beginEditTransaction() },
             onTurnEnd = { viewModel.commitEditTransaction() },
         )
-        return Fixture(viewModel, fileService, activationService, aiClient, registry, manager)
+        return Fixture(viewModel, fileService, activationService, aiClient, session)
     }
 
     private fun args(vararg pairs: Pair<String, String>): String = buildJsonObject {
@@ -553,12 +571,32 @@ internal class AiAssistantTests {
         put("display_message", "done")
     }.toString()
 
+    /** Opaque config for the fake provider; carries no fields since the fake transport ignores it. */
+    private object FakeProviderConfig : ProviderConfig
+
+    /** Wraps the in-memory transport fake as an AiProvider so the session's public factory can use it. */
+    private class FakeAiProvider(
+        private val aiClient: AiProviderClientInMemoryFake,
+    ) : AiProvider {
+        override val id: String = "fake"
+        override val displayName: String = "Fake"
+        override fun isConfigured(config: ProviderConfig): Boolean = true
+        override suspend fun listModels(config: ProviderConfig): List<Model> = aiClient.listModels()
+        override suspend fun sendChat(config: ProviderConfig, request: ChatRequest): ChatResponse =
+            aiClient.sendChat(request)
+    }
+
     private data class Fixture(
         val viewModel: SpringboardViewModel,
         val fileService: PlatformFileContentServiceInMemoryFake,
         val activationService: PlatformActivationServiceInMemoryFake,
         val aiClient: AiProviderClientInMemoryFake,
-        val registry: ToolCallRegistry,
-        val manager: AiSessionManager,
-    )
+        val session: LutherSession,
+    ) {
+        // The old internal AiSessionManager exposed history: List<ChatMessage> directly. The public
+        // LutherSession exposes the grouped chat history instead, so project it with the public
+        // buildProviderHistory to reconstruct the same provider-facing message list for assertions.
+        fun providerHistory(): List<ChatMessage> =
+            buildProviderHistory(session.chatHistory.value.flatMap { it.items })
+    }
 }

@@ -36,7 +36,7 @@ include(":shared")
 include(":desktopApp")
 include(":webApp")
 
-// Local dev: build against luther source instead of the published artifact when -PlutherDev is set.
-if (providers.gradleProperty("lutherDev").isPresent) {
+// Local dev: build against luther source instead of the published artifact when lutherDev=true.
+if (providers.gradleProperty("lutherDev").orNull == "true") {
     includeBuild("../luther")
 }

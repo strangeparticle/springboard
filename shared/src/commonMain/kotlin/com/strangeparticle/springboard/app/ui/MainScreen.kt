@@ -2,11 +2,8 @@ package com.strangeparticle.springboard.app.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import com.strangeparticle.springboard.app.domain.factory.currentTimeMillis
 import com.strangeparticle.springboard.app.domain.model.hasAnyAllEnvsActivators
 import com.strangeparticle.springboard.app.platform.NetworkContentService
@@ -15,9 +12,7 @@ import com.strangeparticle.springboard.app.platform.PlatformFileContentServiceDe
 import com.strangeparticle.springboard.app.ui.gridnav.GridNav
 import com.strangeparticle.springboard.app.ui.gridnav.GroupActivationConfirmDialog
 import com.strangeparticle.luther.cmp.AiChatPane
-import com.strangeparticle.luther.cmp.AiChatPaneDefaults
 import com.strangeparticle.luther.cmp.AiChatPaneState
-import com.strangeparticle.luther.cmp.ChatPaneResizeHandle
 import com.strangeparticle.springboard.app.ui.keynav.NavBar
 import com.strangeparticle.springboard.app.ui.openbutton.OpenFromNetworkDialog
 import com.strangeparticle.springboard.app.ui.openbutton.WelcomeScreen
@@ -185,22 +180,6 @@ internal fun MainScreen(
         )
 
         if (showAssistant && aiAssistantEnabled) {
-            var chatPaneHeightDp by rememberSaveable {
-                mutableStateOf(AiChatPaneDefaults.DefaultHeight.value)
-            }
-            val density = LocalDensity.current
-            ChatPaneResizeHandle(
-                onDragDelta = { deltaPx ->
-                    // Drag DOWN (positive deltaPx) shrinks the pane (pane grows upward from
-                    // its bottom edge, which is pinned to the BottomBar below).
-                    val deltaDp = with(density) { deltaPx.toDp() }
-                    val proposed = (chatPaneHeightDp.dp - deltaDp).coerceIn(
-                        AiChatPaneDefaults.MinHeight,
-                        AiChatPaneDefaults.MaxHeight,
-                    )
-                    chatPaneHeightDp = proposed.value
-                },
-            )
             AiChatPane(
                 state = aiChatPaneState,
                 onClose = onCloseAssistant,
@@ -208,7 +187,6 @@ internal fun MainScreen(
                 onTabOut = { viewModel.requestFocusAppDropdown() },
                 onShiftTabOut = { try { environmentDropdownFocusRequester.requestFocus() } catch (_: Exception) {} },
                 inputFocusRequester = assistantInputFocusRequester,
-                height = chatPaneHeightDp.dp,
             )
         }
 

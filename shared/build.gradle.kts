@@ -20,6 +20,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            // luther-cmp brings luther-core transitively (api). With -PlutherDev the settings.gradle.kts
+            // composite build substitutes this coordinate with the local ../luther source.
+            implementation("com.strangeparticle:luther-cmp:0.1.1")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
